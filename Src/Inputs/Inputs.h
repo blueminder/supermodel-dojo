@@ -33,6 +33,8 @@
 #include "Util/NewConfig.h"
 #include <vector>
 
+#include "Dojo/Dojo.h"
+
 class CInputSystem;
 class CInput;
 struct Game;
