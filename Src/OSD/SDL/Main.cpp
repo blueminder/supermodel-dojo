@@ -100,6 +100,8 @@
 
 #include "Crosshair.h"
 
+#include "Dojo/Dojo.h"
+
 /******************************************************************************
  Global Run-time Config
 ******************************************************************************/
@@ -905,6 +907,9 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
   bool        paused = false;
   bool        dumpTimings = false;
 
+  bool recordSession = false;
+  bool playbackSession = false;
+
   // Initialize and load ROMs
   if (OKAY != Model3->Init())
     return 1;
@@ -1009,8 +1014,18 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
     quit = true;
   }
 #endif
+
+  recordSession = s_runtime_config.Get("RecordSession").ValueAs<bool>();
+  Dojo::Init(Model3->GetGame().name, recordSession);
+
   while (!quit)
   {
+	  if (Dojo::playback)
+    {
+      if(Dojo::index == Dojo::net_inputs[0].size())
+        quit = true;
+    }
+
     // Render if paused, otherwise run a frame
     if (paused)
       Model3->RenderFrame();
@@ -1018,7 +1033,12 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
       Model3->RunFrame();
 
     // Poll the inputs
-    if (!Inputs->Poll(&game, xOffset, yOffset, xRes, yRes))
+    if (Inputs->Poll(&game, xOffset, yOffset, xRes, yRes))
+    {
+      if (!paused)
+        Dojo::AdvanceFrame();
+    }
+    else
       quit = true;
 
 #ifdef SUPERMODEL_DEBUGGER
@@ -1527,6 +1547,9 @@ static Util::Config::Node DefaultConfig()
 #endif
   config.Set("Outputs", "none");
   config.Set("DumpTextures", false);
+  // Replays
+  config.Set("RecordSession", false);
+  config.Set("ReplayFile", "");
   return config;
 }
 
@@ -1679,7 +1702,8 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
     { "-input-system",          "InputSystem"             },
     { "-outputs",               "Outputs"                 },
     { "-log-output",            "LogOutput"               },
-    { "-log-level",             "LogLevel"                }
+    { "-log-level",             "LogLevel"                },
+    { "-replay-file",           "ReplayFile"              }
   };
   const std::map<std::string, std::pair<std::string, bool>> bool_options
   { // -option
@@ -1724,6 +1748,7 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
     { "-no-force-feedback",   { "ForceFeedback",    false } },
     { "-force-feedback",      { "ForceFeedback",    true } },
     { "-dump-textures",       { "DumpTextures",     true } },
+    { "-record",              { "RecordSession",    true } },
   };
   for (int i = 1; i < argc; i++)
   {
@@ -1934,6 +1959,9 @@ int main(int argc, char **argv)
     {
       std::string xml_file = config3["GameXMLFile"].ValueAs<std::string>();
       GameLoader loader(xml_file);
+
+      Dojo::replay_filename = config3["ReplayFile"].ValueAs<std::string>();
+
       if (print_games)
       {
         PrintGameList(xml_file, loader.GetGames());

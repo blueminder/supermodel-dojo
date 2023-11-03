@@ -162,6 +162,10 @@ SRC_FILES = \
 	Src/GameLoader.cpp \
 	Src/Pkgs/tinyxml2.cpp \
 	Src/ROMSet.cpp \
+	Src/Dojo/Dojo.cpp \
+	Src/Dojo/Frame.cpp \
+	Src/Dojo/Message.cpp \
+	Src/Dojo/Replay.cpp \
 	$(PLATFORM_SRC_FILES)
 
 ifeq ($(strip $(NET_BOARD)),1)
