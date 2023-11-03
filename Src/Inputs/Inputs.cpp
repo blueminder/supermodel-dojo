@@ -749,11 +749,54 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 
 	// Poll all UI inputs and all the inputs used by the current game, or all inputs if game is NULL
 	uint32_t gameFlags = game ? game->inputs : Game::INPUT_ALL;
+
+	std::bitset<32> inputBits;
+	std::bitset<32> frameInputBits;
+
+	if (Dojo::playback)
+	{
+		if (Dojo::net_inputs[0].find(Dojo::index) != Dojo::net_inputs[0].end())
+		{
+			uint32_t frameInputData = Dojo::net_inputs[0].at(Dojo::index);
+			frameInputBits = std::bitset<32>(frameInputData);
+		}
+	}
+
+	int idx = 0;
 	for (vector<CInput*>::iterator it = m_inputs.begin(); it != m_inputs.end(); ++it)
 	{
 		if ((*it)->IsUIInput() || ((*it)->gameFlags & gameFlags))
 			(*it)->Poll();
+
+		if (((*it)->gameFlags & gameFlags))
+		{
+			if (Dojo::playback)
+			{
+				if (frameInputBits.test(idx))
+				{
+					(*it)->value = 1;
+					inputBits.set(idx);
+				}
+			}
+
+			if (Dojo::record)
+			{
+				if ((*it)->value)
+					inputBits.set(idx);
+			}
+
+			idx++;
+		}
 	}
+
+	if (Dojo::record)
+	{
+		uint32_t digital = (uint32_t)inputBits.to_ulong();
+		std::string current_frame = Dojo::Frame::Create(Dojo::index, 0, 0, digital);
+		Dojo::Replay::AppendFrameToFile(current_frame);
+	}
+
+	//std::cout << Dojo::index << ":" << inputBits.to_string() << " " << digital << std::endl;
 	return true;
 }
 
