@@ -104,6 +104,16 @@ public:
   CSwitchInput  *uiDumpInpState;
   CSwitchInput  *uiDumpTimings;
   CSwitchInput  *uiScreenshot;
+  // Training Mode
+  CSwitchInput  *uiRecordSlot1;
+  CSwitchInput  *uiRecordSlot2;
+  CSwitchInput  *uiRecordSlot3;
+  CSwitchInput  *uiPlaySlot1;
+  CSwitchInput  *uiPlaySlot2;
+  CSwitchInput  *uiPlaySlot3;
+  //CSwitchInput  *uiSwitchPlayer;
+  CSwitchInput  *uiTogglePlayLoop;
+  CSwitchInput  *uiPlayRandomSlot;
 #ifdef SUPERMODEL_DEBUGGER
   CSwitchInput  *uiEnterDebugger;
 #endif
