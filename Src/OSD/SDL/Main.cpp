@@ -908,7 +908,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
   bool        dumpTimings = false;
 
   bool recordSession = false;
-  bool playbackSession = false;
+  bool trainSession = false;
 
   // Initialize and load ROMs
   if (OKAY != Model3->Init())
@@ -1016,7 +1016,8 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
 #endif
 
   recordSession = s_runtime_config.Get("RecordSession").ValueAs<bool>();
-  Dojo::Init(Model3->GetGame().name, recordSession);
+  trainSession = s_runtime_config.Get("TrainingSession").ValueAs<bool>();
+  Dojo::Init(Model3->GetGame().name, recordSession, trainSession);
 
   while (!quit)
   {
@@ -1149,6 +1150,54 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
 
       Inputs->GetInputSystem()->SetMouseVisibility(!s_runtime_config["FullScreen"].ValueAs<bool>());
     }
+    /*
+    else if (Dojo::training && Inputs->uiSwitchPlayer->Pressed())
+    {
+      std::string notice = Dojo::Training::TogglePlayerSwap();
+      std::cout << notice << std::endl;
+    }
+    */
+    else if (Dojo::training && Inputs->uiRecordSlot1->Pressed())
+    {
+      std::string notice = Dojo::Training::ToggleRecording(0);
+      std::cout << notice << std::endl;
+    }
+    else if (Dojo::training && Inputs->uiRecordSlot2->Pressed())
+    {
+      std::string notice = Dojo::Training::ToggleRecording(1);
+      std::cout << notice << std::endl;
+    }
+    else if (Dojo::training && Inputs->uiRecordSlot3->Pressed())
+    {
+      std::string notice = Dojo::Training::ToggleRecording(2);
+      std::cout << notice << std::endl;
+    }
+    else if (Dojo::training && Inputs->uiPlaySlot1->Pressed())
+    {
+      std::string notice = Dojo::Training::TogglePlayback(0);
+      std::cout << notice << std::endl;
+    }
+    else if (Dojo::training && Inputs->uiPlaySlot2->Pressed())
+    {
+      std::string notice = Dojo::Training::TogglePlayback(1);
+      std::cout << notice << std::endl;
+    }
+    else if (Dojo::training && Inputs->uiPlaySlot3->Pressed())
+    {
+      std::string notice = Dojo::Training::TogglePlayback(2);
+      std::cout << notice << std::endl;
+    }
+    else if (Dojo::training && Inputs->uiPlayRandomSlot->Pressed())
+    {
+      std::string notice = Dojo::Training::ToggleRandomPlayback();
+      std::cout << notice << std::endl;
+    }
+    else if (Dojo::training && Inputs->uiTogglePlayLoop->Pressed())
+    {
+      std::string notice = Dojo::Training::ToggleLoop();
+      std::cout << notice << std::endl;
+    }
+
     else if (Inputs->uiSaveState->Pressed())
     {
       if (!paused)
@@ -1550,6 +1599,7 @@ static Util::Config::Node DefaultConfig()
   // Replays
   config.Set("RecordSession", false);
   config.Set("ReplayFile", "");
+  config.Set("TrainingSession", false);
   return config;
 }
 
@@ -1749,6 +1799,7 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
     { "-force-feedback",      { "ForceFeedback",    true } },
     { "-dump-textures",       { "DumpTextures",     true } },
     { "-record",              { "RecordSession",    true } },
+    { "-train",               { "TrainingSession",  true } },
   };
   for (int i = 1; i < argc; i++)
   {

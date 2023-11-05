@@ -1,6 +1,6 @@
 #include "Dojo.h"
 
-void Dojo::Init(std::string game_name, bool record_session)
+void Dojo::Init(std::string game_name, bool record_session, bool train_session)
 {
     index = 0;
 
@@ -14,6 +14,13 @@ void Dojo::Init(std::string game_name, bool record_session)
     {
         record = true;
         playback = false;
+    }
+
+    if (train_session)
+    {
+      std::cout << "Training Session" << std::endl;
+      training = true;
+      playback = false;
     }
 
     if (record)
@@ -50,7 +57,7 @@ void Dojo::AddNetFrame(const char* received_data)
   //if (net_inputs[frame_player].count(effective_frame_num) == 0 ||
   //  effective_frame_num >= last_consecutive_common_frame)
   {
-    //net_frames[frame_player].emplace(effective_frame_num, data_to_queue);
+    net_frames[frame_player].emplace(effective_frame_num, data_to_queue);
     net_inputs[frame_player].emplace(effective_frame_num, Frame::GetDigital((uint8_t*)data));
   }
 }

@@ -166,6 +166,7 @@ SRC_FILES = \
 	Src/Dojo/Frame.cpp \
 	Src/Dojo/Message.cpp \
 	Src/Dojo/Replay.cpp \
+	Src/Dojo/Training.cpp \
 	$(PLATFORM_SRC_FILES)
 
 ifeq ($(strip $(NET_BOARD)),1)
