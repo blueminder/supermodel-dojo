@@ -63,6 +63,17 @@ CInputs::CInputs(CInputSystem *system)
 	uiDumpInpState     = AddSwitchInput("UIDumpInputState",   "Dump Input State",      Game::INPUT_UI, "KEY_ALT+KEY_U");
 	uiDumpTimings      = AddSwitchInput("UIDumpTimings",      "Dump Frame Timings",    Game::INPUT_UI, "KEY_ALT+KEY_O");
 	uiScreenshot       = AddSwitchInput("UIScreenShot",	      "Screenshot",            Game::INPUT_UI, "KEY_ALT+KEY_S");
+
+	// Training Mode
+	uiRecordSlot1      = AddSwitchInput("UIRecordSlot1",	  "Record Slot 1",         Game::INPUT_UI, "KEY_SHIFT+KEY_F1");
+	uiRecordSlot2      = AddSwitchInput("UIRecordSlot2",	  "Record Slot 2",         Game::INPUT_UI, "KEY_SHIFT+KEY_F2");
+	uiRecordSlot3      = AddSwitchInput("UIRecordSlot3",	  "Record Slot 3",         Game::INPUT_UI, "KEY_SHIFT+KEY_F3");
+	uiPlaySlot1        = AddSwitchInput("UIPlaySlot1",	      "Play Slot 1",           Game::INPUT_UI, "KEY_SHIFT+KEY_F4");
+	uiPlaySlot2        = AddSwitchInput("UIPlaySlot2",	      "Play Slot 2",           Game::INPUT_UI, "KEY_SHIFT+KEY_F5");
+	uiPlaySlot3        = AddSwitchInput("UIPlaySlot3",	      "Play Slot 3",           Game::INPUT_UI, "KEY_SHIFT+KEY_F6");
+	//uiSwitchPlayer     = AddSwitchInput("UISwitchPlayer",	  "Switch Player",         Game::INPUT_UI, "KEY_SHIFT+KEY_F7");
+	uiTogglePlayLoop   = AddSwitchInput("UITogglePlayLoop",   "Toggle Playback Loop",  Game::INPUT_UI, "KEY_SHIFT+KEY_F9");
+	uiPlayRandomSlot   = AddSwitchInput("UIPlayRandomSlot",   "Play Random Slot",      Game::INPUT_UI, "KEY_SHIFT+KEY_F10");
 #ifdef SUPERMODEL_DEBUGGER
 	uiEnterDebugger    = AddSwitchInput("UIEnterDebugger",    "Enter Debugger",        Game::INPUT_UI, "KEY_ALT+KEY_B");
 #endif
@@ -753,8 +764,11 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 	std::bitset<32> inputBits;
 	std::bitset<32> frameInputBits;
 
-	if (Dojo::playback)
+	if (Dojo::playback || Dojo::training)
 	{
+	    if (Dojo::training)
+        	Dojo::Training::TrainingFrameAction();
+
 		if (Dojo::net_inputs[0].find(Dojo::index) != Dojo::net_inputs[0].end())
 		{
 			uint32_t frameInputData = Dojo::net_inputs[0].at(Dojo::index);
@@ -770,7 +784,7 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 
 		if (((*it)->gameFlags & gameFlags))
 		{
-			if (Dojo::playback)
+			if (Dojo::playback || Dojo::training)
 			{
 				if (frameInputBits.test(idx))
 				{
@@ -779,7 +793,7 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 				}
 			}
 
-			if (Dojo::record)
+			if (Dojo::record || Dojo::playback || Dojo::training)
 			{
 				if ((*it)->value)
 					inputBits.set(idx);
@@ -789,11 +803,18 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		}
 	}
 
-	if (Dojo::record)
+	uint32_t digital = (uint32_t)inputBits.to_ulong();
+	if (Dojo::record || Dojo::training)
 	{
-		uint32_t digital = (uint32_t)inputBits.to_ulong();
 		std::string current_frame = Dojo::Frame::Create(Dojo::index, 0, 0, digital);
-		Dojo::Replay::AppendFrameToFile(current_frame);
+
+		if (Dojo::training)
+			Dojo::AddNetFrame(current_frame.data());
+
+		if (Dojo::record)
+			Dojo::Replay::AppendFrameToFile(current_frame);
+		
+		Dojo::current_frame = current_frame;
 	}
 
 	//std::cout << Dojo::index << ":" << inputBits.to_string() << " " << digital << std::endl;
