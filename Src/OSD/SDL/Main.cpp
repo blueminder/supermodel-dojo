@@ -1024,7 +1024,11 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
     if (Dojo::playback)
     {
       if(Dojo::index == Dojo::net_inputs[0].size())
-        quit = true;
+      {
+        std::cout << "End of Replay" << std::endl;
+        if (!Dojo::training)
+          quit = true;
+      }
     }
 
     // Render if paused, otherwise run a frame
@@ -1195,6 +1199,16 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
     else if (Dojo::training && Inputs->uiTogglePlayLoop->Pressed())
     {
       std::string notice = Dojo::Training::ToggleLoop();
+      std::cout << notice << std::endl;
+    }
+    else if (Dojo::playback && Inputs->uiTakeoverReplay1->Pressed())
+    {
+      std::string notice = Dojo::Replay::Takeover(0);
+      std::cout << notice << std::endl;
+    }
+    else if (Dojo::playback && Inputs->uiTakeoverReplay2->Pressed())
+    {
+      std::string notice = Dojo::Replay::Takeover(1);
       std::cout << notice << std::endl;
     }
 

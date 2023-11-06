@@ -25,6 +25,8 @@ namespace Dojo {
     void AdvanceFrame();
     void AddNetFrame(const char* received_data);
 
+    uint32_t WipePlayerInputs(int player, uint32_t digital);
+
     inline uint32_t index = 0;
     inline uint32_t delay = 0;
     inline std::string replay_filename;

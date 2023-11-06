@@ -8,6 +8,8 @@ void Dojo::Init(std::string game_name, bool record_session, bool train_session)
     {
         record = false;
         playback = true;
+        Dojo::Replay::p1_override = false;
+        Dojo::Replay::p2_override = false;
     }
 
     if (record_session)
@@ -60,4 +62,15 @@ void Dojo::AddNetFrame(const char* received_data)
     net_frames[frame_player].emplace(effective_frame_num, data_to_queue);
     net_inputs[frame_player].emplace(effective_frame_num, Frame::GetDigital((uint8_t*)data));
   }
+}
+
+uint32_t Dojo::WipePlayerInputs(int player, uint32_t digital)
+{
+  uint32_t input_mask = 0;
+  if (player == 0)
+    input_mask = 986965;
+  else if (player == 1)
+    input_mask = 15790250;
+
+  return digital & ~input_mask;
 }
