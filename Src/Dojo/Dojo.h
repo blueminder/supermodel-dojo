@@ -15,6 +15,8 @@
 #include "Replay.h"
 #include "Training.h"
 
+#include "Poll.h"
+
 #define FRAME_SIZE 10
 #define HEADER_LEN 12
 

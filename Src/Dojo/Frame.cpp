@@ -1,4 +1,4 @@
-#include "dojo.h"
+#include "Dojo.h"
 
 std::string Dojo::Frame::Create(uint32_t frame_num, int player, uint32_t delay, uint32_t digital)
 {
