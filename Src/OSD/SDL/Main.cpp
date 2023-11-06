@@ -1021,7 +1021,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
 
   while (!quit)
   {
-	  if (Dojo::playback)
+    if (Dojo::playback)
     {
       if(Dojo::index == Dojo::net_inputs[0].size())
         quit = true;
