@@ -6,7 +6,7 @@ namespace Dojo::Poll {
     void ButtonAction(CInput* btn);
     void EndAction();
 
-    inline int poll_idx = 0;
-    inline std::bitset<32> poll_frame;
-    inline std::bitset<32> poll_final;
+    inline int idx = 0;
+    inline std::bitset<32> frame;
+    inline std::bitset<32> final;
 }

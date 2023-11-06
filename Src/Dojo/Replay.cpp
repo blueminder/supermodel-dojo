@@ -150,3 +150,24 @@ void Dojo::Replay::LoadFile(std::string path)
 
   std::cout << "Replay File Loaded: " << path << std::endl;
 }
+
+std::string Dojo::Replay::Takeover(int player)
+{
+  if (Dojo::Replay::p1_override || Dojo::Replay::p2_override || player > 1)
+    return "Replay Already Taken Over";
+
+  if (player < 0 || player > 1)
+    return "Player Index Out of Bounds";
+
+  std::ostringstream NoticeStream;
+
+  if (player == 0)
+    p1_override = true;
+  else if (player == 1)
+    p2_override = true;
+
+  Dojo::training = true;
+
+  NoticeStream << "Replay Takeover, Player " << player + 1 << " Override";
+  return NoticeStream.str();
+}
