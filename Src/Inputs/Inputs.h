@@ -114,6 +114,8 @@ public:
   //CSwitchInput  *uiSwitchPlayer;
   CSwitchInput  *uiTogglePlayLoop;
   CSwitchInput  *uiPlayRandomSlot;
+  CSwitchInput  *uiTakeoverReplay1;
+  CSwitchInput  *uiTakeoverReplay2;
 #ifdef SUPERMODEL_DEBUGGER
   CSwitchInput  *uiEnterDebugger;
 #endif
