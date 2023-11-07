@@ -29,7 +29,6 @@ namespace Dojo {
 
     inline uint32_t index = 0;
     inline uint32_t delay = 0;
-    inline std::string replay_filename;
     inline std::map<uint32_t, std::string> net_frames[2];
     inline std::map<uint32_t, uint32_t> net_inputs[2];
     inline std::string current_frame;
