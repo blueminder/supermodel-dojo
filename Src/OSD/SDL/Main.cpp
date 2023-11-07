@@ -907,6 +907,8 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
   bool        paused = false;
   bool        dumpTimings = false;
 
+  Dojo::Replay::file_path = s_runtime_config["ReplayFile"].ValueAs<std::string>();
+
   bool recordSession = false;
   bool trainSession = false;
 
@@ -990,6 +992,13 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
   // Load initial save state if requested
   if (initialState.length() > 0)
     LoadState(Model3, initialState);
+
+  if (Dojo::Replay::file_path.length() > 0)
+  {
+    auto statePath = Dojo::Replay::GetStatePath();
+    if (statePath.length() > 0)
+      LoadState(Model3, statePath);
+  }
 
 #ifdef SUPERMODEL_DEBUGGER
   // If debugger was supplied, set it as logger and attach it to system
@@ -2024,8 +2033,6 @@ int main(int argc, char **argv)
     {
       std::string xml_file = config3["GameXMLFile"].ValueAs<std::string>();
       GameLoader loader(xml_file);
-
-      Dojo::replay_filename = config3["ReplayFile"].ValueAs<std::string>();
 
       if (print_games)
       {
