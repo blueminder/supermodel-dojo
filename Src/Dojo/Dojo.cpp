@@ -4,7 +4,7 @@ void Dojo::Init(std::string game_name, bool record_session, bool train_session)
 {
     index = 0;
 
-    if (!replay_filename.empty())
+    if (!Replay::file_path.empty())
     {
         record = false;
         playback = true;
@@ -34,7 +34,7 @@ void Dojo::Init(std::string game_name, bool record_session, bool train_session)
     else if (playback)
     {
         std::cout << "Playing Replay" << std::endl;
-        Dojo::Replay::LoadFile(Dojo::replay_filename);
+        Replay::LoadFile(Replay::file_path);
     }
 }
 

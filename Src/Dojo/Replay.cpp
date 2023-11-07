@@ -25,9 +25,9 @@ std::string Dojo::Replay::CreateReplayFile(std::string game_name)
   filename.append(".supr");
 
   // create replay file itself
-  Dojo::replay_filename = filename;
+  file_path = filename;
   std::ofstream file;
-  file.open(Dojo::replay_filename);
+  file.open(file_path);
 
   AppendHeaderToFile(game_name);
 
@@ -36,7 +36,7 @@ std::string Dojo::Replay::CreateReplayFile(std::string game_name)
 
 void Dojo::Replay::AppendHeaderToFile(std::string game_name)
 {
-  std::ofstream fout(Dojo::replay_filename,
+  std::ofstream fout(Dojo::Replay::file_path,
     std::ios::out | std::ios::binary | std::ios_base::app);
 
   Message::Writer spectate_start;
@@ -60,7 +60,7 @@ void Dojo::Replay::AppendHeaderToFile(std::string game_name)
 
 void Dojo::Replay::AppendPlayerInfoToFile()
 {
-  std::ofstream fout(Dojo::replay_filename,
+  std::ofstream fout(Dojo::Replay::file_path,
     std::ios::out | std::ios::binary | std::ios_base::app);
 
   Message::Writer player_info;
@@ -79,7 +79,7 @@ void Dojo::Replay::AppendFrameToFile(std::string frame)
   if (frame.size() == FRAME_SIZE)
   {
     // append frame data to replay file
-    std::ofstream fout(Dojo::replay_filename,
+    std::ofstream fout(Dojo::Replay::file_path,
       std::ios::out | std::ios::binary | std::ios_base::app);
 
     if (replay_frame_count == 0)
@@ -170,4 +170,13 @@ std::string Dojo::Replay::Takeover(int player)
 
   NoticeStream << "Replay Takeover, Player " << player + 1 << " Override";
   return NoticeStream.str();
+}
+
+std::string Dojo::Replay::GetStatePath()
+{
+  std::string state_path = file_path.substr(0, file_path.find_last_of("."));
+  state_path.append(".st0");
+  if (std::filesystem::exists(state_path))
+    return state_path;
+  return "";
 }

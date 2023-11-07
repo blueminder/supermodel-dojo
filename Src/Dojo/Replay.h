@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 
 namespace Dojo::Replay {
   static uint32_t replay_frame_count;
@@ -15,8 +16,11 @@ namespace Dojo::Replay {
   void AppendPlayerInfoToFile();
   void AppendFrameToFile(std::string frame);
   void LoadFile(std::string path);
+  std::string GetStatePath();
 
   std::string Takeover(int player);
   inline bool p1_override = false;
   inline bool p2_override = false;
+
+  inline std::string file_path;
 } // namespace Dojo::Replay
