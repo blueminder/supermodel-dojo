@@ -685,7 +685,7 @@ static const int STATE_FILE_VERSION = 3;  // save state file version
 static const int NVRAM_FILE_VERSION = 0;  // NVRAM file version
 static unsigned s_saveSlot = 0;           // save state slot #
 
-static void SaveState(IEmulator *Model3)
+static void SaveState(IEmulator *Model3, bool clip_save=false)
 {
   CBlockFile  SaveState;
 
@@ -695,6 +695,9 @@ static void SaveState(IEmulator *Model3)
     ErrorLog("Unable to save state to '%s'.", file_path.c_str());
     return;
   }
+
+  if (clip_save)
+    Dojo::Replay::clip_state = file_path;
 
   // Write file format version and ROM set ID to header block
   int32_t fileVersion = STATE_FILE_VERSION;
@@ -1219,6 +1222,41 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
     else if (Dojo::playback && Inputs->uiTakeoverReplay2->Pressed())
     {
       std::string notice = Dojo::Replay::Takeover(1);
+      std::cout << notice << std::endl;
+    }
+    else if (Inputs->uiClipRecord->Pressed())
+    {
+      std::string notice;
+      if (!Dojo::record)
+      {
+        if (!paused)
+        {
+          Model3->PauseThreads();
+          SetAudioEnabled(false);
+        }
+
+        // Save game state
+        SaveState(Model3, true);
+
+        Dojo::Init(
+          Model3->GetGame().name,
+          true,
+          Dojo::training,
+          Dojo::Replay::clip_state);
+
+        if (!paused)
+        {
+          Model3->ResumeThreads();
+          SetAudioEnabled(true);
+        }
+
+        notice = "Clip Recording Started";
+      }
+      else
+      {
+        Dojo::record= false;
+        notice = "Clip Recording Stopped";
+      }
       std::cout << notice << std::endl;
     }
 
