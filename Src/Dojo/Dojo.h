@@ -21,7 +21,7 @@
 #define HEADER_LEN 12
 
 namespace Dojo {
-    void Init(std::string game_name, bool record_session, bool train_session);
+    void Init(std::string game_name, bool record_session, bool train_session, std::string state_path);
     void AdvanceFrame();
     void AddNetFrame(const char* received_data);
 

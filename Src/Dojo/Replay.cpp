@@ -15,12 +15,21 @@ std::string Dojo::Replay::currentISO8601TimeUTC()
 #endif
 }
 
-std::string Dojo::Replay::CreateReplayFile(std::string game_name)
+std::string Dojo::Replay::CreateReplayFile(std::string game_name, std::string state_path)
 {
   // create timestamp string, iso8601 format
   std::string timestamp = currentISO8601TimeUTC();
   std::replace(timestamp.begin(), timestamp.end(), ':', '_');
   std::string filename = "Replays/" + game_name + "_" + timestamp;
+
+  if (!state_path.empty())
+  {
+    if (std::filesystem::exists(state_path))
+    {
+      std::string state_filename = filename + ".st0";
+      std::filesystem::copy_file(state_path, state_filename);
+    }
+  }
 
   filename.append(".supr");
 

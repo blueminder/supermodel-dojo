@@ -11,7 +11,7 @@ namespace Dojo::Replay {
 
   std::string currentISO8601TimeUTC();
 
-  std::string CreateReplayFile(std::string game_name);
+  std::string CreateReplayFile(std::string game_name, std::string state_path);
   void AppendHeaderToFile(std::string game_name);
   void AppendPlayerInfoToFile();
   void AppendFrameToFile(std::string frame);
