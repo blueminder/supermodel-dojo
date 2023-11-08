@@ -23,4 +23,5 @@ namespace Dojo::Replay {
   inline bool p2_override = false;
 
   inline std::string file_path;
+  inline std::string clip_state;
 } // namespace Dojo::Replay

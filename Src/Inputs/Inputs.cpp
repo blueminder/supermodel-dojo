@@ -76,6 +76,7 @@ CInputs::CInputs(CInputSystem *system)
 	uiPlayRandomSlot   = AddSwitchInput("UIPlayRandomSlot",   "Play Random Slot",      Game::INPUT_UI, "KEY_SHIFT+KEY_F10");
 	uiTakeoverReplay1  = AddSwitchInput("UITakeoverReplay1",  "Replay Takeover Player 1",        Game::INPUT_UI, "KEY_SHIFT+KEY_1");
 	uiTakeoverReplay2  = AddSwitchInput("UITakeoverReplay2",  "Replay Takeover Player 2",        Game::INPUT_UI, "KEY_SHIFT+KEY_2");
+	uiClipRecord       = AddSwitchInput("UIClipRecord",       "Record Replay Clip",    Game::INPUT_UI, "KEY_SHIFT+KEY_3");
 #ifdef SUPERMODEL_DEBUGGER
 	uiEnterDebugger    = AddSwitchInput("UIEnterDebugger",    "Enter Debugger",        Game::INPUT_UI, "KEY_ALT+KEY_B");
 #endif
