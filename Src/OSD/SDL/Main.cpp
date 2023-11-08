@@ -1026,7 +1026,8 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
 
   recordSession = s_runtime_config.Get("RecordSession").ValueAs<bool>();
   trainSession = s_runtime_config.Get("TrainingSession").ValueAs<bool>();
-  Dojo::Init(Model3->GetGame().name, recordSession, trainSession);
+
+  Dojo::Init(Model3->GetGame().name, recordSession, trainSession, initialState);
 
   while (!quit)
   {
