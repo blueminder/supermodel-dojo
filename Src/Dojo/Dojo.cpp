@@ -1,6 +1,6 @@
 #include "Dojo.h"
 
-void Dojo::Init(std::string game_name, bool record_session, bool train_session)
+void Dojo::Init(std::string game_name, bool record_session, bool train_session, std::string state_path)
 {
     index = 0;
 
@@ -28,7 +28,7 @@ void Dojo::Init(std::string game_name, bool record_session, bool train_session)
     if (record)
     {
         std::cout << "Recording Session" << std::endl;
-        std::string replay_fn = Replay::CreateReplayFile(game_name);
+        std::string replay_fn = Replay::CreateReplayFile(game_name, state_path);
         std::cout << replay_fn << std::endl;
     }
     else if (playback)
