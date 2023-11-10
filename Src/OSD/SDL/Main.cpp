@@ -911,9 +911,13 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
   bool        dumpTimings = false;
 
   Dojo::Replay::file_path = s_runtime_config["ReplayFile"].ValueAs<std::string>();
+  Dojo::target_ip = s_runtime_config["TargetIP"].ValueAs<std::string>();
+  Dojo::target_port = s_runtime_config["TargetPort"].ValueAs<uint16_t>();
 
   bool recordSession = false;
   bool trainSession = false;
+  bool receiving = false;
+  bool hosting = false;
 
   // Initialize and load ROMs
   if (OKAY != Model3->Init())
@@ -1029,12 +1033,22 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
 
   recordSession = s_runtime_config.Get("RecordSession").ValueAs<bool>();
   trainSession = s_runtime_config.Get("TrainingSession").ValueAs<bool>();
+  receiving = s_runtime_config.Get("Receiving").ValueAs<bool>();
+  hosting = s_runtime_config.Get("ActAsServer").ValueAs<bool>();
 
-  Dojo::Init(Model3->GetGame().name, recordSession, trainSession, initialState);
+  Dojo::Init(Model3->GetGame().name, recordSession, trainSession, receiving, hosting, initialState);
 
   while (!quit)
   {
-    if (Dojo::playback)
+    if (Dojo::receiving)
+    {
+      if (Dojo::net_inputs[0].size() < 600)
+        paused = true;
+      else
+        paused = false;
+    }
+
+    if (Dojo::playback && !paused)
     {
       if(Dojo::index == Dojo::net_inputs[0].size())
       {
@@ -1242,6 +1256,8 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
           Model3->GetGame().name,
           true,
           Dojo::training,
+          false,
+          false,
           Dojo::Replay::clip_state);
 
         if (!paused)
@@ -1662,6 +1678,10 @@ static Util::Config::Node DefaultConfig()
   config.Set("RecordSession", false);
   config.Set("ReplayFile", "");
   config.Set("TrainingSession", false);
+  config.Set("Receiving", false);
+  config.Set("ActAsServer", false);
+  config.Set("TargetIP", "127.0.0.1");
+  config.Set("TargetPort", 5000);
   return config;
 }
 
@@ -1815,7 +1835,9 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
     { "-outputs",               "Outputs"                 },
     { "-log-output",            "LogOutput"               },
     { "-log-level",             "LogLevel"                },
-    { "-replay-file",           "ReplayFile"              }
+    { "-replay-file",           "ReplayFile"              },
+    { "-target-ip",             "TargetIP"                },
+    { "-target-port",           "TargetPort"              },
   };
   const std::map<std::string, std::pair<std::string, bool>> bool_options
   { // -option
@@ -1862,6 +1884,8 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
     { "-dump-textures",       { "DumpTextures",     true } },
     { "-record",              { "RecordSession",    true } },
     { "-train",               { "TrainingSession",  true } },
+    { "-receive",             { "Receiving",        true } },
+    { "-host",                { "ActAsServer",      true } },
   };
   for (int i = 1; i < argc; i++)
   {
