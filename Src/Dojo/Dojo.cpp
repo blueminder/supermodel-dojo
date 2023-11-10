@@ -1,8 +1,9 @@
 #include "Dojo.h"
 
-void Dojo::Init(std::string game_name, bool record_session, bool train_session, std::string state_path)
+void Dojo::Init(std::string game_name, bool record_session, bool train_session, bool receiving, bool hosting, std::string state_path)
 {
     index = 0;
+    Dojo::hosting = hosting;
 
     if (!Replay::file_path.empty())
     {
@@ -25,6 +26,16 @@ void Dojo::Init(std::string game_name, bool record_session, bool train_session, 
       playback = false;
     }
 
+    if (receiving)
+    {
+      Dojo::receiving = true;
+      paused = true;
+      playback = true;
+      Receiver::Launch();
+    }
+
+    Dojo::hosting = hosting;
+
     if (record)
     {
         std::cout << "Recording Session" << std::endl;
@@ -36,6 +47,7 @@ void Dojo::Init(std::string game_name, bool record_session, bool train_session, 
         std::cout << "Playing Replay" << std::endl;
         Replay::LoadFile(Replay::file_path);
     }
+
 }
 
 void Dojo::AdvanceFrame()
@@ -53,8 +65,9 @@ void Dojo::AddNetFrame(const char* received_data)
     return;
 
   uint32_t frame_player = (uint8_t)data[0];
-
   std::string data_to_queue(data, data + FRAME_SIZE);
+
+  //std::cout << frame_player << " " << effective_frame_num << " " << Frame::GetDigital((uint8_t*)data) << std::endl;
 
   //if (net_inputs[frame_player].count(effective_frame_num) == 0 ||
   //  effective_frame_num >= last_consecutive_common_frame)

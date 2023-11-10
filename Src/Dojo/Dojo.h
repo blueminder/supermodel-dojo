@@ -16,12 +16,13 @@
 #include "Training.h"
 
 #include "Poll.h"
+#include "Receiver.h"
 
 #define FRAME_SIZE 10
 #define HEADER_LEN 12
 
 namespace Dojo {
-    void Init(std::string game_name, bool record_session, bool train_session, std::string state_path);
+    void Init(std::string game_name, bool record_session, bool train_session, bool receiving, bool hosting, std::string state_path);
     void AdvanceFrame();
     void AddNetFrame(const char* received_data);
 
@@ -36,8 +37,14 @@ namespace Dojo {
     inline bool record = false;
     inline bool playback = false;
     inline bool training = false;
+    inline bool receiving = false;
+    inline bool hosting = false;
 
     inline bool players_swapped = false;
+    inline bool paused = false;
+
+    inline std::string target_ip;
+    inline uint16_t target_port = 5000;
 };
 
 #endif  // INCLUDED_DOJO_H
