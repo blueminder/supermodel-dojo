@@ -7,6 +7,7 @@ namespace Dojo::Poll {
     void EndAction();
 
     inline int idx = 0;
-    inline std::bitset<32> frame;
-    inline std::bitset<32> final;
+    inline std::bitset<32> incoming;
+    inline std::bitset<32> outgoing;
+    inline std::bitset<32> current;
 }

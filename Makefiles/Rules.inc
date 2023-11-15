@@ -43,7 +43,7 @@ OUTFILE = supermodel
 #
 # Construct Supermodel build options
 #
-SUPERMODEL_BUILD_FLAGS =
+SUPERMODEL_BUILD_FLAGS = -lwinmm -lws2_32
 
 # If render state analyser is enabled, need to define DEBUG
 ifeq ($(strip $(DEBUG)),1)
@@ -169,6 +169,7 @@ SRC_FILES = \
 	Src/Dojo/Training.cpp \
 	Src/Dojo/Poll.cpp \
 	Src/Dojo/Receiver.cpp \
+	Src/Dojo/Netplay.cpp \
 	$(PLATFORM_SRC_FILES)
 
 ifeq ($(strip $(NET_BOARD)),1)
