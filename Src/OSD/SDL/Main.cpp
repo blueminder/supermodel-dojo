@@ -913,11 +913,13 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
   Dojo::Replay::file_path = s_runtime_config["ReplayFile"].ValueAs<std::string>();
   Dojo::target_ip = s_runtime_config["TargetIP"].ValueAs<std::string>();
   Dojo::target_port = s_runtime_config["TargetPort"].ValueAs<uint16_t>();
+  Dojo::delay = s_runtime_config["Delay"].ValueAs<uint32_t>();
 
   bool recordSession = false;
   bool trainSession = false;
   bool receiving = false;
   bool hosting = false;
+  bool netplay = false;
 
   // Initialize and load ROMs
   if (OKAY != Model3->Init())
@@ -1035,8 +1037,9 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
   trainSession = s_runtime_config.Get("TrainingSession").ValueAs<bool>();
   receiving = s_runtime_config.Get("Receiving").ValueAs<bool>();
   hosting = s_runtime_config.Get("ActAsServer").ValueAs<bool>();
+  netplay = s_runtime_config.Get("Netplay").ValueAs<bool>();
 
-  Dojo::Init(Model3->GetGame().name, recordSession, trainSession, receiving, hosting, initialState);
+  Dojo::Init(Model3->GetGame().name, recordSession, trainSession, receiving, hosting, netplay, initialState);
 
   while (!quit)
   {
@@ -1067,6 +1070,22 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
     // Poll the inputs
     if (Inputs->Poll(&game, xOffset, yOffset, xRes, yRes))
     {
+      if (Dojo::netplay)
+      {
+        paused = !Dojo::PlayerInputsFilled(Dojo::index);
+
+        if (paused)
+        {
+          Model3->PauseThreads();
+          SetAudioEnabled(false);
+        }
+        else
+        {
+          Model3->ResumeThreads();
+          SetAudioEnabled(true);
+        }
+      }
+
       if (!paused)
         Dojo::AdvanceFrame();
     }
@@ -1256,6 +1275,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
           Model3->GetGame().name,
           true,
           Dojo::training,
+          false,
           false,
           false,
           Dojo::Replay::clip_state);
@@ -1682,6 +1702,8 @@ static Util::Config::Node DefaultConfig()
   config.Set("ActAsServer", false);
   config.Set("TargetIP", "127.0.0.1");
   config.Set("TargetPort", 5000);
+  config.Set("Netplay", false);
+  config.Set("Delay", 0);
   return config;
 }
 
@@ -1838,6 +1860,7 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
     { "-replay-file",           "ReplayFile"              },
     { "-target-ip",             "TargetIP"                },
     { "-target-port",           "TargetPort"              },
+    { "-delay",                 "Delay"                   },
   };
   const std::map<std::string, std::pair<std::string, bool>> bool_options
   { // -option
@@ -1886,6 +1909,7 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
     { "-train",               { "TrainingSession",  true } },
     { "-receive",             { "Receiving",        true } },
     { "-host",                { "ActAsServer",      true } },
+    { "-netplay",             { "Netplay",          true } },
   };
   for (int i = 1; i < argc; i++)
   {

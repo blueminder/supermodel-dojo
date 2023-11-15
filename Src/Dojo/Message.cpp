@@ -1,4 +1,4 @@
-#include "dojo.h"
+#include "Dojo.h"
 
 uint32_t Dojo::Message::GetSize(const uint8_t* buffer)
 {

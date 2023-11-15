@@ -2,8 +2,8 @@
 
 std::string Dojo::Replay::currentISO8601TimeUTC()
 {
-  auto now = std::chrono::system_clock::now();
-  auto itt = std::chrono::system_clock::to_time_t(now);
+  time_t itt;
+  time ( &itt );
 #ifndef _MSC_VER
   char buf[128] = { 0 };
   strftime(buf, sizeof buf, "%Y-%m-%dT%H:%M:%SZ", gmtime(&itt));
