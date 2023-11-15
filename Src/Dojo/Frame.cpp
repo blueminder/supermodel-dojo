@@ -44,3 +44,17 @@ uint32_t Dojo::Frame::GetDigital(uint8_t* data)
 {
   return (*(uint32_t*)(data + 6));
 }
+
+std::string Dojo::Frame::Str(uint8_t* data)
+{
+  std::ostringstream OutStream;
+  auto player = GetPlayer(data);
+  auto delay = GetDelay(data);
+  auto frame_num = GetFrameNumber(data);
+  auto effective_frame_num = GetEffectiveFrameNumber(data);
+  auto digital = GetDigital(data);
+  auto digital_bits = std::bitset<32>(digital);
+
+  OutStream << effective_frame_num << ": P" << player << " F" << frame_num << " D" << delay << " " << digital_bits.to_string();
+  return OutStream.str();
+}
