@@ -797,10 +797,13 @@ static void LoadNVRAM(IEmulator *Model3)
     return;
   }
 
-  // Load
-  Model3->LoadNVRAM(&NVRAM);
-  NVRAM.Close();
-  DebugLog("Loaded NVRAM from '%s'.\n", file_path.c_str());
+  if (!Dojo::netplay && !Dojo::record && !Dojo::training && !Dojo::Replay::file_path.empty())
+  {
+    // Load
+    Model3->LoadNVRAM(&NVRAM);
+    NVRAM.Close();
+    DebugLog("Loaded NVRAM from '%s'.\n", file_path.c_str());
+  }
 }
 
 
@@ -1487,8 +1490,11 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
   }
 #endif // SUPERMODEL_DEBUGGER
 
-  // Save NVRAM
-  SaveNVRAM(Model3);
+  if (!Dojo::netplay && !Dojo::record && !Dojo::training && !Dojo::Replay::file_path.empty())
+  {
+    // Save NVRAM
+    SaveNVRAM(Model3);
+  }
 
   // Close audio
   CloseAudio();
