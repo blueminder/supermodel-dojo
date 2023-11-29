@@ -6,7 +6,7 @@
  ** This file is part of Supermodel.
  **
  ** Supermodel is free software: you can redistribute it and/or modify it under
- ** the terms of the GNU General Public License as published by the Free 
+ ** the terms of the GNU General Public License as published by the Free
  ** Software Foundation, either version 3 of the License, or (at your option)
  ** any later version.
  **
@@ -24,7 +24,7 @@
  *
  * Header file for CInputs, a class which manages all individual inputs.
  */
- 
+
 #ifndef INCLUDED_INPUTS_H
 #define INCLUDED_INPUTS_H
 
@@ -53,14 +53,14 @@ private:
 
   /*
    * Adds a switch input (eg button) to this collection.
-   */ 
+   */
   CSwitchInput *AddSwitchInput(const char *id, const char *label, unsigned gameFlags, const char *defaultMapping,
     UINT16 offVal = 0x00, UINT16 onVal = 0x01);
 
   /*
    * Adds an analog input (eg pedal) to this collection.
    */
-  CAnalogInput *AddAnalogInput(const char *id, const char *label, unsigned gameFlags, const char *defaultMapping, 
+  CAnalogInput *AddAnalogInput(const char *id, const char *label, unsigned gameFlags, const char *defaultMapping,
     UINT16 minVal = 0x00, UINT16 maxVal = 0xFF);
 
   /*
@@ -72,13 +72,13 @@ private:
   /*
    * Adds a 4-gear shifter input to this collection.
    */
-  CGearShift4Input *AddGearShift4Input(const char *id, const char *label, unsigned gameFlags, 
+  CGearShift4Input *AddGearShift4Input(const char *id, const char *label, unsigned gameFlags,
     CSwitchInput *shift1, CSwitchInput *shift2, CSwitchInput *shift3, CSwitchInput *shift4, CSwitchInput *shiftN, CSwitchInput *shiftUp, CSwitchInput *shiftDown);
 
   /*
    * Adds a lightgun trigger input to this collection.
    */
-  CTriggerInput *AddTriggerInput(const char *id, const char *label, unsigned gameFlags, 
+  CTriggerInput *AddTriggerInput(const char *id, const char *label, unsigned gameFlags,
     CSwitchInput *trigger, CSwitchInput *offscreen, UINT16 offVal = 0x00, UINT16 onVal = 0x01);
 
   void PrintHeader(const char *fmt, ...);
@@ -111,7 +111,7 @@ public:
   CSwitchInput  *uiPlaySlot1;
   CSwitchInput  *uiPlaySlot2;
   CSwitchInput  *uiPlaySlot3;
-  //CSwitchInput  *uiSwitchPlayer;
+  CSwitchInput  *uiSwitchPlayer;
   CSwitchInput  *uiTogglePlayLoop;
   CSwitchInput  *uiPlayRandomSlot;
   CSwitchInput  *uiTakeoverReplay1;
@@ -138,7 +138,7 @@ public:
   CSwitchInput  *kick[2];
   CSwitchInput  *guard[2];
   CSwitchInput  *escape[2];
-  
+
   // Spikeout controls
   CSwitchInput  *shift;
   CSwitchInput  *beat;
@@ -157,11 +157,11 @@ public:
 
   // VR view buttons: VR1 Red, VR2 Blue, VR3 Yellow, VR4 Green
   CSwitchInput  *vr[4];
- 
+
   // Up/down gear shift
   CSwitchInput  *gearShiftUp;
   CSwitchInput  *gearShiftDown;
-  
+
   // 4-speed gear shift
   CGearShift4Input *gearShift4;
 
@@ -186,8 +186,8 @@ public:
   CSwitchInput  *twinJoyShot2;
   CSwitchInput  *twinJoyTurbo1;
   CSwitchInput  *twinJoyTurbo2;
-  
-  // Twin joysticks (macro mapping, for users w/out dual joysticks) 
+
+  // Twin joysticks (macro mapping, for users w/out dual joysticks)
   CSwitchInput  *twinJoyTurnLeft;
   CSwitchInput  *twinJoyTurnRight;
   CSwitchInput  *twinJoyStrafeLeft;
@@ -196,7 +196,7 @@ public:
   CSwitchInput  *twinJoyReverse;
   CSwitchInput  *twinJoyJump;
   CSwitchInput  *twinJoyCrouch;
-  
+
   // Analog joystick
   CAxisInput    *analogJoyX;
   CAxisInput    *analogJoyY;
@@ -209,7 +209,7 @@ public:
   CAxisInput    *gunX[2];
   CAxisInput    *gunY[2];
   CTriggerInput *trigger[2];
-  
+
   // Analog gun controls (players 1 and 2)
   CAxisInput    *analogGunX[2];
   CAxisInput    *analogGunY[2];
@@ -245,7 +245,7 @@ public:
    * Creates a set of inputs with the given input system.
    */
   CInputs(CInputSystem *system);
-  
+
   /*
    * CInputs destructor.
    */
@@ -273,14 +273,14 @@ public:
 
   /*
    * Initializes the inputs.  Must be called before any other methods are used.
-   */ 
+   */
   bool Initialize();
 
   /*
    * Loads the input mapping assignments from the given config object.
    */
   void LoadFromConfig(const Util::Config::Node &config);
-  
+
   /*
    * Stores the current input mapping assignments to the given config object.
    */
@@ -291,7 +291,7 @@ public:
    * Returns true if the inputs were configured okay or false if the user exited without requesting to save changes.
    */
   bool ConfigureInputs(const Game &game);
-  
+
   /*
    * Configures the current input mapping assignments for the given game, or all inputs if game is NULL, by asking the user for input.
    * Takes display geometry if this has not been set previously by a call to Poll().
