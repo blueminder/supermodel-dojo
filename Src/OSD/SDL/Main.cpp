@@ -1200,13 +1200,11 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
 
       Inputs->GetInputSystem()->SetMouseVisibility(!s_runtime_config["FullScreen"].ValueAs<bool>());
     }
-    /*
     else if (Dojo::training && Inputs->uiSwitchPlayer->Pressed())
     {
       std::string notice = Dojo::Training::TogglePlayerSwap();
       std::cout << notice << std::endl;
     }
-    */
     else if (Dojo::training && Inputs->uiRecordSlot1->Pressed())
     {
       std::string notice = Dojo::Training::ToggleRecording(0);

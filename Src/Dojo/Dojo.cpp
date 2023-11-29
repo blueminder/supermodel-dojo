@@ -37,7 +37,10 @@ void Dojo::Init(std::string game_name, bool record_session, bool train_session, 
     if (netplay)
     {
       if (!hosting)
+      {
         player = 1;
+        Training::TogglePlayerSwap();
+      }
       if (delay == 0)
         delay = 1;
       Dojo::netplay = true;
@@ -110,7 +113,7 @@ void Dojo::AddNetFrame(const char* received_data)
   if (record)
     Replay::AppendFrameToFile(data_to_queue);
 
-  std::cout << Frame::Str((uint8_t*)data_to_queue.data()) << std::endl;
+  //std::cout << Frame::Str((uint8_t*)data_to_queue.data()) << std::endl;
 }
 
 uint32_t Dojo::WipePlayerInputs(int player, uint32_t digital)
