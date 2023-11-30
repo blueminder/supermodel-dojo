@@ -924,6 +924,12 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
   bool hosting = false;
   bool netplay = false;
 
+  recordSession = s_runtime_config.Get("RecordSession").ValueAs<bool>();
+  trainSession = s_runtime_config.Get("TrainingSession").ValueAs<bool>();
+  receiving = s_runtime_config.Get("Receiving").ValueAs<bool>();
+  hosting = s_runtime_config.Get("ActAsServer").ValueAs<bool>();
+  netplay = s_runtime_config.Get("Netplay").ValueAs<bool>();
+
   // Initialize and load ROMs
   if (OKAY != Model3->Init())
     return 1;
@@ -1007,6 +1013,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
 
   if (Dojo::Replay::file_path.length() > 0)
   {
+    recordSession = false;
     auto statePath = Dojo::Replay::GetStatePath();
     if (statePath.length() > 0)
       LoadState(Model3, statePath);
@@ -1035,12 +1042,6 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
     quit = true;
   }
 #endif
-
-  recordSession = s_runtime_config.Get("RecordSession").ValueAs<bool>();
-  trainSession = s_runtime_config.Get("TrainingSession").ValueAs<bool>();
-  receiving = s_runtime_config.Get("Receiving").ValueAs<bool>();
-  hosting = s_runtime_config.Get("ActAsServer").ValueAs<bool>();
-  netplay = s_runtime_config.Get("Netplay").ValueAs<bool>();
 
   Dojo::Init(Model3->GetGame().name, recordSession, trainSession, receiving, hosting, netplay, initialState);
 
