@@ -1060,8 +1060,17 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
       if(Dojo::index == Dojo::net_inputs[0].size())
       {
         std::cout << "End of Replay" << std::endl;
+        Dojo::playback = false;
+        Dojo::Replay::p1_override = false;
+        if (Dojo::Replay::p2_override)
+        {
+          Dojo::Replay::p2_override = false;
+          Dojo::Training::TogglePlayerSwap();
+        }
         if (!Dojo::training)
           quit = true;
+        else
+          std::cout << "Entering Training Mode" << std::endl;
       }
     }
 
