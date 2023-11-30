@@ -791,7 +791,7 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"Escape2", "Escape"},
 	};
 
-	std::map<const char *, const char *> translate_1p_to_2p_keys = {
+	std::map<const char *, const char *> translate_p1_to_p2_keys = {
 		{"Start1", "Start2"},
 		{"Coin1", "Coin2"},
 		{"ServiceA", "ServiceB"},
@@ -807,8 +807,8 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 	};
 
 	std::map<const char *, const char *> swapped_player_inputs;
-	if (Dojo::netplay)
-		swapped_player_inputs = translate_1p_to_2p_keys;
+	if (Dojo::netplay || Dojo::Replay::p2_override)
+		swapped_player_inputs = translate_p1_to_p2_keys;
 	else
 	 	swapped_player_inputs = translate_both_keys;
 
@@ -839,6 +839,21 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"Escape2", 0},
 	};
 
+	std::map<const char *, uint16_t> blank_p1_inputs = {
+		{"Start1", 0},
+		{"Coin1", 0},
+		{"ServiceA", 0},
+		{"TestA", 0},
+		{"JoyUp", 0},
+		{"JoyDown", 0},
+		{"JoyLeft", 0},
+		{"JoyRight", 0},
+		{"Punch", 0},
+		{"Kick", 0},
+		{"Guard", 0},
+		{"Escape", 0},
+	};
+
 	std::map<const char *, uint16_t> blank_p2_inputs = {
 		{"Start2", 0},
 		{"Coin2", 0},
@@ -854,7 +869,9 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"Escape2", 0},
 	};
 
-	if (Dojo::players_swapped)
+
+	// translate local player inputs to assigned character
+	if (Dojo::players_swapped || Dojo::Replay::p2_override)
 	{
 		for (vector<CInput*>::iterator it = m_inputs.begin(); it != m_inputs.end(); ++it)
 		{
@@ -872,12 +889,24 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		if ((*it)->IsUIInput() || ((*it)->gameFlags & gameFlags))
 			(*it)->Poll();
 
-		if ((Dojo::players_swapped) && mod_player_inputs.count((*it)->id))
+		// input translation, swap players & p2 override
+		if ((Dojo::players_swapped || Dojo::Replay::p2_override) && mod_player_inputs.count((*it)->id))
 			(*it)->value = mod_player_inputs[(*it)->id];
 
-		// clear local p2 inputs for netplay host
+		// netplay host: clear local p2 inputs
 		if (Dojo::netplay && Dojo::hosting && blank_p2_inputs.count((*it)->id))
 			(*it)->value = blank_p2_inputs[(*it)->id];
+
+		// replay playback: ignore local inputs
+		if (Dojo::playback && !Dojo::training && ((*it)->gameFlags & gameFlags))
+			(*it)->value = 0;
+
+		// replay takeover: clear local inputs of opposing player
+		if (Dojo::Replay::p1_override && blank_p2_inputs.count((*it)->id))
+			(*it)->value = blank_p2_inputs[(*it)->id];
+
+		if (Dojo::Replay::p2_override && blank_p1_inputs.count((*it)->id))
+			(*it)->value = blank_p1_inputs[(*it)->id];
 
 		if (((*it)->gameFlags & gameFlags))
 			Dojo::Poll::ButtonAction(*it);
