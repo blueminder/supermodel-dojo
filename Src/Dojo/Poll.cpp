@@ -12,7 +12,7 @@ void Dojo::Poll::StartAction()
 		if (Dojo::training)
 			Dojo::Training::TrainingFrameAction();
 
-		if (Dojo::net_inputs[0].find(Dojo::index) != Dojo::net_inputs[0].end())
+		if (Dojo::net_inputs[0].count(Dojo::index))
 		{
 			uint32_t input_data = Dojo::net_inputs[0].at(Dojo::index);
 			if (playback && net_replay && PlayerInputsFilled(Dojo::index))
@@ -27,7 +27,7 @@ void Dojo::Poll::StartAction()
 
 	if (Dojo::netplay && PlayerInputsFilled(Dojo::index))
 	{
-		if (Dojo::net_inputs[1].find(Dojo::index) != Dojo::net_inputs[1].end())
+		if (Dojo::net_inputs[1].count(Dojo::index))
 		{
 			uint32_t p1_input_data = Dojo::net_inputs[0].at(Dojo::index);
 			uint32_t p2_input_data = Dojo::net_inputs[1].at(Dojo::index);
@@ -35,6 +35,10 @@ void Dojo::Poll::StartAction()
 			uint32_t input_data = p1_input_data | p2_input_data;
 
 			current = std::bitset<32>(input_data);
+
+			std::ostringstream LogStream;
+			LogStream << Dojo::index << ": " << current.to_string();
+			InfoLog(LogStream.str().data());
 		}
 	}
 }

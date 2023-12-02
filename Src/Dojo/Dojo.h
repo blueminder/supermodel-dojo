@@ -20,6 +20,8 @@
 #include "Receiver.h"
 #include "Netplay.h"
 
+#include "OSD/Logger.h"
+
 #define FRAME_SIZE 10
 #define HEADER_LEN 12
 

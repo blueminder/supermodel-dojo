@@ -73,6 +73,15 @@ void Dojo::Init(std::string game_name, bool record_session, bool train_session, 
       AddNetFrame(p1_frame.data());
       AddNetFrame(p2_frame.data());
     }
+
+    if (hosting)
+    {
+      for (int d = 0; d < (delay * 2) + 1; d++)
+      {
+        auto buffer_frame = Dojo::Frame::Create(d, 1, 0, 0);
+        AddNetFrame(buffer_frame.data());
+      }
+    }
 }
 
 void Dojo::AdvanceFrame()
@@ -129,7 +138,6 @@ uint32_t Dojo::WipePlayerInputs(int player, uint32_t digital)
 
 bool Dojo::PlayerInputsFilled(uint32_t i = index)
 {
-  bool condition = net_frames[0].count(i) && net_frames[1].count(i);
-  //std::cout << "FILLED " << condition << " " << index << std::endl;
+  bool condition = net_inputs[0].count(i) && net_inputs[1].count(i);
   return condition;
 }
