@@ -21,7 +21,7 @@ void Dojo::Netplay::ServerThread()
 	while (!done) { // server loop
 		if (peer != nullptr)
 		{
-			if(frames_to_send.size() > 0)
+			if (frames_to_send.size() > 0)
 			{
 				std::string frame = frames_to_send.front();
 				ENetPacket* packet = enet_packet_create(frame.data(), FRAME_SIZE, ENET_PACKET_FLAG_RELIABLE);
@@ -50,7 +50,6 @@ void Dojo::Netplay::ServerThread()
 
 		case ENET_EVENT_TYPE_RECEIVE: {
 			//std::cout << "[SERVER] RECEIVED " << Frame::Str((uint8_t*)event.packet->data) << std::endl;
-
 			AddNetFrame((const char*)event.packet->data);
 			enet_packet_destroy(event.packet);
 
@@ -91,7 +90,7 @@ void Dojo::Netplay::ClientThread()
 	while(!done) { // client loop
 		if (peer != nullptr)
 		{
-			if(frames_to_send.size() > 0)
+			if (frames_to_send.size() > 0)
 			{
 				std::string frame = frames_to_send.front();
 				ENetPacket* packet = enet_packet_create(frame.data(), FRAME_SIZE, ENET_PACKET_FLAG_RELIABLE);
