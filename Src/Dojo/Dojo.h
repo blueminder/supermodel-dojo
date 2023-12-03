@@ -39,6 +39,8 @@ namespace Dojo {
     inline std::map<uint32_t, uint32_t> net_inputs[2];
     inline std::string current_frame;
 
+    inline uint32_t lccf = 0;
+
     inline bool record = false;
     inline bool playback = false;
     inline bool training = false;

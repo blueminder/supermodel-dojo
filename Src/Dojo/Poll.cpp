@@ -27,7 +27,7 @@ void Dojo::Poll::StartAction()
 
 	if (Dojo::netplay && PlayerInputsFilled(Dojo::index))
 	{
-		if (Dojo::net_inputs[1].count(Dojo::index))
+		if (Dojo::net_inputs[0].count(Dojo::index) && Dojo::net_inputs[1].count(Dojo::index))
 		{
 			uint32_t p1_input_data = Dojo::net_inputs[0].at(Dojo::index);
 			uint32_t p2_input_data = Dojo::net_inputs[1].at(Dojo::index);
