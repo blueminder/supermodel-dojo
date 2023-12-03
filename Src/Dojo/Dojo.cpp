@@ -113,20 +113,18 @@ void Dojo::AddNetFrame(const char* received_data)
     net_frames[frame_player].emplace(effective_frame_num, data_to_queue);
     net_inputs[frame_player].emplace(effective_frame_num, Frame::GetDigital((uint8_t*)data));
 
-    if ((effective_frame_num == lccf + 1) && PlayerInputsFilled(effective_frame_num))
+    if (netplay && (effective_frame_num == lccf + 1) && PlayerInputsFilled(effective_frame_num))
     {
       lccf++;
       //std::cout << "last consecutive common frame " << lccf << std::endl;
     }
 
-    if (Dojo::netplay && frame_player == player)
-    {
+    if (netplay && frame_player == player)
       Netplay::frames_to_send.push(data_to_queue);
-    }
-  }
 
-  if (record)
-    Replay::AppendFrameToFile(data_to_queue);
+    if (!netplay && record)
+      Replay::AppendFrameToFile(data_to_queue);
+  }
 
   //std::cout << Frame::Str((uint8_t*)data_to_queue.data()) << std::endl;
 }
