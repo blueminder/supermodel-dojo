@@ -39,6 +39,14 @@ void Dojo::Poll::StartAction()
 			std::ostringstream LogStream;
 			LogStream << Dojo::index << ": " << current.to_string();
 			InfoLog(LogStream.str().data());
+
+			// record opponent frame to local replay
+			if (record)
+			{
+				int opponent = player == 0 ? 1 : 0;
+				std::string opponent_frame = Dojo::net_frames[opponent].at(Dojo::index);
+      			Replay::AppendFrameToFile(opponent_frame);
+			}
 		}
 	}
 }
@@ -82,6 +90,9 @@ void Dojo::Poll::EndAction()
 		std::string outgoing_frame = Dojo::Frame::Create(Dojo::index, Dojo::player, Dojo::delay, digital);
 
 		Dojo::AddNetFrame(outgoing_frame.data());
+
+		if (netplay && record)
+      		Replay::AppendFrameToFile(outgoing_frame);
 
 		Dojo::current_frame = outgoing_frame;
 	}

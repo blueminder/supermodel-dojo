@@ -50,9 +50,11 @@ void Dojo::Netplay::ServerThread()
 
 		case ENET_EVENT_TYPE_RECEIVE: {
 			//std::cout << "[SERVER] RECEIVED " << Frame::Str((uint8_t*)event.packet->data) << std::endl;
-			AddNetFrame((const char*)event.packet->data);
+			const char to_add[FRAME_SIZE] = { 0 };
+			memcpy((void*)to_add, event.packet->data, FRAME_SIZE);
 			enet_packet_destroy(event.packet);
 
+			AddNetFrame((const char *)to_add);
 			//enet_host_flush(host); // since we are going to disconnect right after, we need to do this flush. Otherwise, the message won't get to the destination
 
 			//printf("[SERVER] Now I want to disconnect\n");
@@ -113,9 +115,11 @@ void Dojo::Netplay::ClientThread()
 
 		case ENET_EVENT_TYPE_RECEIVE: {
 			//std::cout << "[CLIENT] RECEIVED " << Frame::Str((uint8_t*)event.packet->data) << std::endl;
-			AddNetFrame((const char*)event.packet->data);
+			const char to_add[FRAME_SIZE] = { 0 };
+			memcpy((void*)to_add, event.packet->data, FRAME_SIZE);
 			enet_packet_destroy(event.packet);
 
+			AddNetFrame((const char *) to_add);
 			//enet_host_flush(host); // since we are going to disconnect right after, we need to do this flush. Otherwise, the message won't get to the destination
 
 			//printf("[SERVER] Now I want to disconnect\n");
