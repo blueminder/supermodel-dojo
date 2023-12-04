@@ -1085,7 +1085,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
     {
       if (Dojo::netplay)
       {
-        paused = !(Dojo::PlayerInputsFilled(Dojo::index) && Dojo::index < Dojo::lccf);
+        paused = !(Dojo::PlayerInputsFilled(Dojo::index) && Dojo::index <= Dojo::lccf);
 
         if (paused)
         {
