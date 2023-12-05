@@ -123,9 +123,9 @@ static std::map<std::string, std::string> settings_desc = {
     {"EmulateNet", "Emulate the net board (requires -no-threads)"},
     {"RecordSession",
      "Record all sessions as replays. Found in Replays folder."},
-    {"NativeRefresh", "Toggles fullscreen, enables VSync, and sets refresh "
-                      "rate to native 57.524 Hz. "
-                      "Requires variable refresh display."}};
+    {"NativeRefresh",
+     "Sets refresh rate to Model 3 native 57.524 Hz. Requires "
+     "variable refresh display or frame limiter. (Default: Disabled, 60 Hz)"}};
 
 // Helper to display a little (?) mark which shows a tooltip when hovered.
 void ShowHelpMarker(const char *desc) {
@@ -231,9 +231,6 @@ void load_settings(std::filesystem::path ini_path) {
 
   // custom options
   if (mod_settings_bool["NativeRefresh"]) {
-    mod_settings_bool["VSync"] = true;
-    mod_settings_bool["Throttle"] = false;
-    mod_settings_bool["FullScreen"] = true;
     mod_settings_double["RefreshRate"] = 57.524;
   } else {
     mod_settings_double["RefreshRate"] = 60.000;
@@ -776,9 +773,6 @@ int main(int, char **) {
 
         // custom options
         if (mod_settings_bool["NativeRefresh"]) {
-          ini["Global"]["VSync"] = 1;
-          ini["Global"]["Throttle"] = 0;
-          ini["Global"]["FullScreen"] = 1;
           ini["Global"]["RefreshRate"] = 57.524;
         } else {
           ini["Global"]["RefreshRate"] = 60.000;
@@ -804,13 +798,13 @@ int main(int, char **) {
           IniCheckBox("MultiTexture");
           IniCheckBox("ShowFrameRate");
 
-          if (!IniCheckBox("NativeRefresh")) {
-            IniCheckBox("VSync");
-            IniCheckBox("Throttle");
-            IniScalar("XResolution");
-            IniScalar("YResolution");
-            IniCheckBox("FullScreen");
-          }
+          IniCheckBox("VSync");
+          IniCheckBox("Throttle");
+          IniCheckBox("NativeRefresh");
+
+          IniScalar("XResolution");
+          IniScalar("YResolution");
+          IniCheckBox("FullScreen");
 
           if (IniCheckBox("WideScreen")) {
             IniCheckBox("Stretch");
