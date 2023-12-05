@@ -22,6 +22,7 @@
 static std::map<std::string, std::string> mod_settings;
 static std::map<std::string, bool> mod_settings_bool;
 static std::map<std::string, int> mod_settings_int;
+static std::map<std::string, int> mod_settings_double;
 
 static bool settings_init = false;
 
@@ -121,7 +122,10 @@ static std::map<std::string, std::string> settings_desc = {
     {"SimulateNet", "Simulate the net board [Default]"},
     {"EmulateNet", "Emulate the net board (requires -no-threads)"},
     {"RecordSession",
-     "Record all sessions as replays. Found in Replays folder."}};
+     "Record all sessions as replays. Found in Replays folder."},
+    {"NativeRefresh", "Toggles fullscreen, enables VSync, and sets refresh "
+                      "rate to native 57.524 Hz. "
+                      "Requires variable refresh display."}};
 
 // Helper to display a little (?) mark which shows a tooltip when hovered.
 void ShowHelpMarker(const char *desc) {
@@ -183,7 +187,7 @@ static std::string bool_fields[] = {
     "ShowFrameRate",  "Throttle",      "VSync",        "GPUMultiThreaded",
     "Crosshairs",     "MultiThreaded", "MultiTexture", "ForceFeedback",
     "LegacySoundDSP", "EmulateDSB",    "EmulateSound", "FlipStereo",
-    "RecordSession"};
+    "RecordSession",  "NativeRefresh"};
 
 static std::string int_fields[] = {"PowerPCFrequency",
                                    "XResolution",
@@ -199,6 +203,8 @@ static std::string int_fields[] = {"PowerPCFrequency",
                                    "XInputConstForceMax",
                                    "XInputVibrateMax",
                                    "XInputConstForceThreshold"};
+
+static std::string double_fields[] = {"RefreshRate"};
 
 static std::string str_fields[] = {"AddressOut"};
 
@@ -217,6 +223,20 @@ void load_settings(std::filesystem::path ini_path) {
 
   for (std::string field : int_fields) {
     mod_settings_int[field] = ini["Global"][field] | 0;
+  }
+
+  for (std::string field : double_fields) {
+    mod_settings_double[field] = ini["Global"][field] | 0.00;
+  }
+
+  // custom options
+  if (mod_settings_bool["NativeRefresh"]) {
+    mod_settings_bool["VSync"] = true;
+    mod_settings_bool["Throttle"] = false;
+    mod_settings_bool["FullScreen"] = true;
+    mod_settings_double["RefreshRate"] = 57.524;
+  } else {
+    mod_settings_double["RefreshRate"] = 60.000;
   }
 }
 
@@ -742,6 +762,20 @@ int main(int, char **) {
           ini["Global"][field] = mod_settings_int[field] | 0;
         }
 
+        for (std::string field : double_fields) {
+          ini["Global"][field] = mod_settings_double[field] | 0;
+        }
+
+        // custom options
+        if (mod_settings_bool["NativeRefresh"]) {
+          ini["Global"]["VSync"] = 1;
+          ini["Global"]["Throttle"] = 0;
+          ini["Global"]["FullScreen"] = 1;
+          ini["Global"]["RefreshRate"] = 57.524;
+        } else {
+          ini["Global"]["RefreshRate"] = 60.000;
+        }
+
         std::ofstream out(ini_path);
         std::cout << ini;
         out << ini;
@@ -758,20 +792,22 @@ int main(int, char **) {
       if (ImGui::BeginTabBar("SettingsTabBar")) {
         if (ImGui::BeginTabItem("Graphics")) {
           IniCheckBox("New3DEngine");
-
-          IniCheckBox("VSync");
           IniCheckBox("QuadRendering");
           IniCheckBox("MultiTexture");
-          IniCheckBox("FullScreen");
+          IniCheckBox("ShowFrameRate");
+
+          if (!IniCheckBox("NativeRefresh")) {
+            IniCheckBox("VSync");
+            IniCheckBox("Throttle");
+            IniScalar("XResolution");
+            IniScalar("YResolution");
+            IniCheckBox("FullScreen");
+          }
+
           if (IniCheckBox("WideScreen")) {
             IniCheckBox("Stretch");
             IniCheckBox("WideBackground");
           }
-          IniCheckBox("ShowFrameRate");
-          IniCheckBox("Throttle");
-
-          IniScalar("XResolution");
-          IniScalar("YResolution");
 
           IniCheckBox("Crosshairs");
           ImGui::EndTabItem();
