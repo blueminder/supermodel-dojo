@@ -27,27 +27,16 @@ void Dojo::Poll::StartAction()
 
 	if (Dojo::netplay && PlayerInputsFilled(Dojo::index))
 	{
-		if (Dojo::net_inputs[0].count(Dojo::index) && Dojo::net_inputs[1].count(Dojo::index))
-		{
-			uint32_t p1_input_data = Dojo::net_inputs[0].at(Dojo::index);
-			uint32_t p2_input_data = Dojo::net_inputs[1].at(Dojo::index);
+		uint32_t p1_input_data = Dojo::net_inputs[0].at(Dojo::index);
+		uint32_t p2_input_data = Dojo::net_inputs[1].at(Dojo::index);
 
-			uint32_t input_data = p1_input_data | p2_input_data;
+		uint32_t input_data = p1_input_data | p2_input_data;
 
-			current = std::bitset<32>(input_data);
+		current = std::bitset<32>(input_data);
 
-			std::ostringstream LogStream;
-			LogStream << Dojo::index << ": " << current.to_string();
-			InfoLog(LogStream.str().data());
-
-			// record opponent frame to local replay
-			if (record)
-			{
-				int opponent = player == 0 ? 1 : 0;
-				std::string opponent_frame = Dojo::net_frames[opponent].at(Dojo::index);
-      			Replay::AppendFrameToFile(opponent_frame);
-			}
-		}
+		std::ostringstream LogStream;
+		LogStream << Dojo::index << ": " << current.to_string();
+		InfoLog(LogStream.str().data());
 	}
 }
 
@@ -90,9 +79,6 @@ void Dojo::Poll::EndAction()
 		std::string outgoing_frame = Dojo::Frame::Create(Dojo::index, Dojo::player, Dojo::delay, digital);
 
 		Dojo::AddNetFrame(outgoing_frame.data());
-
-		if (netplay && record)
-      		Replay::AppendFrameToFile(outgoing_frame);
 
 		Dojo::current_frame = outgoing_frame;
 	}

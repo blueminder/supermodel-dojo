@@ -86,6 +86,20 @@ void Dojo::Init(std::string game_name, bool record_session, bool train_session, 
 
 void Dojo::AdvanceFrame()
 {
+    // replays: save previous frame to file
+    if (record && index > 1)
+    {
+      if (netplay && PlayerFramesFilled(index - 1))
+      {
+        Replay::AppendFrameToFile(net_frames[0].at(index - 1));
+        Replay::AppendFrameToFile(net_frames[1].at(index - 1));
+      }
+      else
+      {
+        Replay::AppendFrameToFile(net_frames[0].at(index - 1));
+      }
+    }
+
     index++;
 }
 
@@ -121,9 +135,6 @@ void Dojo::AddNetFrame(const char* received_data)
 
     if (netplay && frame_player == player)
       Netplay::frames_to_send.push(data_to_queue);
-
-    if (!netplay && record)
-      Replay::AppendFrameToFile(data_to_queue);
   }
 
   //std::cout << Frame::Str((uint8_t*)data_to_queue.data()) << std::endl;
@@ -143,5 +154,11 @@ uint32_t Dojo::WipePlayerInputs(int player, uint32_t digital)
 bool Dojo::PlayerInputsFilled(uint32_t i = index)
 {
   bool condition = net_inputs[0].count(i) && net_inputs[1].count(i);
+  return condition;
+}
+
+bool Dojo::PlayerFramesFilled(uint32_t i = index)
+{
+  bool condition = net_frames[0].count(i) && net_frames[1].count(i);
   return condition;
 }
