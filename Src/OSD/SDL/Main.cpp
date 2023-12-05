@@ -1087,7 +1087,6 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
       {
         paused = !(
           Dojo::PlayerInputsFilled(Dojo::index) &&
-          Dojo::PlayerFramesFilled(Dojo::index) &&
           Dojo::index <= Dojo::lccf
         );
 
