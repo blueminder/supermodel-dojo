@@ -561,6 +561,14 @@ int main(int, char **) {
         std::string rom_path = rom_dir + rom_name + ".zip";
         std::string cmd = "cmd /C supermodel.exe " + rom_path; // + " > output";
 
+        // fvipers2 default settings
+        // 100MHz to prevent slowdown and desyncs
+        // legacy sound to prevent ear damage
+        if (rom_name == "fvipers2" || rom_name == "fvipers2o") {
+          cmd += " -ppc-frequency=100";
+          cmd += " -legacy-scsp";
+        }
+
         if (fs::exists(rom_path)) {
           if (filter.PassFilter(title.c_str())) {
             std::string button_txt = title + " (" + version + ")";
