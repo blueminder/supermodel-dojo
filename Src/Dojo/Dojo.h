@@ -32,6 +32,7 @@ namespace Dojo {
 
     uint32_t WipePlayerInputs(int player, uint32_t digital);
     bool PlayerInputsFilled(uint32_t i);
+    bool PlayerFramesFilled(uint32_t i);
 
     inline uint32_t index = 0;
     inline uint32_t delay = 0;
