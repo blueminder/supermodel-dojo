@@ -181,4 +181,13 @@ void Dojo::Message::ProcessBody(uint32_t cmd, uint32_t body_size, const char* bu
   {
     //Dojo::Session::disconnect_toggle = true;
   }
+  else if (cmd == GAME_START)
+  {
+    uint32_t session_delay = Message::ReadInt((const char*)buffer, offset);
+    Dojo::delay = session_delay;
+
+    Dojo::FillDelay();
+
+    std::cout << "Starting Netplay Session, P" << Dojo::player + 1 << " D" << Dojo::delay << std::endl;
+  }
 }
