@@ -45,7 +45,6 @@ void Dojo::Init(std::string game_name, bool record_session, bool train_session, 
         delay = 1;
       Dojo::netplay = true;
       Netplay::Launch(hosting);
-      std::cout << "Starting Netplay Session, P" << player + 1 << " D" << delay << std::endl;
     }
 
     Dojo::hosting = hosting;
@@ -64,24 +63,30 @@ void Dojo::Init(std::string game_name, bool record_session, bool train_session, 
           net_replay = true;
     }
 
-    // add buffer frames for delay
-    for (int d = 0; d < delay; d++)
-    {
-      auto p1_frame = Dojo::Frame::Create(d, 0, 0, 0);
-      auto p2_frame = Dojo::Frame::Create(d, 1, 0, 0);
+    if (!netplay)
+      FillDelay();
+}
 
-      AddNetFrame(p1_frame.data());
-      AddNetFrame(p2_frame.data());
-    }
+void Dojo::FillDelay()
+{
+  // add buffer frames for delay
+  for (int d = 0; d < delay; d++)
+  {
+    auto p1_frame = Dojo::Frame::Create(d, 0, 0, 0);
+    auto p2_frame = Dojo::Frame::Create(d, 1, 0, 0);
 
-    if (hosting)
+    AddNetFrame(p1_frame.data());
+    AddNetFrame(p2_frame.data());
+  }
+
+  if (hosting)
+  {
+    for (int d = 0; d < (delay * 2) + 1; d++)
     {
-      for (int d = 0; d < (delay * 2) + 1; d++)
-      {
-        auto buffer_frame = Dojo::Frame::Create(d, 1, 0, 0);
-        AddNetFrame(buffer_frame.data());
-      }
+      auto buffer_frame = Dojo::Frame::Create(d, 1, 0, 0);
+      AddNetFrame(buffer_frame.data());
     }
+  }
 }
 
 void Dojo::AdvanceFrame()

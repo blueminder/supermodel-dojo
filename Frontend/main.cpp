@@ -267,7 +267,8 @@ void start_netplay_popup(std::string game_name, std::string cmd, bool hosting) {
     ImGui::InputScalar("Port", ImGuiDataType_S32, &target_port,
                        inputs_step ? &s32_one : NULL, NULL, "%d");
 
-    ImGui::SliderInt("Delay", (int *)&current_delay, 0, 20);
+    if (hosting)
+      ImGui::SliderInt("Delay", (int *)&current_delay, 0, 20);
 
     if (ImGui::Button("Start")) {
       ImGui::CloseCurrentPopup();

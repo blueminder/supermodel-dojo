@@ -27,6 +27,7 @@
 
 namespace Dojo {
     void Init(std::string game_name, bool record_session, bool train_session, bool receiving, bool hosting, bool netplay, std::string state_path);
+    void FillDelay();
     void AdvanceFrame();
     void AddNetFrame(const char* received_data);
 
