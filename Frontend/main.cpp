@@ -276,7 +276,9 @@ void start_netplay_popup(std::string game_name, std::string cmd, bool hosting) {
         cmd += " -netplay -host";
         cmd += " -delay=" + std::to_string(current_delay);
         cmd += " -target-port=" + std::to_string(target_port);
+#ifdef _WIN32
         cmd += " & pause";
+#endif
         std::cout << cmd << std::endl;
 
         std::thread t_run([cmd]() { std::system(cmd.c_str()); });
@@ -286,7 +288,9 @@ void start_netplay_popup(std::string game_name, std::string cmd, bool hosting) {
         cmd += " -delay=" + std::to_string(current_delay);
         cmd += " -target-ip=" + std::string(si);
         cmd += " -target-port=" + std::to_string(target_port);
+#ifdef _WIN32
         cmd += " & pause";
+#endif
         std::cout << cmd << std::endl;
 
         std::thread t_run([cmd]() { std::system(cmd.c_str()); });
@@ -548,7 +552,11 @@ int main(int, char **) {
 
       ImGui::BeginChild("C", ImVec2(520, 455), true);
       namespace fs = std::filesystem;
+#ifdef _WIN32
       std::string rom_dir = "ROMs\\";
+#else
+      std::string rom_dir = "ROMs/";
+#endif
       for (pugi::xml_node game = games.child("game"); game;
            game = game.next_sibling("game")) {
         std::string title = game.child("identity").child("title").child_value();
@@ -557,7 +565,11 @@ int main(int, char **) {
             game.child("identity").child("version").child_value();
 
         std::string rom_path = rom_dir + rom_name + ".zip";
-        std::string cmd = "cmd /C supermodel.exe " + rom_path; // + " > output";
+#ifdef _WIN32
+            std::string cmd = "cmd /C supermodel.exe " + rom_path; // + " > output";
+#else
+            std::string cmd = "./supermodel " + rom_path; // + " > output";
+#endif
 
         // fvipers2 default settings
         // 100MHz to prevent slowdown and desyncs
@@ -585,7 +597,9 @@ int main(int, char **) {
                 show_cmds = true;
                 ImGui::CloseCurrentPopup();
 
+#ifdef _WIN32
                 cmd += " & pause";
+#endif
                 std::cout << cmd << std::endl;
 
                 std::thread t_run([cmd]() { std::system(cmd.c_str()); });
@@ -603,7 +617,9 @@ int main(int, char **) {
                 show_cmds = true;
                 ImGui::CloseCurrentPopup();
                 cmd += " -train";
+#ifdef _WIN32
                 cmd += " & pause";
+#endif
                 std::cout << cmd << std::endl;
 
                 std::thread t_run([cmd]() { std::system(cmd.c_str()); });
@@ -645,9 +661,15 @@ int main(int, char **) {
 
                 SetSMWindowPos(window, ini_path.string());
                 show_cmds = true;
+#ifdef _WIN32
                 std::string replay_cmd = "supermodel.exe " + selected_rom_path;
+#else
+                std::string replay_cmd = "./supermodel " + selected_rom_path;
+#endif
                 replay_cmd += " -replay-file=" + filePathName;
+#ifdef _WIN32
                 replay_cmd += " & pause";
+#endif
                 // replay_cmd += " > output";
                 std::cout << replay_cmd << std::endl;
 
@@ -832,14 +854,22 @@ int main(int, char **) {
         }
         if (ImGui::BeginTabItem("Controls")) {
           if (ImGui::Button("Set Controls")) {
+#ifdef _WIN32
             std::string cmd = "cmd /C supermodel.exe -config-inputs & pause";
+#else
+            std::string cmd = "./supermodel -config-inputs";
+#endif
             system(cmd.c_str());
           }
           ImGui::SameLine();
           ShowHelpMarker("Sets controls via interactive command line prompt.");
 
           if (ImGui::Button("View Controls")) {
+#ifdef _WIN32
             std::string cmd = "cmd /C supermodel.exe -print-inputs & pause";
+#else
+            std::string cmd = "./supermodel -print-inputs";
+#endif
 
             std::thread t_run([cmd]() { std::system(cmd.c_str()); });
             t_run.detach();
