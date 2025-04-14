@@ -605,6 +605,19 @@ int main(int, char **) {
                 std::thread t_run([cmd]() { std::system(cmd.c_str()); });
                 t_run.detach();
               }
+              if (ImGui::MenuItem("Set Controls")) {
+                SetSMWindowPos(window, ini_path.string());
+                show_cmds = true;
+                ImGui::CloseCurrentPopup();
+                cmd += " -config-inputs";
+#ifdef _WIN32
+                cmd += " & pause";
+#endif
+                std::cout << cmd << std::endl;
+
+                std::thread t_run([cmd]() { std::system(cmd.c_str()); });
+                t_run.detach();
+              }
               if (ImGui::MenuItem("Open Replay File")) {
                 ImGui::SetNextWindowSize(ImVec2(650, 400));
                 ImGuiFileDialog::Instance()->OpenDialog(
