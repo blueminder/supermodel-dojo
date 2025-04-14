@@ -8,6 +8,7 @@ static const char *vertexShaderR3DQuads = R"glsl(
 // uniforms
 uniform float	modelScale;
 uniform float	nodeAlpha;
+uniform float	cota;
 uniform mat4	modelMat;
 uniform mat4	projMat;
 uniform bool	translatorMap;
@@ -19,6 +20,7 @@ in vec2		inTexCoord;
 in vec3		inFaceNormal;		// used to emulate r3d culling 
 in float	inFixedShade;
 in vec4		inColour;
+in float	inTextureNP;
 
 // outputs to geometry shader
 
@@ -30,6 +32,7 @@ out VS_OUT
 	vec4	color;
 	float	fixedShade;
 	float	discardPoly;	// can't have varying bool (glsl spec)
+	float	LODBase;
 } vs_out;
 
 vec4 GetColour(vec4 colour)
@@ -62,6 +65,7 @@ void main(void)
 	vs_out.color    	= GetColour(inColour);
 	vs_out.texCoord		= inTexCoord;
 	vs_out.fixedShade	= inFixedShade;
+	vs_out.LODBase		= -vs_out.discardPoly * cota * inTextureNP;
 	gl_Position			= projMat * modelMat * inVertex;
 }
 )glsl";
@@ -81,6 +85,7 @@ in VS_OUT
 	vec4	color;
 	float	fixedShade;
 	float	discardPoly;	// can't have varying bool (glsl spec)
+	float	LODBase;
 } gs_in[4];
 
 out GS_OUT
@@ -95,6 +100,7 @@ out GS_OUT
 	flat vec2	texCoord[4];
 	flat vec4	color;
 	flat float	fixedShade[4];
+	flat float	LODBase;
 } gs_out;
 
 //a*b - c*d, computed in a stable fashion (Kahan)
@@ -128,6 +134,7 @@ void main(void)
 
 	// flat attributes
 	gs_out.color = gs_in[0].color;
+	gs_out.LODBase = gs_in[0].LODBase;
 
 	// precompute crossproducts for all vertex combinations to be looked up in loop below for area computation
 	precise float cross[4][4];
@@ -175,12 +182,12 @@ static const char *fragmentShaderR3DQuads = R"glsl(
 
 #version 450 core
 
-uniform usampler2D tex1;			// entire texture sheet
+uniform usampler2D textureBank[2];			// entire texture sheet
 
 // texturing
 uniform bool	textureEnabled;
 uniform bool	microTexture;
-uniform float	microTextureScale;
+uniform float	microTextureMinLOD;
 uniform int		microTextureID;
 uniform ivec4	baseTexInfo;		// x/y are x,y positions in the texture sheet. z/w are with and height
 uniform int		baseTexType;
@@ -189,6 +196,7 @@ uniform bool	textureAlpha;
 uniform bool	alphaTest;
 uniform bool	discardAlpha;
 uniform ivec2	textureWrapMode;
+uniform int		texturePage;
 
 // general
 uniform vec3	fogColour;
@@ -209,8 +217,10 @@ uniform float	fogStart;
 uniform float	fogAttenuation;
 uniform float	fogAmbient;
 uniform bool	fixedShading;
+uniform bool	smoothShading;
 uniform int		hardwareStep;
 uniform int		colourLayer;
+uniform bool	polyAlpha;
 
 // matrices (shared with vertex shader)
 uniform mat4	projMat;
@@ -229,6 +239,7 @@ in GS_OUT
 	flat vec2	texCoord[4];
 	flat vec4	color;
 	flat float	fixedShade[4];
+	flat float	LODBase;
 } fs_in;
 
 //our calculated vertex attributes from the above
@@ -237,6 +248,7 @@ vec3	fsViewNormal;
 vec2	fsTexCoord;
 float	fsFixedShade;
 vec4	fsColor;
+float	fsLODBase;
 
 //outputs
 layout(location = 0) out vec4 out0;		// opaque
@@ -321,6 +333,7 @@ void QuadraticInterpolation()
 	fsTexCoord		= vec2(0.0);
 	fsFixedShade	= 0.0;
 	fsColor			= fs_in.color;
+	fsLODBase		= fs_in.LODBase;
 	
 	for (int i=0; i<4; i++) {
 		fsViewVertex	+= lambda[i] * fs_in.viewVertex[i];
@@ -353,7 +366,7 @@ void QuadraticInterpolation()
 		depth			= vertex.z * interp_oneOverW;
 	}
 
-	gl_FragDepth = depth * 0.5 + 0.5;
+	gl_FragDepth = depth;
 }
 
 void main()
@@ -376,7 +389,7 @@ void main()
 	Step15Luminous(colData);			// no-op for step 2.0+	
 	finalData = tex1Data * colData;
 
-	if (finalData.a < (1.0/16.0)) {		// basically chuck out any totally transparent pixels value = 1/16 the smallest transparency level h/w supports
+	if (finalData.a < (1.0/32.0)) {		// basically chuck out any totally transparent pixels value = 1/16 the smallest transparency level h/w supports
 		discard;
 	}
 
@@ -433,7 +446,8 @@ void main()
 		sunFactor = clamp(sunFactor,-1.0,1.0);
 
 		// Optional clamping, value is allowed to be negative
-		if(sunClamp) {
+		// We suspect that translucent polygons are always clamped (e.g. lasers in Daytona 2)
+		if(sunClamp || polyAlpha) {
 			sunFactor = max(sunFactor,0.0);
 		}
 
@@ -452,20 +466,27 @@ void main()
 		// for now assume fixed shading doesn't work with specular
 		if (specularEnabled) {
 
-			float exponent, NdotL, specularFactor;
-			vec4 biasIndex, expIndex, multIndex;
+			float specularFactor;
 
-			// Always clamp floor to zero, we don't want deep black areas
-			NdotL = max(0.0,sunFactor);
+			if (smoothShading)
+			{
+				// Always clamp floor to zero
+				float NdotL = max(0.0, sunFactor);
 
-			expIndex = vec4(8.0, 16.0, 32.0, 64.0);
-			multIndex = vec4(2.0, 2.0, 3.0, 4.0);
-			biasIndex = vec4(0.95, 0.95, 1.05, 1.0);
-			exponent = expIndex[int(shininess)] / biasIndex[int(shininess)];
-
-			specularFactor = pow(NdotL, exponent);
-			specularFactor *= multIndex[int(shininess)];
-			specularFactor *= biasIndex[int(shininess)];
+				vec4 expIndex = vec4(8.0, 16.0, 32.0, 64.0);
+				vec4 multIndex = vec4(1.6, 1.6, 2.4, 3.2);
+				float exponent = expIndex[int(shininess)];
+			
+				specularFactor = pow(NdotL, exponent);
+				specularFactor *= multIndex[int(shininess)];
+			}
+			else
+			{
+				// flat shaded polys use Phong reflection model (R dot V) without any exponent or multiplier
+				// V = (0.0, 0.0, 1.0) is used by Model 3 as a fast approximation, so R dot V = R.z
+				vec3 R = reflect(-sunVector, fsViewNormal);
+				specularFactor = max(0.0, R.z);
+			}
 			
 			specularFactor *= specularValue;
 			specularFactor *= lighting[1].x;

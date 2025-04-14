@@ -59,7 +59,7 @@ bool R3DFrameBuffers::CreateFBO(int width, int height)
 	// depth/stencil attachment
 	glGenRenderbuffers(1, &m_renderBufferID);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_renderBufferID);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_renderBufferID);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_renderBufferID);
 
@@ -80,7 +80,7 @@ bool R3DFrameBuffers::CreateFBODepthCopy(int width, int height)
 
 	glGenRenderbuffers(1, &m_renderBufferIDCopy);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_renderBufferIDCopy);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_renderBufferIDCopy);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_renderBufferIDCopy);
 
@@ -298,7 +298,6 @@ void R3DFrameBuffers::AllocShaderTrans()
 
 void R3DFrameBuffers::Draw()
 {
-	SetFBO		(Layer::none);						// make sure to draw on the back buffer
 	glViewport	(0, 0, m_width, m_height);			// cover the entire screen
 	glDisable	(GL_DEPTH_TEST);					// disable depth testing / writing
 	glDisable	(GL_CULL_FACE);

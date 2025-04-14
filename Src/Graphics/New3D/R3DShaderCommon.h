@@ -82,36 +82,13 @@ vec4 ExtractColour(int type, uint value)
 	return c;
 }
 
-int GetPage(int yCoord)
-{
-	return yCoord / 1024;
-}
-
-int GetNextPage(int yCoord)
-{
-	return (GetPage(yCoord) + 1) & 1;
-}
-
-int GetNextPageOffset(int yCoord)
-{
-	return GetNextPage(yCoord) * 1024;
-}
-
-// wrapping tex coords would be super easy but we combined tex sheets so have to handle wrap around between sheets
 // hardware testing would be useful because i don't know exactly what happens if you try to read outside the texture sheet
 // wrap around is a good guess
-ivec2 WrapTexCoords(ivec2 pos, ivec2 coordinate)
+ivec2 WrapTexCoords(ivec2 pos, ivec2 coordinate, int level)
 {
 	ivec2 newCoord;
-
-	newCoord.x = coordinate.x & 2047;
-	newCoord.y = coordinate.y;
-
-	int page = GetPage(pos.y);
-
-	newCoord.y -= (page * 1024);	// remove page
-	newCoord.y &= 1023;				// wrap around in the same sheet
-	newCoord.y += (page * 1024);	// add page back
+	newCoord.x = coordinate.x & (2047 >> level);
+	newCoord.y = coordinate.y & (1023 >> level);
 
 	return newCoord;
 }
@@ -125,19 +102,11 @@ ivec2 GetTextureSize(int level, ivec2 size)
 
 ivec2 GetTexturePosition(int level, ivec2 pos)
 {
-	const int mipXBase[] = int[](0, 1024, 1536, 1792, 1920, 1984, 2016, 2032, 2040, 2044, 2046, 2047);
-	const int mipYBase[] = int[](0, 512, 768, 896, 960, 992, 1008, 1016, 1020, 1022, 1023);
-
 	int mipDivisor = 1 << level;
 
-	int page = pos.y / 1024;
-	pos.y -= (page * 1024);		// remove page from tex y
-
 	ivec2 retPos;
-	retPos.x = mipXBase[level] + (pos.x / mipDivisor);
-	retPos.y = mipYBase[level] + (pos.y / mipDivisor);
-
-	retPos.y += (page * 1024);	// add page back to tex y
+	retPos.x = pos.x / mipDivisor;
+	retPos.y = pos.y / mipDivisor;
 
 	return retPos;
 }
@@ -148,15 +117,6 @@ ivec2 GetMicroTexturePos(int id)
 	const int yCoords[8] = int[](0, 128, 0, 128, 256, 384, 256, 384);
 
 	return ivec2(xCoords[id],yCoords[id]);
-}
-
-float mip_map_level(in vec2 texture_coordinate) // in texel units
-{
-    vec2  dx_vtc        = dFdx(texture_coordinate);
-    vec2  dy_vtc        = dFdy(texture_coordinate);
-    float delta_max_sqr = max(dot(dx_vtc, dx_vtc), dot(dy_vtc, dy_vtc));
-    float mml = 0.5 * log2(delta_max_sqr);
-    return max( 0.0, mml );
 }
 
 float LinearTexLocations(int wrapMode, float size, float u, out float u0, out float u1)
@@ -206,16 +166,16 @@ float LinearTexLocations(int wrapMode, float size, float u, out float u0, out fl
 	}
 }
 
-vec4 texBiLinear(usampler2D texSampler, ivec2 wrapMode, vec2 texSize, ivec2 texPos, vec2 texCoord)
+vec4 texBiLinear(usampler2D texSampler, ivec2 wrapMode, vec2 texSize, ivec2 texPos, vec2 texCoord, int level)
 {
 	float tx[2], ty[2];
 	float a = LinearTexLocations(wrapMode.s, texSize.x, texCoord.x, tx[0], tx[1]);
 	float b = LinearTexLocations(wrapMode.t, texSize.y, texCoord.y, ty[0], ty[1]);
 
-	vec4 p0q0 = ExtractColour(baseTexType,texelFetch(texSampler, WrapTexCoords(texPos,ivec2(vec2(tx[0],ty[0]) * texSize + texPos)), 0).r);
-    vec4 p1q0 = ExtractColour(baseTexType,texelFetch(texSampler, WrapTexCoords(texPos,ivec2(vec2(tx[1],ty[0]) * texSize + texPos)), 0).r);
-    vec4 p0q1 = ExtractColour(baseTexType,texelFetch(texSampler, WrapTexCoords(texPos,ivec2(vec2(tx[0],ty[1]) * texSize + texPos)), 0).r);
-    vec4 p1q1 = ExtractColour(baseTexType,texelFetch(texSampler, WrapTexCoords(texPos,ivec2(vec2(tx[1],ty[1]) * texSize + texPos)), 0).r);
+	vec4 p0q0 = ExtractColour(baseTexType,texelFetch(texSampler, WrapTexCoords(texPos,ivec2(vec2(tx[0],ty[0]) * texSize + texPos),level), level).r);
+    vec4 p1q0 = ExtractColour(baseTexType,texelFetch(texSampler, WrapTexCoords(texPos,ivec2(vec2(tx[1],ty[0]) * texSize + texPos),level), level).r);
+    vec4 p0q1 = ExtractColour(baseTexType,texelFetch(texSampler, WrapTexCoords(texPos,ivec2(vec2(tx[0],ty[1]) * texSize + texPos),level), level).r);
+    vec4 p1q1 = ExtractColour(baseTexType,texelFetch(texSampler, WrapTexCoords(texPos,ivec2(vec2(tx[1],ty[1]) * texSize + texPos),level), level).r);
 
 	if(alphaTest) {
 		if(p0q0.a > p1q0.a)		{ p1q0.rgb = p0q0.rgb; }
@@ -238,52 +198,49 @@ vec4 texBiLinear(usampler2D texSampler, ivec2 wrapMode, vec2 texSize, ivec2 texP
     return mix( pInterp_q0, pInterp_q1, b ); // Interpolate in Y direction.
 }
 
-vec4 textureR3D(usampler2D texSampler, ivec2 wrapMode, ivec2 texSize, ivec2 texPos, vec2 texCoord)
+vec4 GetTextureValue()
 {
-	float numLevels	= floor(log2(min(float(texSize.x), float(texSize.y))));				// r3d only generates down to 1:1 for square textures, otherwise its the min dimension
-	float fLevel	= min(mip_map_level(texCoord * vec2(texSize)), numLevels);
-
-	if(alphaTest) fLevel *= 0.5;
-	else fLevel *= 0.8;
+	float lod = -log2(gl_FragCoord.w * gl_FragCoord.w * fsLODBase);
+	float numLevels = floor(log2(min(float(baseTexInfo.z), float(baseTexInfo.w)))) - 1.0;	// r3d only generates down to 2:2 for square textures, otherwise its the min dimension
+	float fLevel = clamp(lod, 0.0, numLevels);
 
 	int iLevel = int(fLevel);
 
-	ivec2 texPos0 = GetTexturePosition(iLevel,texPos);
-	ivec2 texPos1 = GetTexturePosition(iLevel+1,texPos);
+	ivec2 tex1Pos = GetTexturePosition(iLevel, ivec2(baseTexInfo.xy));
+	ivec2 tex1Size = GetTextureSize(iLevel, ivec2(baseTexInfo.zw));
+	vec4 tex1Data = texBiLinear(textureBank[texturePage], textureWrapMode, vec2(tex1Size), tex1Pos, fsTexCoord, iLevel);
 
-	ivec2 texSize0 = GetTextureSize(iLevel, texSize);
-	ivec2 texSize1 = GetTextureSize(iLevel+1, texSize); 
+	// init second texel with blank data to avoid any potentially undefined behavior
+	vec4 tex2Data = vec4(0.0);
 
-	vec4 texLevel0 = texBiLinear(texSampler, wrapMode, vec2(texSize0), texPos0, texCoord);
-	vec4 texLevel1 = texBiLinear(texSampler, wrapMode, vec2(texSize1), texPos1, texCoord);
+	float blendFactor = 0.0;
 
-	return mix(texLevel0, texLevel1, fract(fLevel));	// linear blend between our mipmap levels
-}
+	// if LOD < 0, no need to blend with next mipmap level; slight performance boost
+	if (lod > 0.0)
+	{
+		ivec2 tex2Pos = GetTexturePosition(iLevel+1, ivec2(baseTexInfo.xy));
+		ivec2 tex2Size = GetTextureSize(iLevel+1, ivec2(baseTexInfo.zw));
+		tex2Data = texBiLinear(textureBank[texturePage], textureWrapMode, vec2(tex2Size), tex2Pos, fsTexCoord, iLevel+1);
 
-vec4 GetTextureValue()
-{
-	vec4 tex1Data = textureR3D(tex1, textureWrapMode, ivec2(baseTexInfo.zw), ivec2(baseTexInfo.xy), fsTexCoord);
+		blendFactor = fract(fLevel);
+	}
+	else if (microTexture && lod < -microTextureMinLOD)
+	{
+		vec4 scaleIndex = vec4(2.0, 4.0, 16.0, 256.0);		// unsure if minLOD=4 has 256x scale? No games appear to use it
+		vec2 scale = (vec2(baseTexInfo.zw) / 128.0) * scaleIndex[int(microTextureMinLOD)];
+
+		// microtextures are always 128x128 and only use LOD 0 mipmap
+		ivec2 tex2Pos = GetMicroTexturePos(microTextureID);
+		tex2Data = texBiLinear(textureBank[(texturePage+1)&1], ivec2(0), ivec2(128), tex2Pos, fsTexCoord * scale, 0);
+
+		blendFactor = -(lod + microTextureMinLOD) * 0.5;
+		blendFactor = clamp(blendFactor, 0.0, 0.5);
+	}
+
+	tex1Data = mix(tex1Data, tex2Data, blendFactor);
 
 	if(textureInverted) {
 		tex1Data.rgb = vec3(1.0) - vec3(tex1Data.rgb);
-	}
-
-	if (microTexture) {
-		vec2 scale			= (vec2(baseTexInfo.zw) / 128.0) * microTextureScale;
-		ivec2 pos			= GetMicroTexturePos(microTextureID);
-
-		// add page offset to microtexture position
-		pos.y				+= GetNextPageOffset(baseTexInfo.y);
-	
-		vec4 tex2Data		= textureR3D(tex1, ivec2(0), ivec2(128), pos, fsTexCoord * scale);
-
-		float lod			= mip_map_level(fsTexCoord * scale * vec2(128.0));
-
-		float blendFactor	= max(lod - 1.5, 0.0);			// bias -1.5
-		blendFactor			= min(blendFactor, 1.0);		// clamp to max value 1
-		blendFactor			= (blendFactor + 1.0) / 2.0;	// 0.5 - 1 range
-
-		tex1Data			= mix(tex2Data, tex1Data, blendFactor);
 	}
 
 	if (alphaTest) {
@@ -318,7 +275,7 @@ void Step15Luminous(inout vec4 colour)
 	// when fixed shading is enabled the colour is modulated by the vp ambient + fixed shade value
 	// when disabled it appears to be multiplied by 1.5, presumably to allow a higher range
 	if(hardwareStep==0x15) {
-		if(!lightEnabled && textureEnabled) {
+		if(!lightEnabled) {
 			if(fixedShading) {
 				colour.rgb *= 1.0 + fsFixedShade + lighting[1].y;
 			}

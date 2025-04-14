@@ -328,7 +328,7 @@ public:
 	 *		occurred. Any allocated memory will not be freed until the
 	 *		destructor is called. Prints own error messages.
 	 */
-	bool Init(unsigned xOffset, unsigned yOffset, unsigned xRes, unsigned yRes, unsigned totalXRes, unsigned totalYRes);
+	bool Init(unsigned xOffset, unsigned yOffset, unsigned xRes, unsigned yRes, unsigned totalXRes, unsigned totalYRes, unsigned aaTarget);
 
 	/*
 	* SetSunClamp(bool enable);
@@ -339,16 +339,6 @@ public:
 	*		enable	Set clamp mode
 	*/
 	void SetSunClamp(bool enable);
-
-	/*
-	* SetSignedShade(bool enable);
-	*
-	* Sets the sign-ness of fixed shading value
-	*
-	* Parameters:
-	*		enable	Fixed shading is expressed as signed value
-	*/
-	void SetSignedShade(bool enable);
 
 	/*
 	* GetLosValue(int layer);
@@ -457,6 +447,7 @@ private:
 	GLfloat	spotColor[3];
 	GLint	viewportX, viewportY;
 	GLint	viewportWidth, viewportHeight;
+	GLuint  m_aaTarget;
 	
 	// Scene graph processing
 	int		listDepth;	        // how many lists have we recursed into
