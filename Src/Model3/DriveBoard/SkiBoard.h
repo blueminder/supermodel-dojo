@@ -45,9 +45,9 @@ public:
    * Returns:
    *    Drive board type.
    */
-  Game::DriveBoardType GetType(void);
+  Game::DriveBoardType GetType(void) const;
 
-  unsigned GetForceFeedbackStrength(void);
+  unsigned GetForceFeedbackStrength(void) const;
   void SetForceFeedbackStrength(unsigned strength);
 
   /*
@@ -150,7 +150,7 @@ private:
 
   UINT8 SimulateRead(void);
 
-  void SimulateWrite(UINT8 data);
+  void SimulateWrite(UINT8 cmd);
 
   void SendVibrate(UINT8 val);
 

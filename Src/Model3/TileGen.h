@@ -156,9 +156,9 @@ public:
 	 * Returns:
 	 *		Data from the RAM address.
 	 */
-	uint8_t ReadRAM8(unsigned addr);
-	uint16_t ReadRAM16(unsigned addr);
-	uint32_t ReadRAM32(unsigned addr);
+	uint8_t  ReadRAM8(unsigned addr) const;
+	uint16_t ReadRAM16(unsigned addr) const;
+	uint32_t ReadRAM32(unsigned addr) const;
 
 	/*
 	 * WriteRAM8(addr, data):
@@ -191,7 +191,7 @@ public:
 	 * Returns:
 	 *    Data read as little endian from the register.
 	 */
-	UINT32 ReadRegister(unsigned reg);
+	UINT32 ReadRegister(unsigned reg) const;
 
 	/*
 	 * WriteRegister(reg, data):
@@ -290,34 +290,34 @@ private:
 
 	ColourOffsetRegister m_colourOffsetRegs[2];
 
-	bool	IsEnabled		(int layerNumber);
-	bool	Above3D			(int layerNumber);
-	bool	Is4Bit			(int layerNumber);
-	int		GetYScroll		(int layerNumber);
-	int		GetXScroll		(int layerNumber);
-	bool	LineScrollMode	(int layerNumber);
-	int		GetLineScroll	(int layerNumber, int yCoord);
-	int		GetTileNumber	(int xCoord, int yCoord, int xScroll, int yScroll);
-	int		GetTileData		(int layerNum, int tileNumber);
-	int		GetVFine		(int yCoord, int yScroll);
-	int		GetHFine		(int xCoord, int xScroll);
-	int		GetLineMask		(int layerNumber, int yCoord);
-	int		GetPixelMask	(int lineMask, int xCoord);
-	UINT32	GetColour32		(int layer, UINT32 data);
-	void	Draw4Bit		(int tileData, int hFine, int vFine, UINT32* lineBuffer, const UINT32* pal, int& x);
-	void	Draw8Bit		(int tileData, int hFine, int vFine, UINT32* lineBuffer, const UINT32* pal, int& x);
+	bool	IsEnabled		(int layerNumber) const;
+	bool	Above3D			(int layerNumber) const;
+	bool	Is4Bit			(int layerNumber) const;
+	int		GetYScroll		(int layerNumber) const;
+	int		GetXScroll		(int layerNumber) const;
+	bool	LineScrollMode	(int layerNumber) const;
+	int		GetLineScroll	(int layerNumber, int yCoord) const;
+	int		GetTileNumber	(int xCoord, int yCoord, int xScroll, int yScroll) const;
+	int		GetTileData		(int layerNum, int tileNumber) const;
+	int		GetVFine		(int yCoord, int yScroll) const;
+	int		GetHFine		(int xCoord, int xScroll) const;
+	int		GetLineMask		(int layerNumber, int yCoord) const;
+	int		GetPixelMask	(int lineMask, int xCoord) const;
+	UINT32	GetColour32		(int layer, UINT32 data) const;
+	void	Draw4Bit		(int tileData, int hFine, int vFine, UINT32* const lineBuffer, const UINT32* const pal, int& x) const;
+	void	Draw8Bit		(int tileData, int hFine, int vFine, UINT32* const lineBuffer, const UINT32* const pal, int& x) const;
 
 	void	WritePalette	(int layer, int address, UINT32 data);
 	void	RecomputePalettes(int layer);	// 0 = bottom, 1 = top
 
-	const Util::Config::Node& m_config;
+	//const Util::Config::Node& m_config;
 	const bool m_gpuMultiThreaded;
 
 	CIRQ*		IRQ;		// IRQ controller the tile generator is attached to
 	CRender2D*	Render2D;	// 2D renderer the tile generator is attached to
 
 	UINT8*		memoryPool;		// all memory allocated here
-	UINT8*		m_vram;         // 1.125MB of VRAM
+	UINT8*		m_vram;			// 1.125MB of VRAM
 	UINT32*		m_vramP;		// vram pointer but integer size
 	UINT32*		m_palP;			// just a pointer to the palette ram which comes after the vram
 

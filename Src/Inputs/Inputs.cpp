@@ -33,7 +33,7 @@
 #include "InputSystem.h"
 #include "InputTypes.h"
 #include "Game.h"
-#include <stdarg.h>
+#include <cstdarg>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -53,10 +53,10 @@ CInputs::CInputs(CInputSystem *system)
 	uiSaveState        = AddSwitchInput("UISaveState",        "Save State",            Game::INPUT_UI, "KEY_F5");
 	uiChangeSlot       = AddSwitchInput("UIChangeSlot",       "Change Save Slot",      Game::INPUT_UI, "KEY_F6");
 	uiLoadState        = AddSwitchInput("UILoadState",        "Load State",            Game::INPUT_UI, "KEY_F7");
-	uiMusicVolUp	     = AddSwitchInput("UIMusicVolUp",		    "Increase Music Volume", Game::INPUT_UI, "KEY_F10");
-	uiMusicVolDown	   = AddSwitchInput("UIMusicVolDown",	    "Decrease Music Volume", Game::INPUT_UI, "KEY_F9");
-	uiSoundVolUp	     = AddSwitchInput("UISoundVolUp",		    "Increase Sound Volume", Game::INPUT_UI, "KEY_F12");
-	uiSoundVolDown	   = AddSwitchInput("UISoundVolDown",	    "Decrease Sound Volume", Game::INPUT_UI, "KEY_F11");
+	uiMusicVolUp       = AddSwitchInput("UIMusicVolUp",       "Increase Music Volume", Game::INPUT_UI, "KEY_F10");
+	uiMusicVolDown     = AddSwitchInput("UIMusicVolDown",     "Decrease Music Volume", Game::INPUT_UI, "KEY_F9");
+	uiSoundVolUp       = AddSwitchInput("UISoundVolUp",       "Increase Sound Volume", Game::INPUT_UI, "KEY_F12");
+	uiSoundVolDown     = AddSwitchInput("UISoundVolDown",     "Decrease Sound Volume", Game::INPUT_UI, "KEY_F11");
 	uiClearNVRAM       = AddSwitchInput("UIClearNVRAM",       "Clear NVRAM",           Game::INPUT_UI, "KEY_ALT+KEY_N");
 	uiSelectCrosshairs = AddSwitchInput("UISelectCrosshairs", "Select Crosshairs",     Game::INPUT_UI, "KEY_ALT+KEY_I");
 	uiToggleFrLimit    = AddSwitchInput("UIToggleFrameLimit", "Toggle Frame Limiting", Game::INPUT_UI, "KEY_ALT+KEY_T");
@@ -263,31 +263,31 @@ CInputs::CInputs(CInputSystem *system)
 	CAnalogInput *magicalLeverUp1   = AddAnalogInput("MagicalLeverUp1",   "P1 Magical Lever Up",    Game::INPUT_MAGTRUCK, "NONE");
 	CAnalogInput *magicalLeverDown1 = AddAnalogInput("MagicalLeverDown1", "P1 Magical Lever Down",  Game::INPUT_MAGTRUCK, "NONE");
 	CAnalogInput *magicalLeverUp2   = AddAnalogInput("MagicalLeverUp2",   "P2 Magical Lever Up",    Game::INPUT_MAGTRUCK, "NONE");
-  CAnalogInput *magicalLeverDown2 = AddAnalogInput("MagicalLeverDown2", "P2 Magical Lever Down",  Game::INPUT_MAGTRUCK, "NONE");
+	CAnalogInput *magicalLeverDown2 = AddAnalogInput("MagicalLeverDown2", "P2 Magical Lever Down",  Game::INPUT_MAGTRUCK, "NONE");
 
-  magicalLever1 = AddAxisInput(   "MagicalLever1", "P1 Magical Lever",  Game::INPUT_MAGTRUCK, "NONE", magicalLeverUp1, magicalLeverDown1, 0xFF, 0x80, 0);
-  magicalLever2 = AddAxisInput(   "MagicalLever2", "P2 Magical Lever",  Game::INPUT_MAGTRUCK, "NONE", magicalLeverUp2, magicalLeverDown2, 0xFF, 0x80, 0);
-  magicalPedal1 = AddSwitchInput( "MagicalPedal1", "P1 Magical Pedal",  Game::INPUT_MAGTRUCK, "NONE");
-  magicalPedal2 = AddSwitchInput( "MagicalPedal2", "P2 Magical Pedal",  Game::INPUT_MAGTRUCK, "NONE");
+	magicalLever1 = AddAxisInput(   "MagicalLever1", "P1 Magical Lever",  Game::INPUT_MAGTRUCK, "NONE", magicalLeverUp1, magicalLeverDown1, 0xFF, 0x80, 0);
+	magicalLever2 = AddAxisInput(   "MagicalLever2", "P2 Magical Lever",  Game::INPUT_MAGTRUCK, "NONE", magicalLeverUp2, magicalLeverDown2, 0xFF, 0x80, 0);
+	magicalPedal1 = AddSwitchInput( "MagicalPedal1", "P1 Magical Pedal",  Game::INPUT_MAGTRUCK, "NONE");
+	magicalPedal2 = AddSwitchInput( "MagicalPedal2", "P2 Magical Pedal",  Game::INPUT_MAGTRUCK, "NONE");
 
-  // Sega Bass Fishing controls
-  CAnalogInput *fishingRodLeft    = AddAnalogInput("FishingRodLeft",    "Rod Left",     Game::INPUT_FISHING, "NONE");
-  CAnalogInput *fishingRodRight   = AddAnalogInput("FishingRodRight",   "Rod Right",    Game::INPUT_FISHING, "NONE");
-  CAnalogInput *fishingRodUp      = AddAnalogInput("FishingRodUp",      "Rod Up",       Game::INPUT_FISHING, "NONE");
-  CAnalogInput *fishingRodDown    = AddAnalogInput("FishingRodDown",    "Rod Down",     Game::INPUT_FISHING, "NONE");
-  CAnalogInput *fishingStickLeft  = AddAnalogInput("FishingStickLeft",  "Stick Left",   Game::INPUT_FISHING, "NONE");
-  CAnalogInput *fishingStickRight = AddAnalogInput("FishingStickRight", "Stick Right",  Game::INPUT_FISHING, "NONE");
-  CAnalogInput *fishingStickUp    = AddAnalogInput("FishingStickUp",    "Stick Up",     Game::INPUT_FISHING, "NONE");
-  CAnalogInput *fishingStickDown  = AddAnalogInput("FishingStickDown",  "Stick Down",   Game::INPUT_FISHING, "NONE");
+	// Sega Bass Fishing controls
+	CAnalogInput *fishingRodLeft    = AddAnalogInput("FishingRodLeft",    "Rod Left",     Game::INPUT_FISHING, "NONE");
+	CAnalogInput *fishingRodRight   = AddAnalogInput("FishingRodRight",   "Rod Right",    Game::INPUT_FISHING, "NONE");
+	CAnalogInput *fishingRodUp      = AddAnalogInput("FishingRodUp",      "Rod Up",       Game::INPUT_FISHING, "NONE");
+	CAnalogInput *fishingRodDown    = AddAnalogInput("FishingRodDown",    "Rod Down",     Game::INPUT_FISHING, "NONE");
+	CAnalogInput *fishingStickLeft  = AddAnalogInput("FishingStickLeft",  "Stick Left",   Game::INPUT_FISHING, "NONE");
+	CAnalogInput *fishingStickRight = AddAnalogInput("FishingStickRight", "Stick Right",  Game::INPUT_FISHING, "NONE");
+	CAnalogInput *fishingStickUp    = AddAnalogInput("FishingStickUp",    "Stick Up",     Game::INPUT_FISHING, "NONE");
+	CAnalogInput *fishingStickDown  = AddAnalogInput("FishingStickDown",  "Stick Down",   Game::INPUT_FISHING, "NONE");
 
-  fishingRodX   = AddAxisInput(   "FishingRodX",    "Rod X-Axis",     Game::INPUT_FISHING, "NONE", fishingRodLeft, fishingRodRight, 0, 0x80, 0xFF);
-  fishingRodY   = AddAxisInput(   "FishingRodY",    "Rod Y-Axis",     Game::INPUT_FISHING, "NONE", fishingRodUp, fishingRodDown, 0, 0x80, 0xFF);
-  fishingReel   = AddAnalogInput( "FishingReel",    "Reel Speed",     Game::INPUT_FISHING, "NONE");
-  fishingStickX = AddAxisInput(   "FishingStickX",  "Stick X-Axis",   Game::INPUT_FISHING, "NONE", fishingStickLeft, fishingStickRight, 0, 0x80, 0xFF);
-  fishingStickY = AddAxisInput(   "FishingStickY",  "Stick Y-Axis",   Game::INPUT_FISHING, "NONE", fishingStickUp, fishingStickDown, 0, 0x80, 0xFF);
-  fishingCast   = AddSwitchInput( "FishingCast",    "Cast",           Game::INPUT_FISHING, "NONE");
-  fishingSelect = AddSwitchInput( "FishingSelect",  "Select",         Game::INPUT_FISHING, "NONE");
-  fishingTension = AddAnalogInput("FishingTension", "Tension",	      Game::INPUT_FISHING, "NONE"); // getbass only
+	fishingRodX   = AddAxisInput(   "FishingRodX",    "Rod X-Axis",     Game::INPUT_FISHING, "NONE", fishingRodLeft, fishingRodRight, 0, 0x80, 0xFF);
+	fishingRodY   = AddAxisInput(   "FishingRodY",    "Rod Y-Axis",     Game::INPUT_FISHING, "NONE", fishingRodUp, fishingRodDown, 0, 0x80, 0xFF);
+	fishingReel   = AddAnalogInput( "FishingReel",    "Reel Speed",     Game::INPUT_FISHING, "NONE");
+	fishingStickX = AddAxisInput(   "FishingStickX",  "Stick X-Axis",   Game::INPUT_FISHING, "NONE", fishingStickLeft, fishingStickRight, 0, 0x80, 0xFF);
+	fishingStickY = AddAxisInput(   "FishingStickY",  "Stick Y-Axis",   Game::INPUT_FISHING, "NONE", fishingStickUp, fishingStickDown, 0, 0x80, 0xFF);
+	fishingCast   = AddSwitchInput( "FishingCast",    "Cast",           Game::INPUT_FISHING, "NONE");
+	fishingSelect = AddSwitchInput( "FishingSelect",  "Select",         Game::INPUT_FISHING, "NONE");
+	fishingTension= AddAnalogInput("FishingTension", "Tension",	      Game::INPUT_FISHING, "NONE"); // getbass only
 }
 
 CInputs::~CInputs()
@@ -330,9 +330,9 @@ CGearShift4Input *CInputs::AddGearShift4Input(const char *id, const char *label,
 }
 
 CTriggerInput *CInputs::AddTriggerInput(const char *id, const char *label, unsigned gameFlags,
-	CSwitchInput *trigger, CSwitchInput *offscreen, UINT16 offVal, UINT16 onVal)
+	CSwitchInput *_trigger, CSwitchInput *offscreen, UINT16 offVal, UINT16 onVal)
 {
-	CTriggerInput *input = new CTriggerInput(id, label, gameFlags, trigger, offscreen, offVal, onVal);
+	CTriggerInput *input = new CTriggerInput(id, label, gameFlags, _trigger, offscreen, offVal, onVal);
 	m_inputs.push_back(input);
 	return input;
 }
@@ -342,11 +342,12 @@ void CInputs::PrintHeader(const char *fmt, ...)
 	char header[1024];
 	va_list vl;
 	va_start(vl, fmt);
-	vsprintf(header, fmt, vl);
+	vsnprintf(header, sizeof(header), fmt, vl);
 	va_end(vl);
 
 	puts(header);
-	for (size_t i = 0; i < strlen(header); i++)
+	const size_t s = strlen(header);
+	for (size_t i = 0; i < s; i++)
 		putchar('-');
 	printf("\n\n");
 }
@@ -501,9 +502,9 @@ Redisplay:
 
 		// Loop until user has selected a valid option
 		bool done = false;
-		char mapping[50];
 		while (!done)
 		{
+			char mapping[50];
 			// Wait for input from user
 			if (!m_system->ReadMapping(mapping, 50, false, READ_KEYBOARD|READ_MERGE, uiExit->GetMapping()))
 			{

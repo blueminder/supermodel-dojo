@@ -165,7 +165,7 @@ public:
    * This should be called when the command port is written.
    */
   void Flush(void);
-   
+
   /*
    * ReadDMARegister8(reg):
    * ReadDMARegister32(reg):
@@ -179,9 +179,9 @@ public:
    * Returns:
    *    Data of the requested size, in little endian.
    */
-  uint8_t ReadDMARegister8(unsigned reg);
-  uint32_t ReadDMARegister32(unsigned reg);
-  
+  uint8_t ReadDMARegister8(unsigned reg) const;
+  uint32_t ReadDMARegister32(unsigned reg) const;
+
   /*
    * WriteDMARegister8(reg, data):
    * WriteDMARegister32(reg, data);
@@ -195,7 +195,7 @@ public:
    */
   void WriteDMARegister8(unsigned reg, uint8_t data);
   void WriteDMARegister32(unsigned reg, uint32_t data);
-  
+
   /*
    * WriteLowCullingRAM(addr, data):
    *
@@ -289,7 +289,7 @@ public:
    *    The 32-bit status register.
    */
   uint32_t ReadRegister(unsigned reg);
-  
+
   /*
    * ReadPCIConfigSpace(device, reg, bits, offset):
    *
@@ -307,8 +307,8 @@ public:
    * Returns:
    *    Register data.
    */
-  uint32_t ReadPCIConfigSpace(unsigned device, unsigned reg, unsigned bits, unsigned width);
-  
+  uint32_t ReadPCIConfigSpace(unsigned device, unsigned reg, unsigned bits, unsigned offset) const;
+
   /*
    * WritePCIConfigSpace(device, reg, bits, offset, data):
    *
@@ -324,8 +324,8 @@ public:
    *            register number.
    *    data    Data.
    */
-  void WritePCIConfigSpace(unsigned device, unsigned reg, unsigned bits, unsigned width, uint32_t data);
-  
+  void WritePCIConfigSpace(unsigned device, unsigned reg, unsigned bits, unsigned offset, uint32_t data);
+
   /*
    * Reset(void):
    *
@@ -333,7 +333,7 @@ public:
    * device.
    */
   void Reset(void);
-  
+
   /*
    * AttachRenderer(render3DPtr):
    *

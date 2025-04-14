@@ -30,6 +30,7 @@
 
 #include <GL/glew.h>
 #include <memory>
+#include "Supermodel.h"
 #include "Util/NewConfig.h"
 #include "New3D/GLSLShader.h"
 #include "FBO.h"
@@ -147,7 +148,7 @@ public:
 	*
 	* Parameters:
 	*    bottom		Bottom surface
-	*	 top		Top surface	
+	*    top		Top surface	
 	*/
 	void AttachDrawBuffers(std::shared_ptr<TileGenBuffer> bottom, std::shared_ptr<TileGenBuffer> top);
 
@@ -171,7 +172,7 @@ public:
 	 *    OKAY is successful, otherwise FAILED if a non-recoverable error
 	 *    occurred. Prints own error messages.
 	 */
-	Result Init(unsigned xOffset, unsigned yOffset, unsigned xRes, unsigned yRes, unsigned totalXRes, unsigned totalYRes, unsigned aaTarget);
+	Result Init(unsigned xOffset, unsigned yOffset, unsigned xRes, unsigned yRes, unsigned totalXRes, unsigned totalYRes, unsigned aaTarget, UpscaleMode upscaleMode);
 
 	/*
 	 * CRender2D(config):
@@ -202,6 +203,7 @@ private:
 	unsigned  m_totalYPixels = 0;
 	unsigned  m_correction = 0;
 	GLuint m_aaTarget = 0;
+	UpscaleMode m_upscaleMode = UpscaleMode::Biquintic;
 
 	GLuint m_vao;
 	GLuint m_textureIDs[2];
