@@ -8,6 +8,7 @@ static const char *vertexShaderR3D = R"glsl(
 // uniforms
 uniform float	modelScale;
 uniform float	nodeAlpha;
+uniform float	cota;
 uniform mat4	modelMat;
 uniform mat4	projMat;
 uniform bool	translatorMap;
@@ -19,6 +20,7 @@ in  vec2	inTexCoord;
 in  vec4	inColour;
 in  vec3	inFaceNormal;		// used to emulate r3d culling 
 in  float	inFixedShade;
+in  float	inTextureNP;
 
 // outputs to fragment shader
 out vec3	fsViewVertex;
@@ -27,6 +29,7 @@ out vec2	fsTexCoord;
 out vec4	fsColor;
 out float	fsDiscard;			// can't have varying bool (glsl spec)
 out float	fsFixedShade;
+out float	fsLODBase;
 
 vec4 GetColour(vec4 colour)
 {
@@ -58,6 +61,7 @@ void main(void)
 	fsColor    		= GetColour(inColour);
 	fsTexCoord		= inTexCoord;
 	fsFixedShade	= inFixedShade;
+	fsLODBase		= -fsDiscard * cota * inTextureNP;
 	gl_Position		= projMat * modelMat * inVertex;
 }
 )glsl";
@@ -66,12 +70,12 @@ static const char *fragmentShaderR3D = R"glsl(
 
 #version 410 core
 
-uniform usampler2D tex1;			// entire texture sheet
+uniform usampler2D textureBank[2];			// entire texture sheet
 
 // texturing
 uniform bool	textureEnabled;
 uniform bool	microTexture;
-uniform float	microTextureScale;
+uniform float	microTextureMinLOD;
 uniform int		microTextureID;
 uniform ivec4	baseTexInfo;		// x/y are x,y positions in the texture sheet. z/w are with and height
 uniform int		baseTexType;
@@ -80,6 +84,7 @@ uniform bool	textureAlpha;
 uniform bool	alphaTest;
 uniform bool	discardAlpha;
 uniform ivec2	textureWrapMode;
+uniform int		texturePage;
 
 // general
 uniform vec3	fogColour;
@@ -100,8 +105,13 @@ uniform float	fogStart;
 uniform float	fogAttenuation;
 uniform float	fogAmbient;
 uniform bool	fixedShading;
+uniform bool	smoothShading;
 uniform int		hardwareStep;
 uniform int		colourLayer;
+uniform bool	polyAlpha;
+
+// matrices (shared with vertex shader)
+uniform mat4	projMat;
 
 //interpolated inputs from vertex shader
 in	vec3	fsViewVertex;
@@ -110,6 +120,7 @@ in  vec4	fsColor;
 in  vec2	fsTexCoord;
 in  float	fsDiscard;
 in  float	fsFixedShade;
+in	float	fsLODBase;
 
 //outputs
 layout(location = 0) out vec4 out0;		// opaque
@@ -135,7 +146,9 @@ void main()
 	if(fsDiscard > 0) {
 		discard;		//emulate back face culling here
 	}
-
+	
+	gl_FragDepth = projMat[3][2] * gl_FragCoord.w;
+	
 	fogData = vec4(fogColour.rgb * fogAmbient, CalcFog());
 	tex1Data = vec4(1.0, 1.0, 1.0, 1.0);
 
@@ -147,7 +160,7 @@ void main()
 	Step15Luminous(colData);			// no-op for step 2.0+	
 	finalData = tex1Data * colData;
 
-	if (finalData.a < (1.0/16.0)) {		// basically chuck out any totally transparent pixels value = 1/16 the smallest transparency level h/w supports
+	if (finalData.a < (1.0/32.0)) {		// basically chuck out any totally transparent pixels value = 1/16 the smallest transparency level h/w supports
 		discard;
 	}
 
@@ -204,7 +217,8 @@ void main()
 		sunFactor = clamp(sunFactor,-1.0,1.0);
 
 		// Optional clamping, value is allowed to be negative
-		if(sunClamp) {
+		// We suspect that translucent polygons are always clamped (e.g. lasers in Daytona 2)
+		if(sunClamp || polyAlpha) {
 			sunFactor = max(sunFactor,0.0);
 		}
 
@@ -223,20 +237,27 @@ void main()
 		// for now assume fixed shading doesn't work with specular
 		if (specularEnabled) {
 
-			float exponent, NdotL, specularFactor;
-			vec4 biasIndex, expIndex, multIndex;
+			float specularFactor;
 
-			// Always clamp floor to zero, we don't want deep black areas
-			NdotL = max(0.0,sunFactor);
+			if (smoothShading)
+			{
+				// Always clamp floor to zero
+				float NdotL = max(0.0, sunFactor);
 
-			expIndex = vec4(8.0, 16.0, 32.0, 64.0);
-			multIndex = vec4(2.0, 2.0, 3.0, 4.0);
-			biasIndex = vec4(0.95, 0.95, 1.05, 1.0);
-			exponent = expIndex[int(shininess)] / biasIndex[int(shininess)];
-
-			specularFactor = pow(NdotL, exponent);
-			specularFactor *= multIndex[int(shininess)];
-			specularFactor *= biasIndex[int(shininess)];
+				vec4 expIndex = vec4(8.0, 16.0, 32.0, 64.0);
+				vec4 multIndex = vec4(1.6, 1.6, 2.4, 3.2);
+				float exponent = expIndex[int(shininess)];
+			
+				specularFactor = pow(NdotL, exponent);
+				specularFactor *= multIndex[int(shininess)];
+			}
+			else
+			{
+				// flat shaded polys use Phong reflection model (R dot V) without any exponent or multiplier
+				// V = (0.0, 0.0, 1.0) is used by Model 3 as a fast approximation, so R dot V = R.z
+				vec3 R = reflect(-sunVector, fsViewNormal);
+				specularFactor = max(0.0, R.z);
+			}
 			
 			specularFactor *= specularValue;
 			specularFactor *= lighting[1].x;

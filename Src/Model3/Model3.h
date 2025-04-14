@@ -45,6 +45,8 @@
 #include "Network/INetBoard.h"
 #endif // NET_BOARD
 #include "Util/NewConfig.h"
+#include "Graphics/SuperAA.h"
+
 
 /*
  * FrameTimings
@@ -92,7 +94,7 @@ public:
   void RenderFrame(void);
   void Reset(void);
   const Game &GetGame(void) const;
-  void AttachRenderers(CRender2D *Render2DPtr, IRender3D *Render3DPtr);
+  void AttachRenderers(CRender2D *Render2DPtr, IRender3D *Render3DPtr, SuperAA *superAA);
   void AttachInputs(CInputs *InputsPtr);
   void AttachOutputs(COutputs *OutputsPtr);
   bool Init(void);
@@ -237,6 +239,7 @@ private:
 
   // Game and hardware information
   Game m_game;
+  int m_stepping;
 
   // Game inputs and outputs
   CInputs   *Inputs;
@@ -321,6 +324,7 @@ private:
   CDriveBoard *DriveBoard;    // Drive board
   CCrypto     m_cryptoDevice; // Encryption device
   CJTAG       m_jtag;         // JTAG interface
+  SuperAA     *m_superAA;
 #ifdef NET_BOARD
   INetBoard   *NetBoard;      // Net board
   bool		m_runNetBoard;

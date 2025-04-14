@@ -324,10 +324,12 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClCompile Include="..\Src\Graphics\New3D\R3DFrameBuffers.cpp" />
     <ClCompile Include="..\Src\Graphics\New3D\R3DScrollFog.cpp" />
     <ClCompile Include="..\Src\Graphics\New3D\R3DShader.cpp" />
+    <ClCompile Include="..\Src\Graphics\New3D\TextureBank.cpp" />
     <ClCompile Include="..\Src\Graphics\New3D\VBO.cpp" />
     <ClCompile Include="..\Src\Graphics\New3D\Vec.cpp" />
     <ClCompile Include="..\Src\Graphics\Render2D.cpp" />
     <ClCompile Include="..\Src\Graphics\Shader.cpp" />
+    <ClCompile Include="..\Src\Graphics\SuperAA.cpp" />
     <ClCompile Include="..\Src\Inputs\Input.cpp" />
     <ClCompile Include="..\Src\Inputs\Inputs.cpp" />
     <ClCompile Include="..\Src\Inputs\InputSource.cpp" />
@@ -396,7 +398,6 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\Src\Util\BitRegister.cpp" />
     <ClCompile Include="..\Src\Util\ByteSwap.cpp" />
     <ClCompile Include="..\Src\Util\ConfigBuilders.cpp" />
     <ClCompile Include="..\Src\Util\Format.cpp" />
@@ -502,11 +503,13 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClInclude Include="..\Src\Graphics\New3D\R3DShaderCommon.h" />
     <ClInclude Include="..\Src\Graphics\New3D\R3DShaderQuads.h" />
     <ClInclude Include="..\Src\Graphics\New3D\R3DShaderTriangles.h" />
+    <ClInclude Include="..\Src\Graphics\New3D\TextureBank.h" />
     <ClInclude Include="..\Src\Graphics\New3D\VBO.h" />
     <ClInclude Include="..\Src\Graphics\New3D\Vec.h" />
     <ClInclude Include="..\Src\Graphics\Render2D.h" />
     <ClInclude Include="..\Src\Graphics\Shader.h" />
     <ClInclude Include="..\Src\Graphics\Shaders2D.h" />
+    <ClInclude Include="..\Src\Graphics\SuperAA.h" />
     <ClInclude Include="..\Src\Inputs\Input.h" />
     <ClInclude Include="..\Src\Inputs\Inputs.h" />
     <ClInclude Include="..\Src\Inputs\InputSource.h" />
@@ -560,7 +563,6 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClInclude Include="..\Src\Sound\SCSPDSP.h" />
     <ClInclude Include="..\Src\Supermodel.h" />
     <ClInclude Include="..\Src\Util\BitCast.h" />
-    <ClInclude Include="..\Src\Util\BitRegister.h" />
     <ClInclude Include="..\Src\Util\BMPFile.h" />
     <ClInclude Include="..\Src\Util\ByteSwap.h" />
     <ClInclude Include="..\Src\Util\ConfigBuilders.h" />

@@ -10,18 +10,6 @@
 
 namespace New3D {
 
-struct ClipVertex
-{
-	float pos[4];
-};
-
-struct ClipPoly
-{
-	ClipVertex list[12];		// what's the max number we can hit for a triangle + 4 planes?
-	int count = 0;
-};
-
-
 struct Vertex					// half vertex
 {
 	float pos[4];
@@ -52,6 +40,7 @@ struct R3DPoly
 	Vertex v[4];			// just easier to have them as an array
 	float faceNormal[3];	// we need this to help work out poly winding, i assume the h/w uses this instead of calculating normals itself
 	UINT8 faceColour[4];	// per face colour
+	float textureNP;
 	int number = 4;
 };
 
@@ -59,6 +48,7 @@ struct FVertex : Vertex			// full vertex including face attributes
 {
 	float faceNormal[3];
 	UINT8 faceColour[4];
+	float textureNP;
 
 	FVertex& operator=(const Vertex& vertex) 
 	{
@@ -71,6 +61,7 @@ struct FVertex : Vertex			// full vertex including face attributes
 	{
 		for (int i = 0; i < 4; i++) { faceColour[i] = r3dPoly.faceColour[i]; }
 		for (int i = 0; i < 3; i++) { faceNormal[i] = r3dPoly.faceNormal[i]; }
+		textureNP = r3dPoly.textureNP;
 
 		*this = r3dPoly.v[index];
 	}
@@ -82,6 +73,7 @@ struct FVertex : Vertex			// full vertex including face attributes
 		// copy face attributes
 		for (int i = 0; i < 4; i++) { faceColour[i] = r3dPoly.faceColour[i]; }
 		for (int i = 0; i < 3; i++) { faceNormal[i] = r3dPoly.faceNormal[i]; }
+		textureNP = r3dPoly.textureNP;
 	}
 
 	static void Average(const FVertex& p1, const FVertex& p2, FVertex& p3)
@@ -128,15 +120,21 @@ struct Mesh
 	enum TexWrapMode : int { repeat = 0, repeatClamp, mirror, mirrorClamp };
 
 	// texture
-	int format, x, y, width, height = 0;
+	int		format		= 0;
+	int		x			= 0;
+	int		y			= 0;
+	int		width		= 0;
+	int		height		= 0;
+	int		page		= 0;
+	bool	inverted	= false;
+
 	TexWrapMode wrapModeU;
 	TexWrapMode wrapModeV;
-	bool inverted = false;
 
 	// microtexture
 	bool	microTexture		= false;
 	int		microTextureID		= 0;
-	float	microTextureScale	= 0;
+	float	microTextureMinLOD	= 0;
 
 	// attributes
 	bool textured		= false;
@@ -151,6 +149,7 @@ struct Mesh
 
 	// lighting
 	bool fixedShading	= false;
+	bool smoothShading	= false;
 	bool lighting		= false;
 	bool specular		= false;
 	float shininess		= 0;
@@ -201,6 +200,7 @@ struct Viewport
 	float	angle_right;
 	float	angle_top;
 	float	angle_bottom;
+	float	cota;
 
 	Mat4	projectionMatrix;		// projection matrix, we will calc this later when we have scene near/far vals
 

@@ -75,7 +75,6 @@
 #define MEM_POOL_SIZE_DIRTY (DIRTY_SIZE(MEM_POOL_SIZE_RO))
 #define MEMORY_POOL_SIZE  (MEM_POOL_SIZE_RW+MEM_POOL_SIZE_RO+MEM_POOL_SIZE_DIRTY)
 
-static void UpdateRenderConfig(IRender3D *Render3D, uint64_t internalRenderConfig[]);
 
 
 /******************************************************************************
@@ -102,7 +101,8 @@ void CReal3D::SaveState(CBlockFile *SaveState)
   SaveState->Write(m_internalRenderConfig, sizeof(m_internalRenderConfig));
   SaveState->Write(commandPortWritten);
   SaveState->Write(&m_pingPong, sizeof(m_pingPong));
-  for (int i = 0; i < 39; i++)
+  SaveState->Write(&m_modeword, sizeof(m_modeword));
+  for (int i = 0; i < 19; i++)
   {
     uint8_t nul = 0;
     SaveState->Write(&nul, sizeof(uint8_t));
@@ -137,10 +137,11 @@ void CReal3D::LoadState(CBlockFile *SaveState)
   SaveState->Read(&dmaConfig, sizeof(dmaConfig));
 
   SaveState->Read(m_internalRenderConfig, sizeof(m_internalRenderConfig));
-  UpdateRenderConfig(Render3D, m_internalRenderConfig);
   SaveState->Read(&commandPortWritten);
   SaveState->Read(&m_pingPong, sizeof(m_pingPong));
-  for (int i = 0; i < 39; i++)
+  SaveState->Read(&m_modeword, sizeof(m_modeword));
+  Render3D->SetSunClamp((m_modeword[4] & 0x40000) == 0);
+  for (int i = 0; i < 19; i++)
   {
     uint8_t nul;
     SaveState->Read(&nul, sizeof(uint8_t));
@@ -154,13 +155,6 @@ void CReal3D::LoadState(CBlockFile *SaveState)
  Rendering
 ******************************************************************************/
 
-static void UpdateRenderConfig(IRender3D *Render3D, uint64_t internalRenderConfig[])
-{
-  bool noSunClamp = (internalRenderConfig[0] & 0x800000) != 0 && (internalRenderConfig[1] & 0x400000) != 0;
-  bool shadeIsSigned = (internalRenderConfig[0] & 0x1) == 0;
-  Render3D->SetSunClamp(!noSunClamp);
-  Render3D->SetSignedShade(shadeIsSigned);
-}
 
 void CReal3D::BeginVBlank(int statusCycles)
 {
@@ -326,18 +320,6 @@ static const unsigned decode8x2[16] =
   15, 14
 };
 
-static const unsigned decode8x1[8] =
-{
-  1,
-  3,
-  0,
-  2,
-  5,
-  7,
-  4,
-  6
-};
-
 void CReal3D::StoreTexture(unsigned level, unsigned xPos, unsigned yPos, unsigned width, unsigned height, const uint16_t *texData, bool sixteenBit, bool writeLSB, bool writeMSB, uint32_t &texDataOffset)
 {
   uint32_t tileX = (std::min)(8u, width);
@@ -360,16 +342,17 @@ void CReal3D::StoreTexture(unsigned level, unsigned xPos, unsigned yPos, unsigne
           {
             if (m_gpuMultiThreaded)
               MARK_DIRTY(textureRAMDirty, destOffset * 2);
-            if (tileX == 1) texData -= tileY;
-            if (tileY == 1) texData -= tileX;
-            if (tileX == 8)
+
+            if (tileX == 8) {
               textureRAM[destOffset++] = texData[decode8x8[yy * tileX + xx]];
-            else if (tileX == 4)
+            }
+            else if (tileX == 4) {
               textureRAM[destOffset++] = texData[decode8x4[yy * tileX + xx]];
-            else if (tileX == 2)
+            }
+            else if (tileX == 2) {
               textureRAM[destOffset++] = texData[decode8x2[yy * tileX + xx]];
-            else if (tileX == 1)
-              textureRAM[destOffset++] = texData[decode8x1[yy * tileX + xx]];
+            }
+
             texDataOffset++;
           }
           destOffset += 2048 - tileX; // next line
@@ -409,16 +392,17 @@ void CReal3D::StoreTexture(unsigned level, unsigned xPos, unsigned yPos, unsigne
               textureRAM[destOffset] &= byteMask[byteSelect];
               const uint8_t shift = (8 * ((xx & 1) ^ 1));
               const uint8_t index = (yy ^ 1) * tileX + (xx ^ 1) - (tileX & 1);
-              if (tileX == 1) texData -= tileY;
-              if (tileY == 1) texData -= tileX;
-              if (tileX == 8)
+
+              if (tileX == 8) {
                 tempData = (texData[decode8x8[index] / 2] >> shift) & 0xFF;
-              else if (tileX == 4)
+              }
+              else if (tileX == 4) {
                 tempData = (texData[decode8x4[index] / 2] >> shift) & 0xFF;
-              else if (tileX == 2)
+              }
+              else if (tileX == 2) {
                 tempData = (texData[decode8x2[index] / 2] >> shift) & 0xFF;
-              else if (tileX == 1)
-                tempData = (texData[decode8x1[index] / 2] >> shift) & 0xFF;
+              }
+
               tempData |= tempData << 8;
               tempData &= byteMask[byteSelect] ^ 0xFFFF;
               textureRAM[destOffset] |= tempData;
@@ -492,9 +476,10 @@ void CReal3D::UploadTexture(uint32_t header, const uint16_t *texData)
     if (type == 0x01) {
       break;
     }
+    [[fallthrough]];
   case 0x02:  // mipmaps only
   {
-    for (int i = 1; width > 0 && height > 0; i++) {
+    for (int i = 1; width >=4 && height >=4; i++) {
 
       int xPos = mipXBase[i] + (x / mipDivisor[i]);
       int yPos = mipYBase[i] + (y / mipDivisor[i]);
@@ -715,7 +700,13 @@ void CReal3D::WriteTexturePort(unsigned reg, uint32_t data)
     {
       uint32_t addr = m_vromTextureFIFO[0];
       uint32_t header = m_vromTextureFIFO[1];
-      UploadTexture(header, (const uint16_t *) &vrom[addr & 0xFFFFFF]);
+
+      // first 4 MB maps to polygon RAM rather than VROM
+      // Daytona 2 PE uses zeroed data to replace unused Dreamcast logo textures
+      if (addr < 0x100000)
+        UploadTexture(header, (const uint16_t*)&polyRAM[addr & 0xFFFFFF]);
+      else
+        UploadTexture(header, (const uint16_t*)&vrom[addr & 0xFFFFFF]);
       m_vromTextureFIFOIdx = 0;
     }
     else
@@ -744,14 +735,19 @@ void CReal3D::WritePolygonRAM(uint32_t addr, uint32_t data)
   polyRAM[addr/4] = data;
 }
 
-// Internal registers accessible via JTAG port
-void CReal3D::WriteJTAGRegister(uint64_t instruction, uint64_t data)
+void CReal3D::WriteJTAGModeword(CASIC::Name device, uint32_t data)
 {
-  if (instruction == CJTAG::Instruction::SetReal3DRenderConfig0)
-    m_internalRenderConfig[0] = data;
-  else if (instruction == CJTAG::Instruction::SetReal3DRenderConfig1)
-    m_internalRenderConfig[1] = data;
-  UpdateRenderConfig(Render3D, m_internalRenderConfig);
+    if (device == CASIC::Name::Dummy)
+        return;
+
+    m_modeword[static_cast<int>(device)] = data;
+
+    switch (device)
+    {
+    case CASIC::Name::Mars:
+        Render3D->SetSunClamp((data & 0x40000) == 0);
+        break;
+    }
 }
 
 // Registers correspond to the Stat_Pckt in the Real3d sdk
@@ -910,12 +906,6 @@ void CReal3D::AttachRenderer(IRender3D *Render3DPtr)
   DebugLog("Real3D attached a Render3D object\n");
 }
 
-uint32_t CReal3D::GetASICIDCode(ASIC asic) const
-{
-  auto it = m_asicID.find(asic);
-  return it == m_asicID.end() ? 0 : it->second;
-}
-
 void CReal3D::SetStepping(int stepping)
 {
   step = stepping;
@@ -931,42 +921,6 @@ void CReal3D::SetStepping(int stepping)
   // Pass to renderer
   if (Render3D != NULL)
     Render3D->SetStepping(step);
-
-  // Set ASIC ID codes
-  m_asicID.clear();
-  if (step == 0x10)
-  {
-    m_asicID = decltype(m_asicID)
-    {
-      { ASIC::Mercury,  0x216c3057 },
-      { ASIC::Venus,    0x116c4057 },
-      { ASIC::Earth,    0x216c5057 },
-      { ASIC::Mars,     0x116c6057 },
-      { ASIC::Jupiter,  0x116c7057 }
-    };
-  }
-  else if (step == 0x15)
-  {
-    m_asicID = decltype(m_asicID)
-    {
-      { ASIC::Mercury,  0x316c3057 },
-      { ASIC::Venus,    0x216c4057 },
-      { ASIC::Earth,    0x316c5057 },
-      { ASIC::Mars,     0x216c6057 },
-      { ASIC::Jupiter,  0x316c7057 }
-    };
-  }
-  else if (step >= 0x20)
-  {
-    m_asicID = decltype(m_asicID)
-    {
-      { ASIC::Mercury,  0x416c3057 },
-      { ASIC::Venus,    0x316c4057 }, // skichamp @ pc=0xa89f4, this value causes 'NO DAUGHTER BOARD' message
-      { ASIC::Earth,    0x416c5057 },
-      { ASIC::Mars,     0x316c6057 },
-      { ASIC::Jupiter,  0x416c7057 }
-    };
-  }
 
   DebugLog("Real3D set to Step %d.%d\n", (step>>4)&0xF, step&0xF);
 }
