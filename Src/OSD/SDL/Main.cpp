@@ -1,7 +1,7 @@
 /**
  ** Supermodel
  ** A Sega Model 3 Arcade Emulator.
- ** Copyright 2003-2024 The Supermodel Team
+ ** Copyright 2003-2025 The Supermodel Team
  **
  ** This file is part of Supermodel.
  **
@@ -101,6 +101,7 @@
 #include "Util/BMPFile.h"
 
 #include "Crosshair.h"
+#include "OSD/DefaultConfigFile.h"
 
 #include "Dojo/Dojo.h"
 
@@ -726,7 +727,7 @@ static void SaveState(IEmulator *Model3, bool clip_save=false)
   Model3->SaveState(&SaveState);
   SaveState.Close();
   printf("Saved state to '%s'.\n", file_path.c_str());
-  DebugLog("Saved state to '%s'.\n", file_path.c_str());
+  InfoLog("Saved state to '%s'.", file_path.c_str());
 }
 
 static void LoadState(IEmulator *Model3, std::string file_path = std::string())
@@ -762,7 +763,7 @@ static void LoadState(IEmulator *Model3, std::string file_path = std::string())
   Model3->LoadState(&SaveState);
   SaveState.Close();
   printf("Loaded state from '%s'.\n", file_path.c_str());
-  DebugLog("Loaded state from '%s'.\n", file_path.c_str());
+  InfoLog("Loaded state from '%s'.", file_path.c_str());
 }
 
 static void SaveNVRAM(IEmulator *Model3)
@@ -784,7 +785,7 @@ static void SaveNVRAM(IEmulator *Model3)
   // Save NVRAM
   Model3->SaveNVRAM(&NVRAM);
   NVRAM.Close();
-  DebugLog("Saved NVRAM to '%s'.\n", file_path.c_str());
+  InfoLog("Saved NVRAM to '%s'.", file_path.c_str());
 }
 
 static void LoadNVRAM(IEmulator *Model3)
@@ -820,7 +821,7 @@ static void LoadNVRAM(IEmulator *Model3)
     // Load
     Model3->LoadNVRAM(&NVRAM);
     NVRAM.Close();
-    DebugLog("Loaded NVRAM from '%s'.\n", file_path.c_str());
+    InfoLog("Loaded NVRAM from '%s'.", file_path.c_str());
   }
 }
 
@@ -1221,9 +1222,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
 
       // Delete renderers and recreate them afterwards since GL context will most likely be lost when switching from/to fullscreen
       delete Render2D;
-      delete Render3D;
       Render2D = nullptr;
-      Render3D = nullptr;
 
       // Resize screen
       totalXRes = xRes = s_runtime_config["XResolution"].ValueAs<unsigned>();
@@ -1236,15 +1235,13 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
       // Recreate renderers and attach to the emulator
       superAA->Init(totalXRes, totalYRes);
       Render2D = new CRender2D(s_runtime_config);
-      Render3D = s_runtime_config["New3DEngine"].ValueAs<bool>() ? ((IRender3D *) new New3D::CNew3D(s_runtime_config, Model3->GetGame().name)) : ((IRender3D *) new Legacy3D::CLegacy3D(s_runtime_config));
+
       if (Result::OKAY != Render2D->Init(xOffset * aaValue, yOffset * aaValue, xRes * aaValue, yRes * aaValue, totalXRes * aaValue, totalYRes * aaValue, superAA->GetTargetID(), upscaleMode))
         goto QuitError;
       if (Result::OKAY != Render3D->Init(xOffset * aaValue, yOffset * aaValue, xRes * aaValue, yRes * aaValue, totalXRes * aaValue, totalYRes * aaValue, superAA->GetTargetID()))
         goto QuitError;
 
       Model3->AttachRenderers(Render2D, Render3D, superAA);
-
-      Render3D->UploadTextures(0, 0, 0, 2048, 2048);    // sync texture memory
 
       Inputs->GetInputSystem()->SetMouseVisibility(!s_runtime_config["FullScreen"].ValueAs<bool>());
     }
@@ -1562,8 +1559,34 @@ QuitError:
 
 
 /******************************************************************************
- Entry Point and Command Line Procesing
+ Entry Point and Command Line Processing
 ******************************************************************************/
+
+// Configuration file is generated whenever it is not present. We no longer
+// distribute it with Supermodel to make it easier to upgrade Supermodel from
+// .zip archives without accidentally overwriting the configuration.
+static void WriteDefaultConfigurationFileIfNotPresent()
+{
+  // Test whether file exists by opening it
+  FILE *fp = fopen(s_configFilePath.c_str(), "r");
+  if (fp)
+  {
+    fclose(fp);
+    return;
+  }
+
+  // Write config
+  fp = fopen(s_configFilePath.c_str(), "w");
+  if (!fp)
+  {
+    ErrorLog("Unable to write default configuration file to %s", s_configFilePath.c_str());
+    return;
+  }
+  fputs(s_defaultConfigFileContents, fp);
+  fclose(fp);
+  InfoLog("Wrote default configuration file to %s", s_configFilePath.c_str());
+}
+
 // Create and configure inputs
 static Result ConfigureInputs(CInputs *Inputs, Util::Config::Node *fileConfig, Util::Config::Node *runtimeConfig, const Game &game, bool configure)
 {
@@ -1702,6 +1725,7 @@ static Util::Config::Node DefaultConfig()
   config.Set("ShowFrameRate", false);
   config.Set("Crosshairs", int(0));
   config.Set("CrosshairStyle", "vector");
+  config.Set("NoWhiteFlash", false);
   config.Set("FlipStereo", false);
 #ifdef SUPERMODEL_WIN32
   config.Set("InputSystem", "dinput");
@@ -1757,7 +1781,7 @@ static Util::Config::Node DefaultConfig()
 static void Title(void)
 {
   puts("Supermodel: A Sega Model 3 Arcade Emulator (Version " SUPERMODEL_VERSION ")");
-  puts("Copyright 2003-2024 by The Supermodel Team");
+  puts("Copyright 2003-2025 by The Supermodel Team");
 }
 
 static void Help(void)
@@ -1806,6 +1830,7 @@ static void Help(void)
   puts("  -legacy3d               Legacy 3D engine (faster but less accurate)");
   puts("  -multi-texture          Use 8 texture maps for decoding (legacy engine)");
   puts("  -no-multi-texture       Decode to single texture (legacy engine) [Default]");
+  puts("  -no-white-flash         Disables white flash when games disable 3D rendering");
   puts("  -vert-shader=<file>     Load Real3D vertex shader for 3D rendering");
   puts("  -frag-shader=<file>     Load Real3D fragment shader for 3D rendering");
   puts("  -vert-shader-fog=<file> Load Real3D scroll fog vertex shader (new engine)");
@@ -1946,6 +1971,8 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
     { "-no-dsb",              { "EmulateDSB",       false } },
     { "-legacy-scsp",         { "LegacySoundDSP",   true } },
     { "-new-scsp",            { "LegacySoundDSP",   false } },
+    { "-no-white-flash",      { "NoWhiteFlash",     true } },
+    { "-white-flash",         { "NoWhiteFlash",     false } },
 #ifdef NET_BOARD
     { "-net",                 { "Network",       true } },
     { "-no-net",              { "Network",       false } },
@@ -2227,6 +2254,7 @@ int main(int argc, char **argv)
   // Load game and resolve run-time config
   Game game;
   ROMSet rom_set;
+  WriteDefaultConfigurationFileIfNotPresent();
   Util::Config::Node fileConfig("Global");
   {
     Util::Config::Node fileConfigWithDefaults("Global");
@@ -2306,7 +2334,9 @@ int main(int argc, char **argv)
 
   // Create input system
   if (selectedInputSystem == "sdl")
-    InputSystem = new CSDLInputSystem(s_runtime_config);
+    InputSystem = new CSDLInputSystem(s_runtime_config, false);
+  else if (selectedInputSystem == "sdlgamepad")
+    InputSystem = new CSDLInputSystem(s_runtime_config, true);
 #ifdef SUPERMODEL_WIN32
   else if (selectedInputSystem == "dinput")
     InputSystem = new CDirectInputSystem(s_runtime_config, s_window, false, false);
