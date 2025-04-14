@@ -2,7 +2,6 @@
 #define _MODEL_H_
 
 #include <vector>
-#include <unordered_map>
 #include <memory>
 #include <cstring>
 #include "Types.h"
@@ -128,8 +127,8 @@ struct Mesh
 	int		page		= 0;
 	bool	inverted	= false;
 
-	TexWrapMode wrapModeU;
-	TexWrapMode wrapModeV;
+	TexWrapMode wrapModeU = TexWrapMode::repeat;
+	TexWrapMode wrapModeV = TexWrapMode::repeat;
 
 	// microtexture
 	bool	microTexture		= false;
@@ -234,7 +233,7 @@ public:
 
 	bool Push();
 	bool Pop();
-	bool StackLimit();
+	bool StackLimit() const;
 	void Reset();
 
 	int currentTexOffsetX;
