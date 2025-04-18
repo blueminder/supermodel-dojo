@@ -7,7 +7,7 @@ In addition to the features described above, Supermodel Dojo also contains a fro
 
 # Netplay Supported Games
 
-Currently, **Supermodel Dojo** netplay functionality only supports games with 2 joysticks and digital buttons, including:
+Currently, Supermodel Dojo __netplay__ functionality only supports games with 2 joysticks and digital buttons, including:
 
 * Virtua Fighter 3
 * Virtua Fighter 3 Team Battle
