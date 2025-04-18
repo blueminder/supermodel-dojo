@@ -5,7 +5,7 @@
 
 In addition to the features described above, Supermodel Dojo also contains a frontend for the emulator to make launching your favorite games and adjusting settings easier than ever.
 
-# Supported Games
+# Netplay Supported Games
 
 Currently, **Supermodel Dojo** netplay functionality only supports games with 2 joysticks and digital buttons, including:
 
