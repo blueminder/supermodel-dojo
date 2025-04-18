@@ -57,6 +57,7 @@ namespace Dojo {
 
     inline std::string target_ip;
     inline uint16_t target_port = 5000;
+    inline uint16_t source_port = 0;
 
     inline bool net_replay = false;
 };

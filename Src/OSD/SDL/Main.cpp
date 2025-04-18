@@ -939,6 +939,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Model3, CInputs *In
   Dojo::target_ip = s_runtime_config["TargetIP"].ValueAs<std::string>();
   Dojo::target_port = s_runtime_config["TargetPort"].ValueAs<uint16_t>();
   Dojo::delay = s_runtime_config["Delay"].ValueAs<uint32_t>();
+  Dojo::source_port = s_runtime_config["SourcePort"].ValueAs<uint16_t>();
 
   bool recordSession = false;
   bool trainSession = false;
@@ -1775,6 +1776,7 @@ static Util::Config::Node DefaultConfig()
   config.Set("TargetPort", 5000);
   config.Set("Netplay", false);
   config.Set("Delay", 0);
+  config.Set("SourcePort", 0);
   return config;
 }
 
@@ -1936,6 +1938,7 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
     { "-target-ip",             "TargetIP"                },
     { "-target-port",           "TargetPort"              },
     { "-delay",                 "Delay"                   },
+    { "-source-port",           "SourcePort"              },
   };
   static const std::map<std::string, std::pair<std::string, bool>> bool_options
   { // -option

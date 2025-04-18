@@ -96,14 +96,21 @@ void Dojo::Netplay::ClientThread()
 	uint32_t index = 0;
 	int player = 1;
 	int delay = Dojo::delay;
+	int source_port = Dojo::source_port;
 
 	ENetHost* host;
 	ENetPeer* peer;
 
-	host = enet_host_create(nullptr, 1, 2, 0, 0);
+	ENetAddress addr;
+
+	if (source_port > 0)
+		addr = { ENET_HOST_ANY, source_port };
+	else
+		addr = { 0 };
+
+	host = enet_host_create(&addr, 1, 2, 0, 0);
 	assert(host != nullptr);
 
-	ENetAddress addr = { 0 };
 	enet_address_set_host(&addr, target_ip.data());
 	addr.port = target_port;
 	peer = enet_host_connect(host, &addr, 2, 0);
