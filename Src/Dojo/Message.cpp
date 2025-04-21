@@ -75,7 +75,7 @@ void Dojo::Message::Writer::AppendHeader(uint32_t _sequence, uint32_t _command)
 
 uint32_t Dojo::Message::Writer::UpdateSize()
 {
-  size = message.size() - HEADER_LEN;
+  size = (uint32_t)(message.size() - HEADER_LEN);
   message[0] = (uint8_t)(size & 0xFF);
   message[1] = (uint8_t)((size >> 8) & 0xFF);
   message[2] = (uint8_t)((size >> 16) & 0xFF);
@@ -98,7 +98,7 @@ void Dojo::Message::Writer::AppendInt(uint32_t value)
 
 void Dojo::Message::Writer::AppendString(std::string value)
 {
-  AppendInt(value.size() + 1);
+  AppendInt((uint32_t)value.size() + 1);
   for (int i = 0; i < value.size() + 1; i++)
   {
     message.push_back((uint8_t)value.data()[i]);
@@ -108,7 +108,7 @@ void Dojo::Message::Writer::AppendString(std::string value)
 void Dojo::Message::Writer::AppendData(const char* value, uint32_t size)
 {
   AppendInt(size);
-  for (int i = 0; i < size; i++)
+  for (uint32_t i = 0; i < size; i++)
   {
     message.push_back((uint8_t)value[i]);
   }
@@ -117,7 +117,7 @@ void Dojo::Message::Writer::AppendData(const char* value, uint32_t size)
 // append int by divisible data size after header before calling
 void Dojo::Message::Writer::AppendContinuousData(const char* value, uint32_t size)
 {
-  for (int i = 0; i < size; i++)
+  for (uint32_t i = 0; i < size; i++)
   {
     message.push_back((uint8_t)value[i]);
   }
@@ -171,7 +171,7 @@ void Dojo::Message::ProcessBody(uint32_t cmd, uint32_t body_size, const char* bu
     uint32_t frame_size = Message::ReadInt((const char*)buffer, offset);
 
     // read frames
-    while (*offset < body_size)
+    while (*offset < (int)body_size)
     {
       std::string frame = Message::ReadContinuousData((const char*)buffer, offset, frame_size);
       Dojo::AddNetFrame(frame.data());

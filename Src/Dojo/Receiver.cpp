@@ -104,7 +104,7 @@ void Dojo::Receiver::ReceiverThread()
     std::vector<uint8_t> msg = spectate_request.Msg();
 
     result = SDLNet_TCP_Send(tcpsock, &msg[0], spectate_request.GetSize()); /* add 1 for the NULL */
-    if (result < spectate_request.GetSize())
+    if (result < (int)spectate_request.GetSize())
     {
       printf("SDLNet_TCP_Send: %s\n", SDLNet_GetError());
     }

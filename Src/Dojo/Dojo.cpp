@@ -70,7 +70,7 @@ void Dojo::Init(std::string game_name, bool record_session, bool train_session, 
 void Dojo::FillDelay()
 {
   // add buffer frames for delay
-  for (int d = 0; d < delay; d++)
+  for (uint32_t d = 0; d < delay; d++)
   {
     auto p1_frame = Dojo::Frame::Create(d, 0, 0, 0);
     auto p2_frame = Dojo::Frame::Create(d, 1, 0, 0);
@@ -81,7 +81,7 @@ void Dojo::FillDelay()
 
   if (hosting)
   {
-    for (int d = 0; d < (delay * 2) + 1; d++)
+    for (uint32_t d = 0; d < (delay * 2) + 1; d++)
     {
       auto buffer_frame = Dojo::Frame::Create(d, 1, 0, 0);
       AddNetFrame(buffer_frame.data());
