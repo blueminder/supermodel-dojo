@@ -94,3 +94,63 @@ For instance, if my opponent’s average ping is 42 ms, I would divide it by 32 
 ```
 
 If you or your opponent are on WiFi, or you have a fluctuating connection, be sure to bump the delay up a little bit to compensate for this.
+
+## Build Instructions
+
+### Windows
+
+The preferred method for building Supermodel is to use GCC and MSYS2. After installing [MSYS2](https://msys2.org), open the MSYS2 shell and install the required dependencies using the pacman package manager:
+
+- GCC (```mingw64/mingw-w64-x86_64-gcc```)
+- Make (```mingw64/mingw-w64-x86_64-make```)
+- SDL2 (```mingw64/mingw-w64-x86_64-SDL2```, ```mingw64/mingw-w64-x86_64-SDL2_net```)
+
+This can be done using the following commands:
+
+```
+pacman -S mingw64/mingw-w64-x86_64-gcc
+pacman -S mingw64/mingw-w64-x86_64-make
+pacman -S mingw64/mingw-w64-x86_64-SDL2
+pacman -S mingw64/mingw-w64-x86_64-SDL2_net
+```
+
+At this point, you can continue using either the MSYS2 shell or Windows Command Prompt but ensure that both ```gcc``` and ```mingw32-make``` are in your path. In MSYS2, the location of these binaries will be ```/mingw64/bin``` and for Command Prompt, assuming MSYS2 was installed in the default location, add ```C:\msys64\mingw64\bin``` to your Windows ```PATH``` variable.
+
+Build the Supermodel Dojo emulator:
+```
+mingw32-make -f Makefiles/Makefile.Win32 NET_BOARD=1
+```
+
+You will find `supermodel` in the `bin` folder.
+
+Build the frontend:
+```
+cd Frontend
+make
+```
+
+Make sure `dojo.exe` and `supermodel.exe` are placed together in the same folder, following the same structure found in the latest Release archive.
+
+### Linux
+
+Ensure SDL2 is installed. Most package managers ought to have this available. For example, on Ubuntu, it should be sufficient to run:
+
+```
+sudo apt install libsdl2-dev
+sudo apt install libsdl2-net-dev
+```
+
+Build the Supermodel Dojo emulator:
+```
+make -f Makefiles/Makefile.UNIX NET_BOARD=1
+```
+
+You will find `supermodel` in the `bin` folder.
+
+Build the frontend:
+```
+cd Frontend
+make
+```
+
+Make sure the `dojo` and `supermodel` binaries are placed together in the same folder, following the same structure found in the latest Release archive.
