@@ -68,8 +68,8 @@ std::string Dojo::Training::ToggleRandomPlayback()
   if (!playing_input)
   {
     auto it = recorded_slots.cbegin();
-    srand(time(0));
-    int rnd = rand() % recorded_slots.size();
+    srand((unsigned int)time(nullptr));
+    int rnd = rand() % (int)recorded_slots.size();
     std::advance(it, rnd);
     current_record_slot = *it;
   }

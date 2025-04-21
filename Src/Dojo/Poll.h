@@ -1,5 +1,5 @@
 #include <bitset>
-#include "Input.h"
+#include "Inputs/Input.h"
 
 namespace Dojo::Poll {
     void StartAction();

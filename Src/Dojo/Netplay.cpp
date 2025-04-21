@@ -96,7 +96,7 @@ void Dojo::Netplay::ClientThread()
 	uint32_t index = 0;
 	int player = 1;
 	int delay = Dojo::delay;
-	int source_port = Dojo::source_port;
+	uint16_t source_port = Dojo::source_port;
 
 	ENetHost* host;
 	ENetPeer* peer;
