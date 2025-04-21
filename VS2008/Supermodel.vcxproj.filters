@@ -153,6 +153,12 @@
     <Filter Include="Header Files\Graphics\New">
       <UniqueIdentifier>{fdb4e5a0-a0ec-4865-a5e6-56eb54c36a2d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Dojo">
+      <UniqueIdentifier>{5dca67ed-d84c-4b21-9d62-ad7121354dac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Dojo">
+      <UniqueIdentifier>{4112d19d-1c3d-4d6c-a9db-e928001dd618}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\BlockFile.cpp">
@@ -472,6 +478,30 @@
     </ClCompile>
     <ClCompile Include="..\Src\Graphics\New3D\TextureBank.cpp">
       <Filter>Source Files\Graphics\New</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Dojo\Dojo.cpp">
+      <Filter>Source Files\Dojo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Dojo\Frame.cpp">
+      <Filter>Source Files\Dojo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Dojo\Message.cpp">
+      <Filter>Source Files\Dojo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Dojo\Netplay.cpp">
+      <Filter>Source Files\Dojo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Dojo\Poll.cpp">
+      <Filter>Source Files\Dojo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Dojo\Receiver.cpp">
+      <Filter>Source Files\Dojo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Dojo\Replay.cpp">
+      <Filter>Source Files\Dojo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Dojo\Training.cpp">
+      <Filter>Source Files\Dojo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -861,6 +891,33 @@
     </ClInclude>
     <ClInclude Include="..\Src\Graphics\New3D\TextureBank.h">
       <Filter>Header Files\Graphics\New</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Dojo\Dojo.h">
+      <Filter>Header Files\Dojo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Dojo\enet.h">
+      <Filter>Header Files\Dojo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Dojo\Frame.h">
+      <Filter>Header Files\Dojo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Dojo\Message.h">
+      <Filter>Header Files\Dojo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Dojo\Netplay.h">
+      <Filter>Header Files\Dojo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Dojo\Poll.h">
+      <Filter>Header Files\Dojo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Dojo\Receiver.h">
+      <Filter>Header Files\Dojo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Dojo\Replay.h">
+      <Filter>Header Files\Dojo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Dojo\Training.h">
+      <Filter>Header Files\Dojo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
