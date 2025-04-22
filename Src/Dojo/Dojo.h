@@ -22,7 +22,7 @@
 
 #include "OSD/Logger.h"
 
-#define FRAME_SIZE 10
+#define FRAME_SIZE 12
 #define HEADER_LEN 12
 
 namespace Dojo {
