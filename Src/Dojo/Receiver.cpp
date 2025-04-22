@@ -37,20 +37,18 @@ void Dojo::Receiver::ReceiverThread()
         continue;
       }
 
-      IPaddress *remoteip;
-      remoteip = SDLNet_TCP_GetPeerAddress(client);
+      IPaddress *remoteip = SDLNet_TCP_GetPeerAddress(client);
       if (!remoteip) {
         printf("SDLNet_TCP_GetPeerAddress: %s\n", SDLNet_GetError());
         continue;
       }
 
-      Uint32 ipaddr;
-      ipaddr = SDL_SwapBE32(remoteip->host);
+      Uint32 ipaddr = SDL_SwapBE32(remoteip->host);
       printf("Accepted a connection from %d.%d.%d.%d port %hu\n", ipaddr >> 24,
              (ipaddr >> 16) & 0xff, (ipaddr >> 8) & 0xff, ipaddr & 0xff,
              remoteip->port);
 
-      while (1) {
+      while (true) {
         char header[HEADER_SIZE];
         int header_len = SDLNet_TCP_Recv(client, header, HEADER_SIZE);
         if (!header_len) {
@@ -103,13 +101,13 @@ void Dojo::Receiver::ReceiverThread()
 
     std::vector<uint8_t> msg = spectate_request.Msg();
 
-    result = SDLNet_TCP_Send(tcpsock, &msg[0], spectate_request.GetSize()); /* add 1 for the NULL */
+    result = SDLNet_TCP_Send(tcpsock, msg.data(), spectate_request.GetSize()); /* add 1 for the NULL */
     if (result < (int)spectate_request.GetSize())
     {
       printf("SDLNet_TCP_Send: %s\n", SDLNet_GetError());
     }
 
-    while (1) {
+    while (true) {
         char header[HEADER_SIZE];
         int header_len = SDLNet_TCP_Recv(tcpsock, header, HEADER_SIZE);
         if (!header_len) {

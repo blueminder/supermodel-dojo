@@ -15,12 +15,12 @@ std::string Dojo::Replay::currentISO8601TimeUTC()
 #endif
 }
 
-std::string Dojo::Replay::CreateReplayFile(std::string game_name, std::string state_path)
+std::string Dojo::Replay::CreateReplayFile(const std::string& game_name, const std::string& state_path)
 {
   // create timestamp string, iso8601 format
   std::string timestamp = currentISO8601TimeUTC();
   std::replace(timestamp.begin(), timestamp.end(), ':', '_');
-  std::string filename = "Replays/" + game_name + "_" + timestamp;
+  std::string filename = "Replays/" + game_name + '_' + timestamp;
 
   if (!state_path.empty())
   {
@@ -43,7 +43,7 @@ std::string Dojo::Replay::CreateReplayFile(std::string game_name, std::string st
   return filename;
 }
 
-void Dojo::Replay::AppendHeaderToFile(std::string game_name)
+void Dojo::Replay::AppendHeaderToFile(const std::string& game_name)
 {
   std::ofstream fout(Dojo::Replay::file_path,
     std::ios::out | std::ios::binary | std::ios_base::app);
@@ -83,7 +83,7 @@ void Dojo::Replay::AppendPlayerInfoToFile()
   fout.close();
 }
 
-void Dojo::Replay::AppendFrameToFile(std::string frame)
+void Dojo::Replay::AppendFrameToFile(const std::string& frame)
 {
   if (frame.size() == FRAME_SIZE)
   {
@@ -104,7 +104,7 @@ void Dojo::Replay::AppendFrameToFile(std::string frame)
     if (replay_frame_count % FRAME_BATCH == 0)
     {
       std::vector<uint8_t> message = replay_msg.Msg();
-      fout.write((const char*)&message[0], message.size());
+      fout.write((const char*)message.data(), message.size());
 
       replay_msg = Message::Writer();
       replay_msg.AppendHeader(0, GAME_BUFFER);
@@ -117,16 +117,16 @@ void Dojo::Replay::AppendFrameToFile(std::string frame)
       if (replay_frame_count % FRAME_BATCH > 0)
       {
         std::vector<uint8_t> message = replay_msg.Msg();
-        fout.write((const char*)&message[0], message.size());
+        fout.write((const char*)message.data(), message.size());
       }
     }
     fout.close();
   }
 }
 
-void Dojo::Replay::LoadFile(std::string path)
+void Dojo::Replay::LoadFile(const std::string& path)
 {
-  if (path == "")
+  if (path.empty())
     return;
 
   // add string in increments of FRAME_SIZE to net_inputs
@@ -183,7 +183,7 @@ std::string Dojo::Replay::Takeover(int player)
 
 std::string Dojo::Replay::GetStatePath()
 {
-  std::string state_path = file_path.substr(0, file_path.find_last_of("."));
+  std::string state_path = file_path.substr(0, file_path.find_last_of('.'));
   state_path.append(".st0");
   if (std::filesystem::exists(state_path))
     return state_path;

@@ -7,14 +7,15 @@ void Dojo::Poll::StartAction()
 	outgoing.reset();
 	current.reset();
 
-    if (Dojo::playback || Dojo::training)
+	if (Dojo::playback || Dojo::training)
 	{
 		if (Dojo::training)
 			Dojo::Training::TrainingFrameAction();
 
-		if (Dojo::net_inputs[0].count(Dojo::index))
+		auto it = Dojo::net_inputs[0].find(Dojo::index);
+		if (it != Dojo::net_inputs[0].end())
 		{
-			uint32_t input_data = Dojo::net_inputs[0].at(Dojo::index);
+			uint32_t input_data = it->second;
 			if (playback && net_replay && PlayerInputsFilled(Dojo::index))
 				input_data |= Dojo::net_inputs[1].at(Dojo::index);
 			if (Dojo::Replay::p1_override)
@@ -42,7 +43,7 @@ void Dojo::Poll::StartAction()
 
 void Dojo::Poll::ButtonAction(CInput* btn)
 {
-    if (Dojo::playback || Dojo::training)
+	if (Dojo::playback || Dojo::training)
 	{
 		if (incoming.test(idx))
 		{
@@ -68,12 +69,12 @@ void Dojo::Poll::ButtonAction(CInput* btn)
 		}
 	}
 
-    idx++;
+	idx++;
 }
 
 void Dojo::Poll::EndAction()
 {
-    uint32_t digital = (uint32_t)outgoing.to_ulong();
+	uint32_t digital = (uint32_t)outgoing.to_ulong();
 	if (Dojo::record || Dojo::training || Dojo::netplay)
 	{
 		std::string outgoing_frame = Dojo::Frame::Create(Dojo::index, Dojo::player, Dojo::delay, digital);
