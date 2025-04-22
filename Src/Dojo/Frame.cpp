@@ -20,32 +20,32 @@ std::string Dojo::Frame::Create(uint32_t frame_num, int player, uint32_t delay, 
   return frame_str;
 }
 
-uint32_t Dojo::Frame::GetPlayer(uint8_t* data)
+uint32_t Dojo::Frame::GetPlayer(const uint8_t* data)
 {
   return (uint32_t)data[0];
 }
 
-uint32_t Dojo::Frame::GetDelay(uint8_t* data)
+uint32_t Dojo::Frame::GetDelay(const uint8_t* data)
 {
   return (uint32_t)data[1];
 }
 
-uint32_t Dojo::Frame::GetFrameNumber(uint8_t* data)
+uint32_t Dojo::Frame::GetFrameNumber(const uint8_t* data)
 {
   return (*(uint32_t*)(data + 2));
 }
 
-uint32_t Dojo::Frame::GetEffectiveFrameNumber(uint8_t* data)
+uint32_t Dojo::Frame::GetEffectiveFrameNumber(const uint8_t* data)
 {
   return GetFrameNumber(data) + GetDelay(data);
 }
 
-uint32_t Dojo::Frame::GetDigital(uint8_t* data)
+uint32_t Dojo::Frame::GetDigital(const uint8_t* data)
 {
   return (*(uint32_t*)(data + 6));
 }
 
-std::string Dojo::Frame::Str(uint8_t* data)
+std::string Dojo::Frame::Str(const uint8_t* data)
 {
   std::ostringstream OutStream;
   auto player = GetPlayer(data);
@@ -55,6 +55,6 @@ std::string Dojo::Frame::Str(uint8_t* data)
   auto digital = GetDigital(data);
   auto digital_bits = std::bitset<32>(digital);
 
-  OutStream << effective_frame_num << ": P" << player << " F" << frame_num << " D" << delay << " " << digital_bits.to_string();
+  OutStream << effective_frame_num << ": P" << player << " F" << frame_num << " D" << delay << ' ' << digital_bits.to_string();
   return OutStream.str();
 }

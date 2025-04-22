@@ -1,6 +1,6 @@
 #include "Dojo.h"
 
-void Dojo::Init(std::string game_name, bool record_session, bool train_session, bool receiving, bool hosting, bool netplay, std::string state_path)
+void Dojo::Init(const std::string& game_name, bool record_session, bool train_session, bool receiving, bool hosting, bool netplay, const std::string& state_path)
 {
     index = 0;
     Dojo::hosting = hosting;
@@ -59,7 +59,7 @@ void Dojo::Init(std::string game_name, bool record_session, bool train_session, 
     {
         std::cout << "Playing Replay" << std::endl;
         Replay::LoadFile(Replay::file_path);
-        if (net_inputs[1].size() > 0)
+        if (!net_inputs[1].empty())
           net_replay = true;
     }
 
@@ -110,7 +110,7 @@ void Dojo::AdvanceFrame()
 
 void Dojo::AddNetFrame(const char* received_data)
 {
-  const char data[FRAME_SIZE] = { 0 };
+  char data[FRAME_SIZE];
   memcpy((void*)data, received_data, FRAME_SIZE);
 
   uint32_t effective_frame_num = Dojo::Frame::GetEffectiveFrameNumber((uint8_t*)data);
@@ -145,12 +145,12 @@ void Dojo::AddNetFrame(const char* received_data)
   //std::cout << Frame::Str((uint8_t*)data_to_queue.data()) << std::endl;
 }
 
-uint32_t Dojo::WipePlayerInputs(int player, uint32_t digital)
+uint32_t Dojo::WipePlayerInputs(int player_no, uint32_t digital)
 {
   uint32_t input_mask = 0;
-  if (player == 0)
+  if (player_no == 0)
     input_mask = 986965;
-  else if (player == 1)
+  else if (player_no == 1)
     input_mask = 15790250;
 
   return digital & ~input_mask;
