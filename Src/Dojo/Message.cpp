@@ -32,7 +32,7 @@ std::string Dojo::Message::ReadContinuousData(const char* buffer, int* offset, u
   return out;
 }
 
-std::vector<std::string> Dojo::Message::SplitString(const std::string input, const char& delimiter)
+std::vector<std::string> Dojo::Message::SplitString(const std::string& input, const char& delimiter)
 {
   std::vector<std::string> sections;
   std::stringstream sstr(input);
@@ -49,7 +49,7 @@ std::vector<std::string> Dojo::Message::SplitString(const std::string input, con
 std::vector<std::string> Dojo::Message::ReadPlayerInfo(const char* buffer, int* offset)
 {
   std::string player_str = ReadString(buffer, offset);
-  std::size_t sep = player_str.find_last_of("#");
+  std::size_t sep = player_str.find_last_of('#');
 
   std::string player_name = player_str.substr(0, sep);
   std::string player_details = player_str.substr(sep + 1);
@@ -83,7 +83,7 @@ uint32_t Dojo::Message::Writer::UpdateSize()
   return size;
 }
 
-uint32_t Dojo::Message::Writer::GetSize()
+uint32_t Dojo::Message::Writer::GetSize() const
 {
   return size;
 }
@@ -96,12 +96,12 @@ void Dojo::Message::Writer::AppendInt(uint32_t value)
   message.push_back((uint8_t)((value >> 24) & 0xFF));
 }
 
-void Dojo::Message::Writer::AppendString(std::string value)
+void Dojo::Message::Writer::AppendString(const std::string& value)
 {
   AppendInt((uint32_t)value.size() + 1);
-  for (int i = 0; i < value.size() + 1; i++)
+  for (size_t i = 0; i < value.size() + 1; i++)
   {
-    message.push_back((uint8_t)value.data()[i]);
+    message.push_back((uint8_t)value[i]);
   }
 }
 
@@ -158,8 +158,8 @@ void Dojo::Message::ProcessBody(uint32_t cmd, uint32_t body_size, const char* bu
     auto p1_info = Message::ReadPlayerInfo(buffer, offset);
     auto p2_info = Message::ReadPlayerInfo(buffer, offset);
 
-    auto player_name = p1_info[0];
-    auto opponent_name = p2_info[0];
+    auto& player_name = p1_info[0];
+    auto& opponent_name = p2_info[0];
 
     //received_player_info = true;
 

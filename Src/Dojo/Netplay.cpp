@@ -6,9 +6,8 @@
 
 void Dojo::Netplay::ServerThread()
 {
-	uint32_t index = 0;
 	int player = 0;
-	int delay = Dojo::delay;
+	uint32_t delay = Dojo::delay;
 
 	ENetHost* host = nullptr;
 	ENetPeer* peer = nullptr;
@@ -21,7 +20,7 @@ void Dojo::Netplay::ServerThread()
 	while (!done) { // server loop
 		if (peer != nullptr)
 		{
-			if (frames_to_send.size() > 0)
+			if (!frames_to_send.empty())
 			{
 				std::string frame = frames_to_send.front();
 				ENetPacket* packet = enet_packet_create(frame.data(), FRAME_SIZE, ENET_PACKET_FLAG_RELIABLE);
@@ -59,7 +58,7 @@ void Dojo::Netplay::ServerThread()
 		case ENET_EVENT_TYPE_RECEIVE: {
 			if (event.channelID == 0)
 			{
-				const char to_add[FRAME_SIZE] = { 0 };
+				char to_add[FRAME_SIZE];
 				memcpy((void*)to_add, event.packet->data, FRAME_SIZE);
 				AddNetFrame((const char *)to_add);
 			}
@@ -93,9 +92,6 @@ void Dojo::Netplay::ServerThread()
 
 void Dojo::Netplay::ClientThread()
 {
-	uint32_t index = 0;
-	int player = 1;
-	int delay = Dojo::delay;
 	uint16_t source_port = Dojo::source_port;
 
 	ENetHost* host;
@@ -120,7 +116,7 @@ void Dojo::Netplay::ClientThread()
 	while(!done) { // client loop
 		if (peer != nullptr)
 		{
-			if (frames_to_send.size() > 0)
+			if (!frames_to_send.empty())
 			{
 				std::string frame = frames_to_send.front();
 				ENetPacket* packet = enet_packet_create(frame.data(), FRAME_SIZE, ENET_PACKET_FLAG_RELIABLE);
@@ -143,7 +139,7 @@ void Dojo::Netplay::ClientThread()
 		case ENET_EVENT_TYPE_RECEIVE: {
 			if (event.channelID == 0)
 			{
-				const char to_add[FRAME_SIZE] = { 0 };
+				char to_add[FRAME_SIZE];
 				memcpy((void*)to_add, event.packet->data, FRAME_SIZE);
 				AddNetFrame((const char *)to_add);
 			}
