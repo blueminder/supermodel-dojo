@@ -1,15 +1,14 @@
 #include "imgui.h"
 #include "imgui_impl_opengl2.h"
 #include "imgui_impl_sdl2.h"
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <SDL_opengl.h>
-#include <stdio.h>
+#include <cstdio>
 
 #include <filesystem>
 #include <iostream>
 
 #include <fstream>
-#include <vector>
 
 #include "pugixml/pugixml.hpp"
 #include "roboto_medium.h"
@@ -19,17 +18,21 @@
 
 #include "ImGuiFileDialog.h"
 
+#ifndef _MSC_VER
+#define strncpy_s strncpy
+#endif
+
 static std::map<std::string, std::string> mod_settings;
 static std::map<std::string, bool> mod_settings_bool;
 static std::map<std::string, int> mod_settings_int;
-static std::map<std::string, int> mod_settings_double;
+static std::map<std::string, double> mod_settings_double;
 
 static bool settings_init = false;
 
 static int current_delay = 1;
 static int target_port = 6000;
 
-static std::map<std::string, std::string> settings_desc = {
+static const std::map<std::string, std::string> settings_desc = {
     {"MultiThreaded",
      "If set to 1, enables multi-threading; if set to 0, runs all emulation in "
      "a single thread.  Read the description of the '-no-threads' command line "
@@ -151,7 +154,7 @@ void IniScalar(const char *field) {
   ImGui::PopItemWidth();
   if (settings_desc.count(field)) {
     ImGui::SameLine();
-    ShowHelpMarker(settings_desc[field].data());
+    ShowHelpMarker(settings_desc.at(field).c_str());
   }
 }
 
@@ -164,7 +167,7 @@ void IniSlider(const char *field) {
   ImGui::PopItemWidth();
   if (settings_desc.count(field)) {
     ImGui::SameLine();
-    ShowHelpMarker(settings_desc[field].data());
+    ShowHelpMarker(settings_desc.at(field).c_str());
   }
 }
 
@@ -175,7 +178,7 @@ bool IniCheckBox(const char *field) {
   ImGui::Checkbox(field, &mod_settings_bool[field]);
   if (settings_desc.count(field)) {
     ImGui::SameLine();
-    ShowHelpMarker(settings_desc[field].data());
+    ShowHelpMarker(settings_desc.at(field).c_str());
   }
 
   return mod_settings_bool[field];
@@ -208,24 +211,24 @@ static std::string double_fields[] = {"RefreshRate"};
 
 static std::string str_fields[] = {"AddressOut"};
 
-void load_settings(std::filesystem::path ini_path) {
+void load_settings(const std::filesystem::path& ini_path) {
   tortellini::ini ini;
   std::fstream in(ini_path);
   in >> ini;
 
-  for (std::string field : str_fields) {
+  for (const std::string& field : str_fields) {
     mod_settings[field] = ini["Global"][field] | "";
   }
 
-  for (std::string field : bool_fields) {
+  for (const std::string& field : bool_fields) {
     mod_settings_bool[field] = ini["Global"][field] | false;
   }
 
-  for (std::string field : int_fields) {
+  for (const std::string& field : int_fields) {
     mod_settings_int[field] = ini["Global"][field] | 0;
   }
 
-  for (std::string field : double_fields) {
+  for (const std::string& field : double_fields) {
     mod_settings_double[field] = ini["Global"][field] | 0.00;
   }
 
@@ -237,20 +240,19 @@ void load_settings(std::filesystem::path ini_path) {
   }
 }
 
-void start_netplay_popup(std::string game_name, std::string cmd, bool hosting) {
+void start_netplay_popup(const std::string& game_name, std::string cmd, bool hosting) {
   std::string netplay_popup_name;
   if (hosting)
     netplay_popup_name = "Host##" + game_name;
   else
     netplay_popup_name = "Join##" + game_name;
-  std::string out = "";
+  std::string out;
   if (ImGui::BeginPopupModal(netplay_popup_name.c_str(), NULL,
                              ImGuiWindowFlags_AlwaysAutoResize |
                                  ImGuiWindowFlags_NoMove)) {
     ImGui::Text("Enter Server Details");
 
     static char si[128] = "127.0.0.1";
-    static char sp[128] = "6000";
     if (!hosting) {
       ImGui::InputTextWithHint("IP", "", si, IM_ARRAYSIZE(si));
       ImGui::SameLine();
@@ -366,7 +368,7 @@ void StyleColorsAM3Wave() {
   colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
 }
 
-void SetSMWindowPos(SDL_Window *win, std::string ini_path) {
+void SetSMWindowPos(SDL_Window *win, const std::string& ini_path) {
   tortellini::ini ini;
   std::fstream in(ini_path);
   in >> ini;
@@ -386,7 +388,7 @@ void SetSMWindowPos(SDL_Window *win, std::string ini_path) {
   out << ini;
 }
 
-ImVec2 GetCmdWindowPos(SDL_Window *win, std::string ini_path) {
+ImVec2 GetCmdWindowPos(SDL_Window *win, const std::string& ini_path) {
   tortellini::ini ini;
   std::fstream in(ini_path);
   in >> ini;
@@ -396,7 +398,7 @@ ImVec2 GetCmdWindowPos(SDL_Window *win, std::string ini_path) {
   SDL_GetWindowPosition(win, &x, &y);
 
   int win_w = ini["Global"]["XResolution"] | 800;
-  int win_h = ini["Global"]["YResolution"] | 600;
+  //int win_h = ini["Global"]["YResolution"] | 600;
 
   int cmd_x = x + win_w + 20;
   int cmd_y = y + 10;
@@ -416,10 +418,6 @@ int main(int, char **) {
   std::filesystem::path cwd = std::filesystem::current_path();
   auto ini_path = cwd / "Config/Supermodel.ini";
   std::string ini_path_s = ini_path.string();
-
-  int current_position = 0;
-
-  bool log_autoscroll = true;
 
   pugi::xml_document doc;
 
@@ -481,13 +479,13 @@ int main(int, char **) {
   ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
   ImGui_ImplOpenGL2_Init();
 
-  static const ImWchar ranges[] = {
+  static constexpr ImWchar ranges[] = {
       0x0020,
       0xFFFF, // All chars
       0,
   };
   io.Fonts->Clear();
-  const float fontSize = 17.f * 1;
+  constexpr float fontSize = 17.f * 1;
   io.Fonts->AddFontFromMemoryCompressedTTF(roboto_medium_compressed_data,
                                            roboto_medium_compressed_size,
                                            fontSize, nullptr, ranges);
@@ -501,7 +499,7 @@ int main(int, char **) {
   bool done = false;
 
   std::string last_pressed_key;
-  std::string selected_rom_path = "";
+  std::string selected_rom_path;
 
   while (!done) {
     SDL_Event event;
@@ -581,12 +579,12 @@ int main(int, char **) {
 
         if (fs::exists(rom_path)) {
           if (filter.PassFilter(title.c_str())) {
-            std::string button_txt = title + " (" + version + ")";
+            std::string button_txt = title + " (" + version + ')';
 
-            if (ImGui::Selectable((const char *)button_txt.data())) {
-              ImGui::OpenPopup(button_txt.data());
+            if (ImGui::Selectable(button_txt.c_str())) {
+              ImGui::OpenPopup(button_txt.c_str());
             }
-            ImGui::SetItemTooltip(rom_name.data());
+            ImGui::SetItemTooltip(rom_name.c_str());
 
             bool open_host = false;
             bool open_guest = false;
@@ -653,13 +651,13 @@ int main(int, char **) {
             if (open_host) {
               std::string popup_name = "Host##" + rom_name;
               SetSMWindowPos(window, ini_path.string());
-              ImGui::OpenPopup(popup_name.data());
+              ImGui::OpenPopup(popup_name.c_str());
             }
 
             if (open_guest) {
               std::string popup_name = "Join##" + rom_name;
               SetSMWindowPos(window, ini_path.string());
-              ImGui::OpenPopup(popup_name.data());
+              ImGui::OpenPopup(popup_name.c_str());
             }
 
             // If Replay Selected
@@ -734,9 +732,9 @@ int main(int, char **) {
         for (auto it = emu_cmds.begin(); it != emu_cmds.end(); ++it) {
           ImGui::TableNextRow();
           ImGui::TableSetColumnIndex(0);
-          ImGui::Text((it->first).data());
+          ImGui::Text((it->first).c_str());
           ImGui::TableSetColumnIndex(1);
-          ImGui::Text((it->second).data());
+          ImGui::Text((it->second).c_str());
         }
         ImGui::EndTable();
       }
@@ -745,9 +743,9 @@ int main(int, char **) {
         for (auto it = replay_cmds.begin(); it != replay_cmds.end(); ++it) {
           ImGui::TableNextRow();
           ImGui::TableSetColumnIndex(0);
-          ImGui::Text((it->first).data());
+          ImGui::Text((it->first).c_str());
           ImGui::TableSetColumnIndex(1);
-          ImGui::Text((it->second).data());
+          ImGui::Text((it->second).c_str());
         }
         ImGui::EndTable();
       }
@@ -756,9 +754,9 @@ int main(int, char **) {
         for (auto it = training_cmds.begin(); it != training_cmds.end(); ++it) {
           ImGui::TableNextRow();
           ImGui::TableSetColumnIndex(0);
-          ImGui::Text((it->first).data());
+          ImGui::Text((it->first).c_str());
           ImGui::TableSetColumnIndex(1);
-          ImGui::Text((it->second).data());
+          ImGui::Text((it->second).c_str());
         }
         ImGui::EndTable();
       }
@@ -773,8 +771,8 @@ int main(int, char **) {
         load_settings(ini_path);
 
         int buffer_idx = 0;
-        for (std::string field : str_fields) {
-          strncpy(ns_buffer[buffer_idx], mod_settings[field].data(),
+        for (const std::string& field : str_fields) {
+          strncpy_s(ns_buffer[buffer_idx], mod_settings[field].c_str(),
                   mod_settings[field].size());
           buffer_idx++;
         }
@@ -790,21 +788,21 @@ int main(int, char **) {
         in >> ini;
 
         int buffer_idx = 0;
-        for (std::string field : str_fields) {
+        for (const std::string& field : str_fields) {
           ini["Global"][field] = (const char *)ns_buffer[buffer_idx];
           buffer_idx++;
         }
 
-        for (std::string field : bool_fields) {
+        for (const std::string& field : bool_fields) {
           ini["Global"][field] = (int)mod_settings_bool[field];
         }
 
-        for (std::string field : int_fields) {
-          ini["Global"][field] = mod_settings_int[field] | 0;
+        for (const std::string& field : int_fields) {
+          ini["Global"][field] = mod_settings_int[field];
         }
 
-        for (std::string field : double_fields) {
-          ini["Global"][field] = mod_settings_double[field] | 0;
+        for (const std::string& field : double_fields) {
+          ini["Global"][field] = mod_settings_double[field];
         }
 
         // custom options
