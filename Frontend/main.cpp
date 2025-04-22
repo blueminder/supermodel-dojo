@@ -131,9 +131,11 @@ static const std::map<std::string, std::string> settings_desc = {
      "variable refresh display or frame limiter. (Default: Disabled, 60 Hz)"}};
 
 // Helper to display a little (?) mark which shows a tooltip when hovered.
-void ShowHelpMarker(const char *desc) {
+void ShowHelpMarker(const char *desc)
+{
   ImGui::TextDisabled("(?)");
-  if (ImGui::IsItemHovered()) {
+  if (ImGui::IsItemHovered())
+  {
     ImGui::BeginTooltip();
     ImGui::PushTextWrapPos(ImGui::GetFontSize() * 25.0f);
     ImGui::TextUnformatted(desc);
@@ -142,7 +144,8 @@ void ShowHelpMarker(const char *desc) {
   }
 }
 
-void IniScalar(const char *field) {
+void IniScalar(const char *field)
+{
   if (mod_settings_int.count(field) == 0)
     return;
 
@@ -152,31 +155,36 @@ void IniScalar(const char *field) {
   ImGui::InputScalar(field, ImGuiDataType_S32, &mod_settings_int[field],
                      inputs_step ? &s32_one : NULL, NULL, "%d");
   ImGui::PopItemWidth();
-  if (settings_desc.count(field)) {
+  if (settings_desc.count(field))
+  {
     ImGui::SameLine();
     ShowHelpMarker(settings_desc.at(field).c_str());
   }
 }
 
-void IniSlider(const char *field) {
+void IniSlider(const char *field)
+{
   if (mod_settings_int.count(field) == 0)
     return;
 
   ImGui::PushItemWidth(150);
   ImGui::SliderInt(field, (int *)&mod_settings_int[field], 0, 100);
   ImGui::PopItemWidth();
-  if (settings_desc.count(field)) {
+  if (settings_desc.count(field))
+  {
     ImGui::SameLine();
     ShowHelpMarker(settings_desc.at(field).c_str());
   }
 }
 
-bool IniCheckBox(const char *field) {
+bool IniCheckBox(const char *field)
+{
   if (mod_settings_bool.count(field) == 0)
     return false;
 
   ImGui::Checkbox(field, &mod_settings_bool[field]);
-  if (settings_desc.count(field)) {
+  if (settings_desc.count(field))
+  {
     ImGui::SameLine();
     ShowHelpMarker(settings_desc.at(field).c_str());
   }
@@ -185,12 +193,12 @@ bool IniCheckBox(const char *field) {
 }
 
 static std::string bool_fields[] = {
-    "Network",        "SimulateNet",   "FullScreen",   "New3DEngine",
-    "QuadRendering",  "WideScreen",    "Stretch",      "WideBackground",
-    "ShowFrameRate",  "Throttle",      "VSync",        "GPUMultiThreaded",
-    "Crosshairs",     "MultiThreaded", "MultiTexture", "ForceFeedback",
-    "LegacySoundDSP", "EmulateDSB",    "EmulateSound", "FlipStereo",
-    "RecordSession",  "NativeRefresh"};
+    "Network", "SimulateNet", "FullScreen", "New3DEngine",
+    "QuadRendering", "WideScreen", "Stretch", "WideBackground",
+    "ShowFrameRate", "Throttle", "VSync", "GPUMultiThreaded",
+    "Crosshairs", "MultiThreaded", "MultiTexture", "ForceFeedback",
+    "LegacySoundDSP", "EmulateDSB", "EmulateSound", "FlipStereo",
+    "RecordSession", "NativeRefresh"};
 
 static std::string int_fields[] = {"PowerPCFrequency",
                                    "XResolution",
@@ -209,38 +217,47 @@ static std::string int_fields[] = {"PowerPCFrequency",
 
 static std::string double_fields[] = {"RefreshRate"};
 
-static std::string str_fields[] = {"AddressOut"};
+static std::string str_fields[] = {"AddressOut", "RomDirectory"};
 
-void load_settings(const std::filesystem::path& ini_path) {
+void load_settings(const std::filesystem::path &ini_path)
+{
   tortellini::ini ini;
   std::fstream in(ini_path);
   in >> ini;
 
-  for (const std::string& field : str_fields) {
+  for (const std::string &field : str_fields)
+  {
     mod_settings[field] = ini["Global"][field] | "";
   }
 
-  for (const std::string& field : bool_fields) {
+  for (const std::string &field : bool_fields)
+  {
     mod_settings_bool[field] = ini["Global"][field] | false;
   }
 
-  for (const std::string& field : int_fields) {
+  for (const std::string &field : int_fields)
+  {
     mod_settings_int[field] = ini["Global"][field] | 0;
   }
 
-  for (const std::string& field : double_fields) {
+  for (const std::string &field : double_fields)
+  {
     mod_settings_double[field] = ini["Global"][field] | 0.00;
   }
 
   // custom options
-  if (mod_settings_bool["NativeRefresh"]) {
+  if (mod_settings_bool["NativeRefresh"])
+  {
     mod_settings_double["RefreshRate"] = 57.524;
-  } else {
+  }
+  else
+  {
     mod_settings_double["RefreshRate"] = 60.000;
   }
 }
 
-void start_netplay_popup(const std::string& game_name, std::string cmd, bool hosting) {
+void start_netplay_popup(const std::string &game_name, std::string cmd, bool hosting)
+{
   std::string netplay_popup_name;
   if (hosting)
     netplay_popup_name = "Host##" + game_name;
@@ -249,15 +266,19 @@ void start_netplay_popup(const std::string& game_name, std::string cmd, bool hos
   std::string out;
   if (ImGui::BeginPopupModal(netplay_popup_name.c_str(), NULL,
                              ImGuiWindowFlags_AlwaysAutoResize |
-                                 ImGuiWindowFlags_NoMove)) {
+                                 ImGuiWindowFlags_NoMove))
+  {
     ImGui::Text("Enter Server Details");
 
     static char si[128] = "127.0.0.1";
-    if (!hosting) {
+    if (!hosting)
+    {
       ImGui::InputTextWithHint("IP", "", si, IM_ARRAYSIZE(si));
       ImGui::SameLine();
-      if (ImGui::Button("Paste")) {
-        for (int i = 0; i < 128; i++) {
+      if (ImGui::Button("Paste"))
+      {
+        for (int i = 0; i < 128; i++)
+        {
           si[i] = 0;
         }
         char *pasted_txt = SDL_GetClipboardText();
@@ -272,9 +293,11 @@ void start_netplay_popup(const std::string& game_name, std::string cmd, bool hos
     if (hosting)
       ImGui::SliderInt("Delay", (int *)&current_delay, 0, 20);
 
-    if (ImGui::Button("Start")) {
+    if (ImGui::Button("Start"))
+    {
       ImGui::CloseCurrentPopup();
-      if (hosting) {
+      if (hosting)
+      {
         cmd += " -netplay -host";
         cmd += " -delay=" + std::to_string(current_delay);
         cmd += " -target-port=" + std::to_string(target_port);
@@ -283,9 +306,12 @@ void start_netplay_popup(const std::string& game_name, std::string cmd, bool hos
 #endif
         std::cout << cmd << std::endl;
 
-        std::thread t_run([cmd]() { std::system(cmd.c_str()); });
+        std::thread t_run([cmd]()
+                          { std::system(cmd.c_str()); });
         t_run.detach();
-      } else {
+      }
+      else
+      {
         cmd += " -netplay";
         cmd += " -delay=" + std::to_string(current_delay);
         cmd += " -target-ip=" + std::string(si);
@@ -295,21 +321,24 @@ void start_netplay_popup(const std::string& game_name, std::string cmd, bool hos
 #endif
         std::cout << cmd << std::endl;
 
-        std::thread t_run([cmd]() { std::system(cmd.c_str()); });
+        std::thread t_run([cmd]()
+                          { std::system(cmd.c_str()); });
         t_run.detach();
       }
     }
 
     ImGui::SameLine();
 
-    if (ImGui::Button("Cancel")) {
+    if (ImGui::Button("Cancel"))
+    {
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
   }
 }
 
-void StyleColorsAM3Wave() {
+void StyleColorsAM3Wave()
+{
   ImVec4 *colors = ImGui::GetStyle().Colors;
   colors[ImGuiCol_Text] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
   colors[ImGuiCol_TextDisabled] = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
@@ -368,7 +397,8 @@ void StyleColorsAM3Wave() {
   colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
 }
 
-void SetSMWindowPos(SDL_Window *win, const std::string& ini_path) {
+void SetSMWindowPos(SDL_Window *win, const std::string &ini_path)
+{
   tortellini::ini ini;
   std::fstream in(ini_path);
   in >> ini;
@@ -388,7 +418,8 @@ void SetSMWindowPos(SDL_Window *win, const std::string& ini_path) {
   out << ini;
 }
 
-ImVec2 GetCmdWindowPos(SDL_Window *win, const std::string& ini_path) {
+ImVec2 GetCmdWindowPos(SDL_Window *win, const std::string &ini_path)
+{
   tortellini::ini ini;
   std::fstream in(ini_path);
   in >> ini;
@@ -398,7 +429,7 @@ ImVec2 GetCmdWindowPos(SDL_Window *win, const std::string& ini_path) {
   SDL_GetWindowPosition(win, &x, &y);
 
   int win_w = ini["Global"]["XResolution"] | 800;
-  //int win_h = ini["Global"]["YResolution"] | 600;
+  // int win_h = ini["Global"]["YResolution"] | 600;
 
   int cmd_x = x + win_w + 20;
   int cmd_y = y + 10;
@@ -407,10 +438,31 @@ ImVec2 GetCmdWindowPos(SDL_Window *win, const std::string& ini_path) {
   return pos;
 }
 
-int main(int, char **) {
+std::string GetRomDirectory(std::string ini_path)
+{
+  tortellini::ini ini;
+  std::fstream in(ini_path);
+  in >> ini;
+
+  std::string rom_dir = ini["Global"]["RomDirectory"] | "";
+
+  if (rom_dir.empty())
+  {
+    std::filesystem::path cwd = std::filesystem::current_path();
+    auto rom_dir_path = cwd / "ROMs";
+    rom_dir = rom_dir_path.string();
+    std::cout << rom_dir << std::endl;
+  }
+
+  return rom_dir;
+}
+
+int main(int, char **)
+{
   // Setup SDL
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER |
-               SDL_INIT_JOYSTICK) != 0) {
+               SDL_INIT_JOYSTICK) != 0)
+  {
     printf("Error: %s\n", SDL_GetError());
     return -1;
   }
@@ -435,8 +487,7 @@ int main(int, char **) {
   SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-  SDL_WindowFlags window_flags = (SDL_WindowFlags)(
-      SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+  SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
   SDL_Window *window =
       SDL_CreateWindow("Supermodel Dojo", SDL_WINDOWPOS_CENTERED,
                        SDL_WINDOWPOS_CENTERED, 1100, 540, window_flags);
@@ -471,7 +522,8 @@ int main(int, char **) {
   style.GrabRounding = 4.0f;
   style.FrameBorderSize = 1.0f;
 
-  if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+  if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+  {
     style.WindowRounding = 0.0f;
     style.Colors[ImGuiCol_WindowBg].w = 1.0f;
   }
@@ -501,9 +553,15 @@ int main(int, char **) {
   std::string last_pressed_key;
   std::string selected_rom_path;
 
-  while (!done) {
+  std::string rom_dir = GetRomDirectory(ini_path);
+
+  bool open_replay = false;
+
+  while (!done)
+  {
     SDL_Event event;
-    while (SDL_PollEvent(&event)) {
+    while (SDL_PollEvent(&event))
+    {
       ImGui_ImplSDL2_ProcessEvent(&event);
 
       if (event.type == SDL_QUIT)
@@ -535,7 +593,8 @@ int main(int, char **) {
       filter.Draw("   ");
       ImGui::SameLine();
 
-      if (ImGui::Button("Settings")) {
+      if (ImGui::Button("Settings"))
+      {
         settings_init = false;
         show_settings = !show_settings;
       }
@@ -543,45 +602,52 @@ int main(int, char **) {
 
       ImGui::SameLine();
 
-      if (ImGui::Button("Command")) {
+      if (ImGui::Button("Command"))
+      {
         show_cmds = !show_cmds;
       }
       ImGui::SetItemTooltip("Displays quick reference of emulator commands");
 
       ImGui::BeginChild("C", ImVec2(520, 455), true);
       namespace fs = std::filesystem;
-#ifdef _WIN32
-      std::string rom_dir = "ROMs\\";
-#else
-      std::string rom_dir = "ROMs/";
-#endif
+
       for (pugi::xml_node game = games.child("game"); game;
-           game = game.next_sibling("game")) {
+           game = game.next_sibling("game"))
+      {
         std::string title = game.child("identity").child("title").child_value();
         std::string rom_name = game.attribute("name").value();
         std::string version =
             game.child("identity").child("version").child_value();
 
-        std::string rom_path = rom_dir + rom_name + ".zip";
+        std::string filename = rom_name + ".zip";
+        if (rom_dir.empty())
+        {
+          rom_dir = GetRomDirectory(ini_path);
+        }
+        auto rom_path = fs::path(rom_dir) / filename;
 #ifdef _WIN32
-            std::string cmd = "cmd /C supermodel.exe " + rom_path; // + " > output";
+        std::string cmd = "cmd /C supermodel.exe " + rom_path.string(); // + " > output";
 #else
-            std::string cmd = "./supermodel " + rom_path; // + " > output";
+        std::string cmd = "./supermodel " + rom_path.string(); // + " > output";
 #endif
 
         // fvipers2 default settings
         // 100MHz to prevent slowdown and desyncs
         // legacy sound to prevent ear damage
-        if (rom_name == "fvipers2" || rom_name == "fvipers2o") {
+        if (rom_name == "fvipers2" || rom_name == "fvipers2o")
+        {
           cmd += " -ppc-frequency=100";
           cmd += " -legacy-scsp";
         }
 
-        if (fs::exists(rom_path)) {
-          if (filter.PassFilter(title.c_str())) {
+        if (fs::exists(rom_path))
+        {
+          if (filter.PassFilter(title.c_str()))
+          {
             std::string button_txt = title + " (" + version + ')';
 
-            if (ImGui::Selectable(button_txt.c_str())) {
+            if (ImGui::Selectable(button_txt.c_str()))
+            {
               ImGui::OpenPopup(button_txt.c_str());
             }
             ImGui::SetItemTooltip(rom_name.c_str());
@@ -589,8 +655,10 @@ int main(int, char **) {
             bool open_host = false;
             bool open_guest = false;
             std::string popup_name = "Options " + title;
-            if (ImGui::BeginPopupContextItem(button_txt.c_str())) {
-              if (ImGui::MenuItem("Start Game")) {
+            if (ImGui::BeginPopupContextItem(button_txt.c_str()))
+            {
+              if (ImGui::MenuItem("Start Game"))
+              {
                 SetSMWindowPos(window, ini_path.string());
                 show_cmds = true;
                 ImGui::CloseCurrentPopup();
@@ -600,10 +668,12 @@ int main(int, char **) {
 #endif
                 std::cout << cmd << std::endl;
 
-                std::thread t_run([cmd]() { std::system(cmd.c_str()); });
+                std::thread t_run([cmd]()
+                                  { std::system(cmd.c_str()); });
                 t_run.detach();
               }
-              if (ImGui::MenuItem("Set Controls")) {
+              if (ImGui::MenuItem("Set Controls"))
+              {
                 SetSMWindowPos(window, ini_path.string());
                 show_cmds = true;
                 ImGui::CloseCurrentPopup();
@@ -613,17 +683,21 @@ int main(int, char **) {
 #endif
                 std::cout << cmd << std::endl;
 
-                std::thread t_run([cmd]() { std::system(cmd.c_str()); });
+                std::thread t_run([cmd]()
+                                  { std::system(cmd.c_str()); });
                 t_run.detach();
               }
-              if (ImGui::MenuItem("Open Replay File")) {
+              if (ImGui::MenuItem("Open Replay File"))
+              {
+                open_replay = true;
                 ImGui::SetNextWindowSize(ImVec2(650, 400));
                 ImGuiFileDialog::Instance()->OpenDialog(
                     "ChooseFileDlgKey", "Choose File", ".supr", "Replays", 1,
                     nullptr, ImGuiFileDialogFlags_Modal);
                 selected_rom_path = rom_path;
               }
-              if (ImGui::MenuItem("Start Training Mode")) {
+              if (ImGui::MenuItem("Start Training Mode"))
+              {
                 SetSMWindowPos(window, ini_path.string());
                 show_cmds = true;
                 ImGui::CloseCurrentPopup();
@@ -633,14 +707,17 @@ int main(int, char **) {
 #endif
                 std::cout << cmd << std::endl;
 
-                std::thread t_run([cmd]() { std::system(cmd.c_str()); });
+                std::thread t_run([cmd]()
+                                  { std::system(cmd.c_str()); });
                 t_run.detach();
               }
-              if (ImGui::MenuItem("Host Netplay Session")) {
+              if (ImGui::MenuItem("Host Netplay Session"))
+              {
                 ImGui::CloseCurrentPopup();
                 open_host = true;
               }
-              if (ImGui::MenuItem("Join Netplay Session")) {
+              if (ImGui::MenuItem("Join Netplay Session"))
+              {
                 ImGui::CloseCurrentPopup();
                 open_guest = true;
               }
@@ -648,49 +725,57 @@ int main(int, char **) {
               ImGui::EndPopup();
             }
 
-            if (open_host) {
+            if (open_host)
+            {
               std::string popup_name = "Host##" + rom_name;
               SetSMWindowPos(window, ini_path.string());
               ImGui::OpenPopup(popup_name.c_str());
             }
 
-            if (open_guest) {
+            if (open_guest)
+            {
               std::string popup_name = "Join##" + rom_name;
               SetSMWindowPos(window, ini_path.string());
               ImGui::OpenPopup(popup_name.c_str());
             }
 
-            // If Replay Selected
-            if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
-              if (ImGuiFileDialog::Instance()->IsOk()) {
-                std::string filePathName =
-                    ImGuiFileDialog::Instance()->GetFilePathName();
-                std::string filePath =
-                    ImGuiFileDialog::Instance()->GetCurrentPath();
+            if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey"))
+            {
+              if (ImGuiFileDialog::Instance()->IsOk())
+              {
+                // If Replay Selected
+                if (open_replay)
+                {
+                  std::string filePathName =
+                      ImGuiFileDialog::Instance()->GetFilePathName();
+                  std::string filePath =
+                      ImGuiFileDialog::Instance()->GetCurrentPath();
 
-                std::cout << filePathName << std::endl;
+                  std::cout << filePathName << std::endl;
 
-                SetSMWindowPos(window, ini_path.string());
-                show_cmds = true;
+                  SetSMWindowPos(window, ini_path.string());
+                  show_cmds = true;
 #ifdef _WIN32
-                std::string replay_cmd = "supermodel.exe " + selected_rom_path;
+                  std::string replay_cmd = "supermodel.exe " + selected_rom_path;
 #else
-                std::string replay_cmd = "./supermodel " + selected_rom_path;
+                  std::string replay_cmd = "./supermodel " + selected_rom_path;
 #endif
-                replay_cmd += " -replay-file=" + filePathName;
+                  replay_cmd += " -replay-file=" + filePathName;
 #ifdef _WIN32
-                replay_cmd += " & pause";
+                  replay_cmd += " & pause";
 #endif
-                // replay_cmd += " > output";
-                std::cout << replay_cmd << std::endl;
+                  // replay_cmd += " > output";
+                  std::cout << replay_cmd << std::endl;
 
-                std::thread t_run(
-                    [replay_cmd]() { std::system(replay_cmd.c_str()); });
-                t_run.detach();
+                  std::thread t_run(
+                      [replay_cmd]()
+                      { std::system(replay_cmd.c_str()); });
+                  t_run.detach();
 
-                selected_rom_path = "";
+                  selected_rom_path = "";
+                  open_replay = false;
+                }
               }
-
               ImGuiFileDialog::Instance()->Close();
             }
 
@@ -704,7 +789,8 @@ int main(int, char **) {
       ImGui::End();
     }
 
-    if (show_cmds) {
+    if (show_cmds)
+    {
       // unordered_map to preserve iteration order
       std::unordered_map<std::string, std::string> emu_cmds;
       emu_cmds.insert({"Record Replay Clip", "Shift + 3"});
@@ -728,8 +814,10 @@ int main(int, char **) {
                               ImGuiCond_FirstUseEver);
       ImGui::Begin("Command Reference");
       ImGui::SeparatorText("Emulator");
-      if (ImGui::BeginTable("EmuCommands", 2)) {
-        for (auto it = emu_cmds.begin(); it != emu_cmds.end(); ++it) {
+      if (ImGui::BeginTable("EmuCommands", 2))
+      {
+        for (auto it = emu_cmds.begin(); it != emu_cmds.end(); ++it)
+        {
           ImGui::TableNextRow();
           ImGui::TableSetColumnIndex(0);
           ImGui::Text((it->first).c_str());
@@ -739,8 +827,10 @@ int main(int, char **) {
         ImGui::EndTable();
       }
       ImGui::SeparatorText("Replays");
-      if (ImGui::BeginTable("ReplayCommands", 2)) {
-        for (auto it = replay_cmds.begin(); it != replay_cmds.end(); ++it) {
+      if (ImGui::BeginTable("ReplayCommands", 2))
+      {
+        for (auto it = replay_cmds.begin(); it != replay_cmds.end(); ++it)
+        {
           ImGui::TableNextRow();
           ImGui::TableSetColumnIndex(0);
           ImGui::Text((it->first).c_str());
@@ -750,8 +840,10 @@ int main(int, char **) {
         ImGui::EndTable();
       }
       ImGui::SeparatorText("Training Mode");
-      if (ImGui::BeginTable("TrainingCommands", 2)) {
-        for (auto it = training_cmds.begin(); it != training_cmds.end(); ++it) {
+      if (ImGui::BeginTable("TrainingCommands", 2))
+      {
+        for (auto it = training_cmds.begin(); it != training_cmds.end(); ++it)
+        {
           ImGui::TableNextRow();
           ImGui::TableSetColumnIndex(0);
           ImGui::Text((it->first).c_str());
@@ -763,17 +855,20 @@ int main(int, char **) {
       ImGui::End();
     }
 
-    if (show_settings) {
-      static char ns_buffer[3][128] = {{0}, {0}, {0}};
+    if (show_settings)
+    {
+      static char ns_buffer[3][512] = {{0}, {0}, {0}};
 
       // only load settings and populate fields on launch
-      if (!settings_init) {
+      if (!settings_init)
+      {
         load_settings(ini_path);
 
         int buffer_idx = 0;
-        for (const std::string& field : str_fields) {
+        for (const std::string &field : str_fields)
+        {
           strncpy_s(ns_buffer[buffer_idx], mod_settings[field].c_str(),
-                  mod_settings[field].size());
+                    mod_settings[field].size());
           buffer_idx++;
         }
 
@@ -782,51 +877,71 @@ int main(int, char **) {
       ImGui::SetNextWindowPos(ImVec2(win_x + 555, win_y + 10), ImGuiCond_Once);
       ImGui::Begin("Settings");
 
-      if (ImGui::Button("Save")) {
+      if (ImGui::Button("Save"))
+      {
         tortellini::ini ini;
         std::fstream in(ini_path);
         in >> ini;
 
         int buffer_idx = 0;
-        for (const std::string& field : str_fields) {
+        for (const std::string &field : str_fields)
+        {
           ini["Global"][field] = (const char *)ns_buffer[buffer_idx];
           buffer_idx++;
         }
 
-        for (const std::string& field : bool_fields) {
+        std::string current_rom_dir = ini["Global"]["RomDirectory"] | "";
+        if (current_rom_dir.empty())
+        {
+          ini["Global"]["RomDirectory"] = GetRomDirectory(ini_path);
+        }
+
+        for (const std::string &field : bool_fields)
+        {
           ini["Global"][field] = (int)mod_settings_bool[field];
         }
 
-        for (const std::string& field : int_fields) {
+        for (const std::string &field : int_fields)
+        {
           ini["Global"][field] = mod_settings_int[field];
         }
 
-        for (const std::string& field : double_fields) {
+        for (const std::string &field : double_fields)
+        {
           ini["Global"][field] = mod_settings_double[field];
         }
 
         // custom options
-        if (mod_settings_bool["NativeRefresh"]) {
+        if (mod_settings_bool["NativeRefresh"])
+        {
           ini["Global"]["RefreshRate"] = 57.524;
-        } else {
+        }
+        else
+        {
           ini["Global"]["RefreshRate"] = 60.000;
         }
 
         std::ofstream out(ini_path);
         std::cout << ini;
         out << ini;
+
+        rom_dir = "";
+        load_settings(ini_path);
       }
 
       ImGui::SameLine();
 
-      if (ImGui::Button("Close")) {
+      if (ImGui::Button("Close"))
+      {
         show_settings = !show_settings;
       }
 
       ImGui::BeginChild("S", ImVec2(450, 400), true);
 
-      if (ImGui::BeginTabBar("SettingsTabBar")) {
-        if (ImGui::BeginTabItem("Graphics")) {
+      if (ImGui::BeginTabBar("SettingsTabBar"))
+      {
+        if (ImGui::BeginTabItem("Graphics"))
+        {
           IniCheckBox("New3DEngine");
           IniCheckBox("QuadRendering");
           IniCheckBox("MultiTexture");
@@ -840,7 +955,8 @@ int main(int, char **) {
           IniScalar("YResolution");
           IniCheckBox("FullScreen");
 
-          if (IniCheckBox("WideScreen")) {
+          if (IniCheckBox("WideScreen"))
+          {
             IniCheckBox("Stretch");
             IniCheckBox("WideBackground");
           }
@@ -848,13 +964,15 @@ int main(int, char **) {
           IniCheckBox("Crosshairs");
           ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("System")) {
+        if (ImGui::BeginTabItem("System"))
+        {
           IniScalar("PowerPCFrequency");
           IniCheckBox("GPUMultiThreaded");
           IniCheckBox("MultiThreaded");
           ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Audio")) {
+        if (ImGui::BeginTabItem("Audio"))
+        {
           IniCheckBox("EmulateSound");
           IniCheckBox("FlipStereo");
           IniCheckBox("EmulateDSB");
@@ -863,8 +981,10 @@ int main(int, char **) {
           IniSlider("SoundVolume");
           ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Controls")) {
-          if (ImGui::Button("Set Controls")) {
+        if (ImGui::BeginTabItem("Controls"))
+        {
+          if (ImGui::Button("Set Controls"))
+          {
 #ifdef _WIN32
             std::string cmd = "cmd /C supermodel.exe -config-inputs & pause";
 #else
@@ -875,20 +995,23 @@ int main(int, char **) {
           ImGui::SameLine();
           ShowHelpMarker("Sets controls via interactive command line prompt.");
 
-          if (ImGui::Button("View Controls")) {
+          if (ImGui::Button("View Controls"))
+          {
 #ifdef _WIN32
             std::string cmd = "cmd /C supermodel.exe -print-inputs & pause";
 #else
             std::string cmd = "./supermodel -print-inputs";
 #endif
 
-            std::thread t_run([cmd]() { std::system(cmd.c_str()); });
+            std::thread t_run([cmd]()
+                              { std::system(cmd.c_str()); });
             t_run.detach();
           }
           ImGui::SameLine();
           ShowHelpMarker("Shows current controls in Log window.");
 
-          if (IniCheckBox("ForceFeedback")) {
+          if (IniCheckBox("ForceFeedback"))
+          {
             IniScalar("DirectInputConstForceMax");
             IniScalar("DirectInputFrictionMax");
             IniScalar("DirectInputSelfCenterMax");
@@ -900,8 +1023,10 @@ int main(int, char **) {
           ImGui::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Net Board")) {
-          if (IniCheckBox("Network")) {
+        if (ImGui::BeginTabItem("Net Board"))
+        {
+          if (IniCheckBox("Network"))
+          {
             IniCheckBox("SimulateNet");
 
             ImGui::PushItemWidth(250);
@@ -915,13 +1040,27 @@ int main(int, char **) {
           ImGui::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Dojo")) {
+        if (ImGui::BeginTabItem("Dojo"))
+        {
           IniCheckBox("RecordSession");
+
+          if (strlen(ns_buffer[1]) == 0)
+          {
+            std::string default_rom_dir = GetRomDirectory(ini_path);
+            memcpy(&ns_buffer[1], default_rom_dir.c_str(), strlen(default_rom_dir.c_str()));
+          }
+
+          ImGui::PushItemWidth(300);
+          ImGui::InputTextWithHint("RomDirectory", "RomDirectory", ns_buffer[1],
+                                   IM_ARRAYSIZE(ns_buffer[1]));
+          ImGui::PopItemWidth();
 
           ImGui::EndTabItem();
         }
+
         ImGui::EndTabBar();
       }
+
       ImGui::EndChild();
 
       ImGui::End();
@@ -935,7 +1074,8 @@ int main(int, char **) {
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
 
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
       SDL_Window *backup_current_window = SDL_GL_GetCurrentWindow();
       SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
       ImGui::UpdatePlatformWindows();
