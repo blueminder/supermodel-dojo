@@ -20,7 +20,7 @@ namespace Dojo::Message {
 
   void ProcessBody(uint32_t cmd, uint32_t body_size, const char* buffer, int* offset);
 
-  std::vector<std::string> SplitString(const std::string input, const char& delimiter);
+  std::vector<std::string> SplitString(const std::string& input, const char& delimiter);
 
   class Writer
   {
@@ -34,10 +34,10 @@ namespace Dojo::Message {
     void AppendHeader(uint32_t _sequence, uint32_t _command);
 
     uint32_t UpdateSize();
-    uint32_t GetSize();
+    uint32_t GetSize() const;
 
     void AppendInt(uint32_t value);
-    void AppendString(std::string value);
+    void AppendString(const std::string& value);
     void AppendData(const char* value, uint32_t size);
 
     // append int by divisible data size after header before calling

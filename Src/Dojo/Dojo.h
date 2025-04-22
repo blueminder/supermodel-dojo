@@ -26,12 +26,12 @@
 #define HEADER_LEN 12
 
 namespace Dojo {
-    void Init(std::string game_name, bool record_session, bool train_session, bool receiving, bool hosting, bool netplay, std::string state_path);
+    void Init(const std::string& game_name, bool record_session, bool train_session, bool receiving, bool hosting, bool netplay, const std::string& state_path);
     void FillDelay();
     void AdvanceFrame();
     void AddNetFrame(const char* received_data);
 
-    uint32_t WipePlayerInputs(int player, uint32_t digital);
+    uint32_t WipePlayerInputs(int player_no, uint32_t digital);
     bool PlayerInputsFilled(uint32_t i);
     bool PlayerFramesFilled(uint32_t i);
 
