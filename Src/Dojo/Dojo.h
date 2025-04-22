@@ -10,6 +10,7 @@
 #include <set>
 #include <map>
 #include <queue>
+#include <mutex>
 
 #include "Message.h"
 #include "Frame.h"
@@ -60,6 +61,8 @@ namespace Dojo {
     inline uint16_t source_port = 0;
 
     inline bool net_replay = false;
+
+    inline std::mutex inputs_mtx;
 };
 
 #endif  // INCLUDED_DOJO_H

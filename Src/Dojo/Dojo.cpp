@@ -130,7 +130,9 @@ void Dojo::AddNetFrame(const char* received_data)
     effective_frame_num > lccf)
   {
     net_frames[frame_player].emplace(effective_frame_num, data_to_queue);
+    inputs_mtx.lock();
     net_inputs[frame_player].emplace(effective_frame_num, Frame::GetDigital((uint8_t*)data));
+    inputs_mtx.unlock();
 
     if (netplay && (effective_frame_num == lccf + 1) && PlayerInputsFilled(effective_frame_num))
     {
