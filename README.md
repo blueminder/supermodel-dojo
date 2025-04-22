@@ -5,9 +5,9 @@
 
 In addition to the features described above, Supermodel Dojo also contains a frontend for the emulator to make launching your favorite games and adjusting settings easier than ever.
 
-# Netplay Supported Games
+# Netplay & Replay Supported Games
 
-Currently, Supermodel Dojo __netplay__ functionality only supports games with 2 joysticks and digital buttons, including:
+Currently, Supermodel Dojo's __netplay & replay__ functionality only supports games with 2 joysticks and digital buttons. These games include:
 
 * Virtua Fighter 3
 * Virtua Fighter 3 Team Battle
