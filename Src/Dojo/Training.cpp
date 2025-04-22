@@ -87,8 +87,8 @@ void Dojo::Training::PlayRecording(int slot)
     for (std::string frame : record_slot[slot])
     {
       //to_add[0] = (uint8_t)record_player; // player
-      to_add[1] = (uint8_t)Dojo::delay;  //delay
       memcpy(to_add, frame.data(), FRAME_SIZE);
+      to_add[1] = (uint8_t)Dojo::delay;  //delay
       memcpy(to_add + 2, (uint8_t*)&target_frame, 4); // frame number
       Dojo::AddNetFrame((const char *)to_add);
       target_frame++;
