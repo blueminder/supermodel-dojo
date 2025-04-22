@@ -469,7 +469,6 @@ int main(int, char **)
 
   std::filesystem::path cwd = std::filesystem::current_path();
   auto ini_path = cwd / "Config/Supermodel.ini";
-  std::string ini_path_s = ini_path.string();
 
   pugi::xml_document doc;
 
@@ -553,7 +552,7 @@ int main(int, char **)
   std::string last_pressed_key;
   std::string selected_rom_path;
 
-  std::string rom_dir = GetRomDirectory(ini_path);
+  std::string rom_dir = GetRomDirectory(ini_path.string());
 
   bool open_replay = false;
 
@@ -622,7 +621,7 @@ int main(int, char **)
         std::string filename = rom_name + ".zip";
         if (rom_dir.empty())
         {
-          rom_dir = GetRomDirectory(ini_path);
+          rom_dir = GetRomDirectory(ini_path.string());
         }
         auto rom_path = fs::path(rom_dir) / filename;
 #ifdef _WIN32
@@ -694,7 +693,7 @@ int main(int, char **)
                 ImGuiFileDialog::Instance()->OpenDialog(
                     "ChooseFileDlgKey", "Choose File", ".supr", "Replays", 1,
                     nullptr, ImGuiFileDialogFlags_Modal);
-                selected_rom_path = rom_path;
+                selected_rom_path = rom_path.string();
               }
               if (ImGui::MenuItem("Start Training Mode"))
               {
@@ -893,7 +892,7 @@ int main(int, char **)
         std::string current_rom_dir = ini["Global"]["RomDirectory"] | "";
         if (current_rom_dir.empty())
         {
-          ini["Global"]["RomDirectory"] = GetRomDirectory(ini_path);
+          ini["Global"]["RomDirectory"] = GetRomDirectory(ini_path.string());
         }
 
         for (const std::string &field : bool_fields)
@@ -1046,7 +1045,7 @@ int main(int, char **)
 
           if (strlen(ns_buffer[1]) == 0)
           {
-            std::string default_rom_dir = GetRomDirectory(ini_path);
+            std::string default_rom_dir = GetRomDirectory(ini_path.string());
             memcpy(&ns_buffer[1], default_rom_dir.c_str(), strlen(default_rom_dir.c_str()));
           }
 
