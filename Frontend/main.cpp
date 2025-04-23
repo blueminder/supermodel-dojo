@@ -625,9 +625,9 @@ int main(int, char **)
         }
         auto rom_path = fs::path(rom_dir) / filename;
 #ifdef _WIN32
-        std::string cmd = "cmd /C supermodel.exe " + rom_path.string(); // + " > output";
+        std::string cmd = "cmd /C supermodel.exe \"" + rom_path.string() + "\""; // + " > output";
 #else
-        std::string cmd = "./supermodel " + rom_path.string(); // + " > output";
+        std::string cmd = "./supermodel \"" + rom_path.string() + "\""; // + " > output";
 #endif
 
         // fvipers2 default settings
