@@ -778,6 +778,9 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"Kick", "Kick2"},
 		{"Guard", "Guard2"},
 		{"Escape", "Escape2"},
+		{"ShortPass", "ShortPass2"},
+		{"LongPass", "LongPass2"},
+		{"Shoot", "Shoot2"},
 		{"Start2", "Start1"},
 		{"Coin2", "Coin1"},
 		{"ServiceB", "ServiceA"},
@@ -790,6 +793,9 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"Kick2", "Kick"},
 		{"Guard2", "Guard"},
 		{"Escape2", "Escape"},
+		{"ShortPass2", "ShortPass"},
+		{"LongPass2", "LongPass"},
+		{"Shoot2", "Shoot"},
 	};
 
 	std::map<const char *, const char *> translate_p1_to_p2_keys = {
@@ -805,6 +811,9 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"Kick", "Kick2"},
 		{"Guard", "Guard2"},
 		{"Escape", "Escape2"},
+		{"ShortPass", "ShortPass2"},
+		{"LongPass", "LongPass2"},
+		{"Shoot", "Shoot2"},
 	};
 
 	std::map<const char *, const char *> swapped_player_inputs;
@@ -826,6 +835,9 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"Kick", 0},
 		{"Guard", 0},
 		{"Escape", 0},
+		{"ShortPass", 0},
+		{"LongPass", 0},
+		{"Shoot", 0},
 		{"Start2", 0},
 		{"Coin2", 0},
 		{"ServiceB", 0},
@@ -838,6 +850,9 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"Kick2", 0},
 		{"Guard2", 0},
 		{"Escape2", 0},
+		{"ShortPass2", 0},
+		{"LongPass2", 0},
+		{"Shoot2", 0},
 	};
 
 	std::set<const char *> p1_inputs = {
@@ -853,6 +868,9 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		"Kick",
 		"Guard",
 		"Escape",
+		"ShortPass",
+		"LongPass",
+		"Shoot"
 	};
 
 	std::set<const char *> p2_inputs = {
@@ -868,6 +886,9 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		"Kick2",
 		"Guard2",
 		"Escape2",
+		"ShortPass2",
+		"LongPass2",
+		"Shoot2"
 	};
 
 
