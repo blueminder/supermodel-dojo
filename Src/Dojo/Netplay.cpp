@@ -12,7 +12,13 @@ void Dojo::Netplay::ServerThread()
 	ENetHost* host = nullptr;
 	ENetPeer* peer = nullptr;
 
-	ENetAddress addr = { ENET_HOST_ANY, target_port };
+	ENetAddress addr;
+
+	if (source_port > 0)
+		addr = { ENET_HOST_ANY, source_port };
+	else
+		addr = { 0 };
+
 	host = enet_host_create(&addr, 1, 2, 0, 0);
 	assert(host != nullptr);
 
