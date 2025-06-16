@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef INCLUDED_DOJO_H
 #define INCLUDED_DOJO_H
 
@@ -17,7 +19,7 @@
 #include "Replay.h"
 #include "Training.h"
 
-#include "Poll.h"
+#include "InputPoll.h"
 #include "Receiver.h"
 #include "Netplay.h"
 

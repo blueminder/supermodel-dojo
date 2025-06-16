@@ -491,7 +491,7 @@
     <ClCompile Include="..\Src\Dojo\Netplay.cpp">
       <Filter>Source Files\Dojo</Filter>
     </ClCompile>
-    <ClCompile Include="..\Src\Dojo\Poll.cpp">
+    <ClCompile Include="..\Src\Dojo\InputPoll.cpp">
       <Filter>Source Files\Dojo</Filter>
     </ClCompile>
     <ClCompile Include="..\Src\Dojo\Receiver.cpp">
@@ -907,7 +907,7 @@
     <ClInclude Include="..\Src\Dojo\Netplay.h">
       <Filter>Header Files\Dojo</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\Dojo\Poll.h">
+    <ClInclude Include="..\Src\Dojo\InputPoll.h">
       <Filter>Header Files\Dojo</Filter>
     </ClInclude>
     <ClInclude Include="..\Src\Dojo\Receiver.h">
