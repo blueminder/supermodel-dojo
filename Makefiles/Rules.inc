@@ -174,7 +174,7 @@ SRC_FILES = \
 	Src/Dojo/Message.cpp \
 	Src/Dojo/Replay.cpp \
 	Src/Dojo/Training.cpp \
-	Src/Dojo/Poll.cpp \
+	Src/Dojo/InputPoll.cpp \
 	Src/Dojo/Receiver.cpp \
 	Src/Dojo/Netplay.cpp \
 	$(PLATFORM_SRC_FILES)

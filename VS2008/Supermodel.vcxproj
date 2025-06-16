@@ -313,7 +313,7 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClCompile Include="..\Src\Dojo\Frame.cpp" />
     <ClCompile Include="..\Src\Dojo\Message.cpp" />
     <ClCompile Include="..\Src\Dojo\Netplay.cpp" />
-    <ClCompile Include="..\Src\Dojo\Poll.cpp" />
+    <ClCompile Include="..\Src\Dojo\InputPoll.cpp" />
     <ClCompile Include="..\Src\Dojo\Receiver.cpp" />
     <ClCompile Include="..\Src\Dojo\Replay.cpp" />
     <ClCompile Include="..\Src\Dojo\Training.cpp" />
@@ -496,7 +496,7 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClInclude Include="..\Src\Dojo\Frame.h" />
     <ClInclude Include="..\Src\Dojo\Message.h" />
     <ClInclude Include="..\Src\Dojo\Netplay.h" />
-    <ClInclude Include="..\Src\Dojo\Poll.h" />
+    <ClInclude Include="..\Src\Dojo\InputPoll.h" />
     <ClInclude Include="..\Src\Dojo\Receiver.h" />
     <ClInclude Include="..\Src\Dojo\Replay.h" />
     <ClInclude Include="..\Src\Dojo\Training.h" />
