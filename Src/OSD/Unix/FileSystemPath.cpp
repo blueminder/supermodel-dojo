@@ -40,11 +40,40 @@ namespace FileSystemPath
     int MakeDir(std::string dir)
     {
         if (!PathExists(dir))
-	{
+        {
             return mkdir(dir.c_str(), 0775);
-	}
+        }
 
         return 0;
+    }
+
+    std::string GetExePath()
+    {
+        char result[PATH_MAX];
+        ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+        return std::string(result, (count > 0) ? count : 0);
+    }
+
+    std::string GetExeDir()
+    {
+        std::string exeDir = std::filesystem::path(GetExePath()).parent_path().u8string();
+        return exeDir;
+    }
+
+    std::string GetGameXmlPath()
+    {
+        std::string defaultPath = Util::Format() << FileSystemPath::GetPath(FileSystemPath::Config) << "Games.xml";
+        std::string finalPath = defaultPath;
+        if (!std::filesystem::exists(defaultPath))
+        {
+            // Fall back to Games xml bundled with exe when unavailable in user home
+            std::string bundledPath = std::filesystem::path(GetExeDir()) / "Config" / "Games.xml";
+            if (std::filesystem::exists(bundledPath))
+            {
+                finalPath = bundledPath;
+            }
+        }
+        return finalPath;
     }
 
     // Generates a path to be used by Supermodel files
@@ -53,7 +82,7 @@ namespace FileSystemPath
         std::string finalPath;
         std::string homePath;
         std::string strPathType;
-        struct passwd* pwd = getpwuid(getuid());
+        struct passwd *pwd = getpwuid(getuid());
 
         // Resolve pathType to string for later use
         switch (pathType)
@@ -92,6 +121,19 @@ namespace FileSystemPath
             homePath = envHome == NULL ? std::string() : envHome;
         }
 
+        auto p1Crosshair = std::filesystem::path(GetExeDir()) / "Assets" / "p1crosshair.bmp";
+
+        // Fall back to assets bundle with exe when unavailable in user Home
+        if ((!FileSystemPath::PathExists("Assets") || homePath.empty()) &&
+            strPathType == "Assets" && std::filesystem::exists(p1Crosshair))
+        {
+            auto fPath = std::filesystem::path(GetExeDir()) / strPathType;
+            finalPath = fPath;
+            FileSystemPath::MakeDir(finalPath);
+            finalPath = Util::Format() << finalPath << "/";
+            return finalPath;
+        }
+
         // If Config path exists in current directory or the user doesn't have a HOME directory use current directory
         if (FileSystemPath::PathExists("Config") || homePath.empty())
         {
@@ -120,32 +162,32 @@ namespace FileSystemPath
                 {
                     const char *envConfig = getenv("XDG_CONFIG_HOME");
                     std::string configPath = (envConfig == NULL ? std::string() : envConfig);
-		    if (!configPath.empty())
-		    {
-		        finalPath = Util::Format() << configPath << "/supermodel";
-	            }
+                    if (!configPath.empty())
+                    {
+                        finalPath = Util::Format() << configPath << "/supermodel";
+                    }
                 }
-		FileSystemPath::MakeDir(finalPath);
+                FileSystemPath::MakeDir(finalPath);
 
-		finalPath = Util::Format() << finalPath << "/Config";
-		FileSystemPath::MakeDir(finalPath);
+                finalPath = Util::Format() << finalPath << "/Config";
+                FileSystemPath::MakeDir(finalPath);
             }
             else
             {
                 finalPath = Util::Format() << homePath << "/.local/share/supermodel";
                 if (!FileSystemPath::PathExists(finalPath))
                 {
-		    const char *envData = getenv("XDG_DATA_HOME");
+                    const char *envData = getenv("XDG_DATA_HOME");
                     std::string dataPath = (envData == NULL ? std::string() : envData);
-		    if (!dataPath.empty())
-		    {
-		        finalPath = Util::Format() << dataPath << "/supermodel";
-	            }
+                    if (!dataPath.empty())
+                    {
+                        finalPath = Util::Format() << dataPath << "/supermodel";
+                    }
                 }
-		FileSystemPath::MakeDir(finalPath);
+                FileSystemPath::MakeDir(finalPath);
 
-		finalPath = Util::Format() << finalPath << "/" << strPathType;
-		FileSystemPath::MakeDir(finalPath);
+                finalPath = Util::Format() << finalPath << "/" << strPathType;
+                FileSystemPath::MakeDir(finalPath);
             }
         }
 

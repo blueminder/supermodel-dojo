@@ -28,6 +28,10 @@
 #ifndef INCLUDED_FILESYSTEMPATH_H
 #define INCLUDED_FILESYSTEMPATH_H
 
+#include <limits.h>
+#include <unistd.h>
+
+#include <filesystem>
 #include <string>
 
 namespace FileSystemPath
@@ -35,6 +39,9 @@ namespace FileSystemPath
     enum PathType { Analysis, Config, Log, NVRAM, Saves, Screenshots, Assets }; // Filesystem path types
     bool PathExists(std::string fileSystemPath); // Checks if a directory exists (returns true if exists, false if it doesn't)
     int MakeDir(std::string dir); // Create a directory
+    std::string GetExePath();
+    std::string GetExeDir();
+    std::string GetGameXmlPath();
     std::string GetPath(PathType pathType);  // Generates a path to be used by Supermodel files
 }
 
