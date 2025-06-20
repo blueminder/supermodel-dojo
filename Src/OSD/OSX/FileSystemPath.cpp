@@ -20,10 +20,17 @@
  **/
 
 #include "FileSystemPath.h"
+#include "Util/Format.h"
 #include <string>
 
 namespace FileSystemPath
 {
+    std::string GetGameXmlPath()
+    {
+        std::string defaultPath = Util::Format() << GetPath(FileSystemPath::Config) << "Games.xml";
+        return defaultPath;
+    }
+
     // Generates a path to be used by Supermodel files
     std::string GetPath(PathType pathType)
     {
