@@ -144,27 +144,27 @@ namespace FileSystemPath
                 FileSystemPath::MakeDir(finalPath);
             }
         }
-        // Check if $HOME/.supermodel exists
-        else if (FileSystemPath::PathExists(Util::Format() << homePath << "/.supermodel"))
+        // Check if $HOME/.supermodel-dojo exists
+        else if (FileSystemPath::PathExists(Util::Format() << homePath << "/.supermodel-dojo"))
         {
-            // Use $HOME/.supermodel
-            finalPath = Util::Format() << homePath << "/.supermodel/" << strPathType;
+            // Use $HOME/.supermodel-dojo
+            finalPath = Util::Format() << homePath << "/.supermodel-dojo/" << strPathType;
             FileSystemPath::MakeDir(finalPath);
         }
         // On Linux one may want to follow the XDG base directory specs (https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
         else
         {
-            // Use $HOME/.config/supermodel or $HOME/.local/share/supermodel depending on the file type
+            // Use $HOME/.config/supermodel-dojo or $HOME/.local/share/supermodel-dojo depending on the file type
             if (pathType == Config)
             {
-                finalPath = Util::Format() << homePath << "/.config/supermodel";
+                finalPath = Util::Format() << homePath << "/.config/supermodel-dojo";
                 if (!FileSystemPath::PathExists(finalPath))
                 {
                     const char *envConfig = getenv("XDG_CONFIG_HOME");
                     std::string configPath = (envConfig == NULL ? std::string() : envConfig);
                     if (!configPath.empty())
                     {
-                        finalPath = Util::Format() << configPath << "/supermodel";
+                        finalPath = Util::Format() << configPath << "/supermodel-dojo";
                     }
                 }
                 FileSystemPath::MakeDir(finalPath);
@@ -174,14 +174,14 @@ namespace FileSystemPath
             }
             else
             {
-                finalPath = Util::Format() << homePath << "/.local/share/supermodel";
+                finalPath = Util::Format() << homePath << "/.local/share/supermodel-dojo";
                 if (!FileSystemPath::PathExists(finalPath))
                 {
                     const char *envData = getenv("XDG_DATA_HOME");
                     std::string dataPath = (envData == NULL ? std::string() : envData);
                     if (!dataPath.empty())
                     {
-                        finalPath = Util::Format() << dataPath << "/supermodel";
+                        finalPath = Util::Format() << dataPath << "/supermodel-dojo";
                     }
                 }
                 FileSystemPath::MakeDir(finalPath);
