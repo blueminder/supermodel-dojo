@@ -124,7 +124,7 @@ namespace FileSystemPath
         auto p1Crosshair = std::filesystem::path(GetExeDir()) / "Assets" / "p1crosshair.bmp";
 
         // Fall back to assets bundle with exe when unavailable in user Home
-        if ((!FileSystemPath::PathExists("Assets") || homePath.empty()) &&
+        if ((!FileSystemPath::PathExists(Util::Format() << homePath << "Assets") || homePath.empty()) &&
             strPathType == "Assets" && std::filesystem::exists(p1Crosshair))
         {
             auto fPath = std::filesystem::path(GetExeDir()) / strPathType;
@@ -135,7 +135,7 @@ namespace FileSystemPath
         }
 
         // If Config path exists in current directory or the user doesn't have a HOME directory use current directory
-        if (FileSystemPath::PathExists("Config") || homePath.empty())
+        if (FileSystemPath::PathExists("Config") && homePath.empty())
         {
             // Use current directory
             if (pathType != Screenshots && pathType != Log)
