@@ -102,6 +102,7 @@
 
 #include "Crosshair.h"
 #include "OSD/DefaultConfigFile.h"
+#include "OSD/DojoConfigFile.h"
 
 #include "Dojo/Dojo.h"
 
@@ -1583,7 +1584,7 @@ static void WriteDefaultConfigurationFileIfNotPresent()
     ErrorLog("Unable to write default configuration file to %s", s_configFilePath.c_str());
     return;
   }
-  fputs(s_defaultConfigFileContents, fp);
+  fputs(s_dojoConfigFileContents, fp);
   fclose(fp);
   InfoLog("Wrote default configuration file to %s", s_configFilePath.c_str());
 }
