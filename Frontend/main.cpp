@@ -18,6 +18,8 @@
 
 #include "ImGuiFileDialog.h"
 
+#include "../Src/OSD/DojoConfigFile.h"
+
 #ifndef _MSC_VER
 #define strncpy_s strncpy
 #endif
@@ -457,6 +459,21 @@ std::string GetRomDirectory(std::string ini_path)
   return rom_dir;
 }
 
+#ifdef __linux__
+std::string GetExePath()
+{
+  char result[PATH_MAX];
+  ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+  return std::string(result, (count > 0) ? count : 0);
+}
+
+std::string GetExeDir()
+{
+  std::string exeDir = std::filesystem::path(GetExePath()).parent_path();
+  return exeDir;
+}
+#endif
+
 int main(int, char **)
 {
   // Setup SDL
@@ -467,12 +484,38 @@ int main(int, char **)
     return -1;
   }
 
-  std::filesystem::path cwd = std::filesystem::current_path();
-  auto ini_path = cwd / "Config/Supermodel.ini";
+  std::filesystem::path target_dir;
+#ifdef __linux__
+  const char *envHome = getenv("HOME");
+  target_dir = std::filesystem::path(envHome) / ".config" / "supermodel-dojo";
+
+  auto ini_path = target_dir / "Config/Supermodel.ini";
+  if (!std::filesystem::exists(ini_path))
+  {
+    std::filesystem::create_directories(target_dir / "Config");
+
+    // Write config
+    FILE *fp = fopen(ini_path.c_str(), "w");
+    if (!fp)
+    {
+      std::cout << "Unable to write default configuration file to " << ini_path.c_str() << std::endl;
+    }
+    fputs(s_dojoConfigFileContents, fp);
+    fclose(fp);
+  }
+#else
+  target_dir = std::filesystem::current_path();
+  auto ini_path = target_dir / "Config/Supermodel.ini";
+#endif
 
   pugi::xml_document doc;
 
+#ifdef __linux__
+  std::string bundledGamePath = std::filesystem::path(GetExeDir()) / "Config" / "Games.xml";
+  pugi::xml_parse_result result = doc.load_file(bundledGamePath.c_str());
+#else
   pugi::xml_parse_result result = doc.load_file("Config/Games.xml");
+#endif
   pugi::xml_node games = doc.child("games");
 
   // From 2.0.18: Enable native IME.
