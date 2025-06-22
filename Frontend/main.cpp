@@ -543,6 +543,14 @@ int main(int, char **)
   ImGui::CreateContext();
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
+
+#ifdef __linux__
+        io.IniFilename = nullptr;
+        auto imgui_ini_path = std::filesystem::path(envHome) / ".config" / "supermodel-dojo" / "Config" / "imgui.ini";
+        if (std::filesystem::exists(imgui_ini_path))
+          ImGui::LoadIniSettingsFromDisk(imgui_ini_path.string().c_str());
+#endif
+
   io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
   io.ConfigFlags |=
       ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
@@ -967,6 +975,11 @@ int main(int, char **)
         std::ofstream out(ini_path);
         std::cout << ini;
         out << ini;
+
+#ifdef __linux__
+        auto imgui_ini_path = std::filesystem::path(envHome) / ".config" / "supermodel-dojo" / "Config" / "imgui.ini";
+        ImGui::SaveIniSettingsToDisk(imgui_ini_path.string().c_str());
+#endif
 
         rom_dir = "";
         load_settings(ini_path);
