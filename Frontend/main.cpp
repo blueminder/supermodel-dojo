@@ -470,6 +470,7 @@ std::string GetExePath()
 std::string GetExeDir()
 {
   std::string exeDir = std::filesystem::path(GetExePath()).parent_path();
+  exeDir = exeDir + "/";
   return exeDir;
 }
 #endif
@@ -667,10 +668,10 @@ int main(int, char **)
           rom_dir = GetRomDirectory(ini_path.string());
         }
         auto rom_path = fs::path(rom_dir) / filename;
-#ifdef _WIN32
-        std::string cmd = "cmd /C supermodel.exe \"" + rom_path.string() + "\""; // + " > output";
+#ifdef __linux__
+        std::string cmd = GetExeDir() + "supermodel \"" + rom_path.string() + "\""; // + " > output";
 #else
-        std::string cmd = "./supermodel \"" + rom_path.string() + "\""; // + " > output";
+        std::string cmd = "cmd /C supermodel.exe \"" + rom_path.string() + "\""; // + " > output";
 #endif
 
         // fvipers2 default settings
