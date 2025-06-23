@@ -130,7 +130,7 @@ static const std::map<std::string, std::string> settings_desc = {
      "Record all sessions as replays. Found in Replays folder."},
     {"NativeRefresh",
      "Sets refresh rate to Model 3 native 57.524 Hz. Requires "
-     "variable refresh display or frame limiter. (Default: Disabled, 60 Hz)"}};
+     "variable refresh display or frame limiter. (Default: Enabled. Disabling sets frequency to 60Hz.)"}};
 
 // Helper to display a little (?) mark which shows a tooltip when hovered.
 void ShowHelpMarker(const char *desc)
