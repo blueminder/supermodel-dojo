@@ -36,7 +36,7 @@
 
 namespace FileSystemPath
 {
-    enum PathType { Analysis, Config, Log, NVRAM, Saves, Screenshots, Assets }; // Filesystem path types
+    enum PathType { Analysis, Config, Log, NVRAM, Saves, Screenshots, Assets, Replays }; // Filesystem path types
     bool PathExists(std::string fileSystemPath); // Checks if a directory exists (returns true if exists, false if it doesn't)
     int MakeDir(std::string dir); // Create a directory
     std::string GetExePath();

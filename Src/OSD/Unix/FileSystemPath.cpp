@@ -108,6 +108,9 @@ namespace FileSystemPath
         case Assets:
             strPathType = "Assets";
             break;
+        case Replays:
+            strPathType = "Replays";
+            break;
         }
 
         // Get user's HOME directory

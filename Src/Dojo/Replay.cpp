@@ -1,4 +1,5 @@
 #include "Dojo.h"
+#include "OSD/FileSystemPath.h"
 
 std::string Dojo::Replay::currentISO8601TimeUTC()
 {
@@ -20,7 +21,7 @@ std::string Dojo::Replay::CreateReplayFile(const std::string& game_name, const s
   // create timestamp string, iso8601 format
   std::string timestamp = currentISO8601TimeUTC();
   std::replace(timestamp.begin(), timestamp.end(), ':', '_');
-  std::string filename = "Replays/" + game_name + '_' + timestamp;
+  std::string filename = Util::Format() << FileSystemPath::GetPath(FileSystemPath::Replays) << game_name + '_' + timestamp;
 
   if (!state_path.empty())
   {
