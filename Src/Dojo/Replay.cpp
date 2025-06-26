@@ -21,7 +21,14 @@ std::string Dojo::Replay::CreateReplayFile(const std::string& game_name, const s
   // create timestamp string, iso8601 format
   std::string timestamp = currentISO8601TimeUTC();
   std::replace(timestamp.begin(), timestamp.end(), ':', '_');
+#ifdef _WIN32
+  if (!std::filesystem::exists("Replays")) {
+    std::filesystem::create_directory("Replays");
+  }
+  std::string filename = "Replays/" + game_name + '_' + timestamp;
+#else
   std::string filename = Util::Format() << FileSystemPath::GetPath(FileSystemPath::Replays) << game_name + '_' + timestamp;
+#endif
 
   if (!state_path.empty())
   {
