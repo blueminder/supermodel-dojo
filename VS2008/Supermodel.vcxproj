@@ -579,6 +579,7 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClInclude Include="..\Src\OSD\Audio.h" />
     <ClInclude Include="..\Src\OSD\Logger.h" />
     <ClInclude Include="..\Src\OSD\Outputs.h" />
+    <ClInclude Include="..\Src\OSD\SDL\roboto_medium.h" />
     <ClInclude Include="..\Src\OSD\SDL\Crosshair.h" />
     <ClInclude Include="..\Src\OSD\SDL\Gui.h" />
     <ClInclude Include="..\Src\OSD\SDL\Main.h" />

@@ -18,6 +18,7 @@
 #include "Main.h"
 
 #include "../Dojo/tortellini.hh"
+#include "roboto_medium.h"
 
 #ifdef _WIN32
     #include "../Src/OSD/Windows/DirectInputSystem.h"
@@ -930,7 +931,16 @@ std::vector<std::string> RunGUI(const std::string& configPath, Util::Config::Nod
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-    io.Fonts->AddFontDefaultVector();
+    static constexpr ImWchar ranges[] = {
+      0x0020,
+      0xFFFF, // All chars
+      0,
+    };
+    io.Fonts->Clear();
+    constexpr float fontSize = 17.f * 1;
+    io.Fonts->AddFontFromMemoryCompressedTTF(roboto_medium_compressed_data,
+                                             roboto_medium_compressed_size,
+                                             fontSize, nullptr, ranges);
 
     ImGui::GetIO().IniFilename = nullptr;                      // we don't need to save window positions between runs
 
@@ -943,6 +953,9 @@ std::vector<std::string> RunGUI(const std::string& configPath, Util::Config::Nod
     ImGuiStyle& style = ImGui::GetStyle();
     float scale = GetDPIScale(window);
     //style.ScaleAllSizes(scale);
+
+    style.GrabRounding = 4.0f;
+    style.FrameBorderSize = 1.0f;
 
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForOpenGL(window, glContext);
