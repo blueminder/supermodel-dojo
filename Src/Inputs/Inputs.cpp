@@ -913,7 +913,7 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 	// translate local player inputs to assigned character
 	if (Dojo::players_swapped || Dojo::Replay::p2_override)
 	{
-		for (vector<CInput*>::iterator it = m_inputs.begin(); it != m_inputs.end(); ++it)
+		for (auto it = m_inputs.begin(); it != m_inputs.end(); ++it)
 		{
 			if (((*it)->gameFlags & gameFlags) && swapped_player_inputs.count((*it)->id))
 			{
