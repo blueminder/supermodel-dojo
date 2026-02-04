@@ -471,32 +471,10 @@ static void AddKeys(Util::Config::Node& config, KeyBindState& kb, std::vector<st
     BindKeys(config, kb, openPopup);
 }
 
-static void DrawButtonOptions(Util::Config::Node& config, int selectedGameIndex, bool& exit, bool& saveSettings)
+static void DrawSettingsButtonOptions(Util::Config::Node& config, int selectedGameIndex, bool& exit, bool& saveSettings)
 {
-    if (ImGui::Button("Load game")) {
-
-        if (selectedGameIndex < 0) {
-            ImGui::OpenPopup("Load game");
-        }
-        else {
-            exit = true;
-        }
-    }
-
-    if (ImGui::BeginPopupModal("Load game", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-
-        ImGui::Text("No game selected");
-        ImGui::Separator();
-
-        if (ImGui::Button("OK", ImVec2(120, 0))) { 
-            ImGui::CloseCurrentPopup(); 
-        }
-
-        ImGui::EndPopup();
-    }
-
-    ImGui::SameLine();
-
+    float buttonWidth = ImGui::CalcTextSize("Load Defaults").x + ImGui::CalcTextSize("Exit").x + 25.f;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - buttonWidth);
     if (ImGui::Button("Load Defaults")) {
         ImGui::OpenPopup("Confirm Load");
     }
@@ -556,16 +534,37 @@ static void DrawButtonOptions(Util::Config::Node& config, int selectedGameIndex,
             ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f); // Fade visuals
         }
 
-        static bool perGameSettings = false;
-        bool perGamesSettingsCopy = perGameSettings;
-        ImGui::Checkbox("Per game settings", &perGamesSettingsCopy);
-
-
-
         if (disabled) {
             ImGui::PopStyleVar();
             ImGui::EndDisabled();
         }
+    }
+}
+
+static void DrawGameButtonOptions(Util::Config::Node& config, int selectedGameIndex, bool& exit, bool& saveSettings)
+{
+    float buttonWidth = ImGui::CalcTextSize("Launch Game").x + 10.f;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - buttonWidth);
+    if (ImGui::Button("Launch Game")) {
+
+        if (selectedGameIndex < 0) {
+            ImGui::OpenPopup("Launch Game");
+        }
+        else {
+            exit = true;
+        }
+    }
+
+    if (ImGui::BeginPopupModal("Launch Game", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+
+        ImGui::Text("No game selected");
+        ImGui::Separator();
+
+        if (ImGui::Button("OK", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
     }
 }
 
@@ -635,28 +634,32 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
 
     ImGui::Begin("Custom Window", nullptr, ImGuiWindowFlags_NoTitleBar); // Explicitly set a window name
 
+    ImGui::PushItemWidth(ImGui::GetWindowSize().x - 20.0f);
     static ImGuiTextFilter filter;
+
+    if (!ImGui::IsAnyItemActive())
+        ImGui::SetKeyboardFocusHere();
+
     filter.Draw("   ");
 
-    ImGui::BeginChild("TableRegion", ImVec2(0.0f, 200.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::BeginChild("TableRegion", ImVec2(0.0f, 300.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
 
-    if (ImGui::BeginTable("Games", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
+    if (ImGui::BeginTable("Games", 3, ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp))
     {
-        ImGui::TableSetupColumn("Title");
-        ImGui::TableSetupColumn("Rom Name");
-        ImGui::TableSetupColumn("Version");
+        ImGui::TableSetupColumn("Game");
+        ImGui::TableSetupColumn("ROM");
         ImGui::TableSetupColumn("Year");
-        ImGui::TableSetupColumn("Stepping");
 
         ImGui::TableHeadersRow();
 
         int row = 0;
         for (const auto& g : games) {
             std::string gameSearchStr = g.second.title + " " + g.second.name;
+            std::string gameTitleStr = g.second.title + " (" + g.second.version + ")";
             if (filter.PassFilter(gameSearchStr.c_str())) {
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
-                ImGui::Text("%s", g.second.title.c_str());
+                ImGui::Text("%s", gameTitleStr.c_str());
                 ImGui::TableSetColumnIndex(1);
                 if (ImGui::Selectable(g.second.name.c_str(), selectedGameIndex == row, ImGuiSelectableFlags_SpanAllColumns)) {
                     selectedGameIndex = row;
@@ -667,11 +670,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
                 }
 
                 ImGui::TableSetColumnIndex(2);
-                ImGui::Text("%s", g.second.version.c_str());
-                ImGui::TableSetColumnIndex(3);
                 ImGui::Text("%d", g.second.year);
-                ImGui::TableSetColumnIndex(4);
-                ImGui::Text("%s", g.second.stepping.c_str());
 
                 row++;
             }
@@ -683,10 +682,11 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
     ImGui::EndChild();
 
     // draw button options
-    DrawButtonOptions(config, selectedGameIndex, exit, saveSettings);
+    DrawGameButtonOptions(config, selectedGameIndex, exit, saveSettings);
 
+    ImGui::BeginChild("SettingsRegion", ImVec2(0.0f, 190.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
     // create a space
-    ImGui::Dummy(ImVec2(0.0f, 20.0f));
+    //ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
     // draw the tabbed options
     if (ImGui::BeginTabBar("MyTabBar", ImGuiTabBarFlags_FittingPolicyResizeDown)) {
@@ -748,7 +748,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
             ImGui::EndTabItem();
             inputs = nullptr;
         }
-        if (ImGui::BeginTabItem("Key bindings")) {
+        if (ImGui::BeginTabItem("Key Bindings")) {
 
             if (inputs == nullptr) {
                 inputs = GetInputSystem(config, window);
@@ -773,6 +773,10 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
 
         ImGui::EndTabBar();
     }
+
+    ImGui::EndChild();
+
+    DrawSettingsButtonOptions(config, selectedGameIndex, exit, saveSettings);
 
     ImGui::End(); // Close the window
 
@@ -907,10 +911,10 @@ std::vector<std::string> RunGUI(const std::string& configPath, Util::Config::Nod
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_INPUT_FOCUS);
+    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 
     // Create SDL window
-    SDL_Window* window = SDL_CreateWindow("SuperSetup", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 950, 600, window_flags);
+    SDL_Window* window = SDL_CreateWindow("Supermodel Dojo", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, window_flags);
     if (!window) {
         std::cerr << "Window could not be created! Error: " << SDL_GetError() << std::endl;
         SDL_Quit();
