@@ -904,6 +904,9 @@
     <ClInclude Include="..\Src\Util\BitCast.h">
       <Filter>Header Files\Util</Filter>
     </ClInclude>
+    <ClInclude Include="..\Src\OSD\SDL\roboto_medium.h">
+      <Filter>Header Files\OSD\SDL</Filter>
+    </ClInclude>
     <ClInclude Include="..\Src\OSD\SDL\Crosshair.h">
       <Filter>Header Files\OSD\SDL</Filter>
     </ClInclude>
