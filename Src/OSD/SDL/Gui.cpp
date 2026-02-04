@@ -17,6 +17,8 @@
 #include "../Src/Inputs/Inputs.h"
 #include "Main.h"
 
+#include "../Dojo/tortellini.hh"
+
 #ifdef _WIN32
     #include "../Src/OSD/Windows/DirectInputSystem.h"
 #endif // _WIN32
@@ -778,13 +780,33 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-static std::string GetRomPath(int selectedGame, const std::map<std::string, Game>& games)
+std::string GetRomDirectory(std::string ini_path)
 {
+  tortellini::ini ini;
+  std::fstream in(ini_path);
+  in >> ini;
+
+  std::string rom_dir = ini["Global"]["RomDirectory"] | "";
+
+  if (rom_dir.empty())
+  {
+    std::filesystem::path cwd = std::filesystem::current_path();
+    auto rom_dir_path = cwd / "ROMs";
+    rom_dir = rom_dir_path.string();
+    std::cout << rom_dir << std::endl;
+  }
+
+  return rom_dir;
+}
+
+static std::string GetRomPath(int selectedGame, const std::map<std::string, Game>& games, std::string configPath)
+{
+    std::string romDirectory = GetRomDirectory(configPath);
     if (selectedGame >= 0) {
         int index = 0;
         for (auto& g : games) {
             if (selectedGame == index) {
-                return (std::filesystem::path("ROMs") / (g.second.name + ".zip")).string();        // todo config rom directory? File dialog will be a bit more tricky cross platform but we can specifiy edit box for manual path entry        
+                return (std::filesystem::path(romDirectory) / (g.second.name + ".zip")).string();
             }
             index++;
         }
@@ -904,7 +926,7 @@ std::vector<std::string> RunGUI(const std::string& configPath, Util::Config::Nod
         }
     }
 
-    path = GetRomPath(selectedGame, games);
+    path = GetRomPath(selectedGame, games, configPath);
     if (!path.empty()) {
         romFiles.emplace_back(path);
     }

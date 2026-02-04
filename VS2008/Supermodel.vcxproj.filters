@@ -940,6 +940,9 @@
     <ClInclude Include="..\Src\Dojo\Training.h">
       <Filter>Header Files\Dojo</Filter>
     </ClInclude>
+    <ClInclude Include="..\Src\Dojo\tortellini.h">
+      <Filter>Header Files\Dojo</Filter>
+    </ClInclude>
     <ClInclude Include="..\Src\OSD\SDL\Gui.h">
       <Filter>Header Files\OSD\SDL</Filter>
     </ClInclude>

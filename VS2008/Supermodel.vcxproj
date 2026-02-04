@@ -518,6 +518,7 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClInclude Include="..\Src\Dojo\Receiver.h" />
     <ClInclude Include="..\Src\Dojo\Replay.h" />
     <ClInclude Include="..\Src\Dojo\Training.h" />
+    <ClInclude Include="..\Src\Dojo\tortellini.h" />
     <ClInclude Include="..\Src\GameLoader.h" />
     <ClInclude Include="..\Src\Graphics\FBO.h" />
     <ClInclude Include="..\Src\Graphics\IRender3D.h" />
