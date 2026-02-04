@@ -41,7 +41,7 @@ void Dojo::Poll::StartAction()
 	}
 }
 
-void Dojo::Poll::ButtonAction(CInput* btn)
+void Dojo::Poll::ButtonAction(std::shared_ptr<CInput> btn)
 {
 	if (Dojo::playback || Dojo::training)
 	{

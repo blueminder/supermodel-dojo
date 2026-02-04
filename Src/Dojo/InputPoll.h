@@ -5,7 +5,7 @@
 
 namespace Dojo::Poll {
     void StartAction();
-    void ButtonAction(CInput* btn);
+    void ButtonAction(std::shared_ptr<CInput> btn);
     void EndAction();
 
     inline int idx = 0;
