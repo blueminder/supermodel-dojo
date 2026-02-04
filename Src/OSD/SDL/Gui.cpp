@@ -635,6 +635,9 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
 
     ImGui::Begin("Custom Window", nullptr, ImGuiWindowFlags_NoTitleBar); // Explicitly set a window name
 
+    static ImGuiTextFilter filter;
+    filter.Draw("   ");
+
     ImGui::BeginChild("TableRegion", ImVec2(0.0f, 200.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
 
     if (ImGui::BeginTable("Games", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
@@ -649,27 +652,29 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
 
         int row = 0;
         for (const auto& g : games) {
+            std::string gameSearchStr = g.second.title + " " + g.second.name;
+            if (filter.PassFilter(gameSearchStr.c_str())) {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("%s", g.second.title.c_str());
+                ImGui::TableSetColumnIndex(1);
+                if (ImGui::Selectable(g.second.name.c_str(), selectedGameIndex == row, ImGuiSelectableFlags_SpanAllColumns)) {
+                    selectedGameIndex = row;
+                }
 
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("%s", g.second.title.c_str());
-            ImGui::TableSetColumnIndex(1);
-            if (ImGui::Selectable(g.second.name.c_str(), selectedGameIndex == row, ImGuiSelectableFlags_SpanAllColumns)) {
-                selectedGameIndex = row;
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                    exit = true;
+                }
+
+                ImGui::TableSetColumnIndex(2);
+                ImGui::Text("%s", g.second.version.c_str());
+                ImGui::TableSetColumnIndex(3);
+                ImGui::Text("%d", g.second.year);
+                ImGui::TableSetColumnIndex(4);
+                ImGui::Text("%s", g.second.stepping.c_str());
+
+                row++;
             }
-
-            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-                exit = true;
-            }
-
-            ImGui::TableSetColumnIndex(2);
-            ImGui::Text("%s", g.second.version.c_str());
-            ImGui::TableSetColumnIndex(3);
-            ImGui::Text("%d", g.second.year);
-            ImGui::TableSetColumnIndex(4);
-            ImGui::Text("%s", g.second.stepping.c_str());
-
-            row++;
         }
 
         ImGui::EndTable();
