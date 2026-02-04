@@ -120,6 +120,9 @@ xcopy /D /Y "$(ProjectDir)..\Docs\*" "$(TargetDir)"
 xcopy /D /Y "$(ProjectDir)..\Config\*" "$(TargetDir)Config"
 xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     </PostBuildEvent>
+    <Manifest>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
@@ -154,6 +157,9 @@ xcopy /D /Y "$(ProjectDir)..\Docs\*" "$(TargetDir)"
 xcopy /D /Y "$(ProjectDir)..\Config\*" "$(TargetDir)Config"
 xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     </PostBuildEvent>
+    <Manifest>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -172,11 +178,11 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
       <AdditionalDependencies>opengl32.lib;glu32.lib;WbemUuid.lib;dinput8.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
       <AdditionalLibraryDirectories>$(DXSDK_DIR)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
       <Command>if not exist "$(TargetDir)Config" mkdir "$(TargetDir)Config"
@@ -187,6 +193,9 @@ xcopy /D /Y "$(ProjectDir)..\Docs\*" "$(TargetDir)"
 xcopy /D /Y "$(ProjectDir)..\Config\*" "$(TargetDir)Config"
 xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     </PostBuildEvent>
+    <Manifest>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -224,6 +233,9 @@ xcopy /D /Y "$(ProjectDir)..\Docs\*" "$(TargetDir)"
 xcopy /D /Y "$(ProjectDir)..\Config\*" "$(TargetDir)Config"
 xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     </PostBuildEvent>
+    <Manifest>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="Musashi68K\Musashi68K.vcxproj">
@@ -371,6 +383,7 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClCompile Include="..\Src\OSD\Outputs.cpp" />
     <ClCompile Include="..\Src\OSD\SDL\Audio.cpp" />
     <ClCompile Include="..\Src\OSD\SDL\Crosshair.cpp" />
+    <ClCompile Include="..\Src\OSD\SDL\Gui.cpp" />
     <ClCompile Include="..\Src\OSD\SDL\Main.cpp" />
     <ClCompile Include="..\Src\OSD\SDL\SDLInputSystem.cpp" />
     <ClCompile Include="..\Src\OSD\SDL\Thread.cpp" />
@@ -383,6 +396,12 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
       <ExceptionHandling Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ExceptionHandling>
     </ClCompile>
+    <ClCompile Include="..\Src\Pkgs\imgui\imgui.cpp" />
+    <ClCompile Include="..\Src\Pkgs\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\Src\Pkgs\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\Src\Pkgs\imgui\imgui_impl_sdl2.cpp" />
+    <ClCompile Include="..\Src\Pkgs\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\Src\Pkgs\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\Src\Pkgs\ioapi.c">
       <ExceptionHandling Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </ExceptionHandling>
@@ -420,7 +439,6 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     </MASM>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Config\Supermodel.ini" />
     <CustomBuild Include="..\Makefiles\Makefile.SDL.OSX.GCC">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -560,6 +578,8 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClInclude Include="..\Src\OSD\Logger.h" />
     <ClInclude Include="..\Src\OSD\Outputs.h" />
     <ClInclude Include="..\Src\OSD\SDL\Crosshair.h" />
+    <ClInclude Include="..\Src\OSD\SDL\Gui.h" />
+    <ClInclude Include="..\Src\OSD\SDL\Main.h" />
     <ClInclude Include="..\Src\OSD\SDL\OSDConfig.h" />
     <ClInclude Include="..\Src\OSD\SDL\SDLInputSystem.h" />
     <ClInclude Include="..\Src\OSD\SDL\Types.h" />
@@ -569,6 +589,13 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClInclude Include="..\Src\OSD\Windows\WinOutputs.h" />
     <ClInclude Include="..\Src\Pkgs\glew.h" />
     <ClInclude Include="..\Src\Pkgs\glxew.h" />
+    <ClInclude Include="..\Src\Pkgs\imgui\imconfig.h" />
+    <ClInclude Include="..\Src\Pkgs\imgui\imgui.h" />
+    <ClInclude Include="..\Src\Pkgs\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="..\Src\Pkgs\imgui\imgui_impl_sdl2.h" />
+    <ClInclude Include="..\Src\Pkgs\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\Src\Pkgs\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\Src\Pkgs\imgui\imstb_truetype.h" />
     <ClInclude Include="..\Src\Pkgs\ioapi.h" />
     <ClInclude Include="..\Src\Pkgs\minimp3.h" />
     <ClInclude Include="..\Src\Pkgs\tinyxml2.h" />
