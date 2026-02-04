@@ -33,8 +33,8 @@
 OBJ_DIR = obj$(strip $(BITS))
 BIN_DIR = bin$(strip $(BITS))
 
-SUPERMODEL_BINARY = supermodel
-DISASSEMBLER_BINARY = ppcd
+SUPERMODEL_BINARY = supermodel$(PLATFORM_BINARY_EXTENSION)
+DISASSEMBLER_BINARY = ppcd$(PLATFORM_BINARY_EXTENSION)
 
 
 ###############################################################################
@@ -129,6 +129,7 @@ SRC_FILES = \
 	Src/OSD/SDL/Main.cpp \
 	Src/OSD/SDL/Audio.cpp \
 	Src/OSD/SDL/Thread.cpp \
+	Src/OSD/SDL/Gui.cpp \
 	Src/Model3/SoundBoard.cpp \
 	Src/Sound/SCSP.cpp \
 	Src/Sound/SCSPDSP.cpp \
@@ -168,6 +169,12 @@ SRC_FILES = \
 	Src/Util/ConfigBuilders.cpp \
 	Src/GameLoader.cpp \
 	Src/Pkgs/tinyxml2.cpp \
+	Src/Pkgs/imgui/imgui.cpp \
+	Src/Pkgs/imgui/imgui_draw.cpp \
+	Src/Pkgs/imgui/imgui_impl_sdl2.cpp \
+	Src/Pkgs/imgui/imgui_impl_opengl3.cpp \
+	Src/Pkgs/imgui/imgui_tables.cpp \
+	Src/Pkgs/imgui/imgui_widgets.cpp \
 	Src/ROMSet.cpp \
 	Src/Dojo/Dojo.cpp \
 	Src/Dojo/Frame.cpp \
@@ -277,7 +284,7 @@ pkg/stage:: pkg/path
 	  mv $(BIN_DIR)/$(SUPERMODEL_BINARY) . && rmdir $(BIN_DIR) && \
 	  mv Docs//* . && rmdir Docs
 	$(info Generating             : $(PKG_STAGE_PATH)/CHANGES.txt)
-	$(SILENT)OUTPUT=$(PKG_STAGE_PATH)/CHANGES.txt ./Scripts/changelog.sh
+	$(SILENT)./Scripts/changelog.sh $(PKG_STAGE_PATH)/CHANGES.txt
 
 pkg/path: set_version
 	$(eval PKG_STAGE_PATH = pkg/supermodel-$(VERSION))
@@ -288,7 +295,7 @@ pkg/path: set_version
 # Sets a VERSION variable based on the git sha.
 #
 set_version:
-	$(eval VERSION = $(strip $(subst ',,0.3a-git-$(shell git rev-parse --short HEAD --sq))))
+	$(eval VERSION = $(strip $(subst ',,0.3a-$(shell git show -s --format=%cd --date=format:%Y%m%d HEAD)-git-$(shell git rev-parse --short HEAD))))
 	$(eval SUPERMODEL_BUILD_FLAGS += -DSUPERMODEL_VERSION=\"$(VERSION)\")
 
 #
@@ -314,9 +321,11 @@ $(BIN_DIR)/$(SUPERMODEL_BINARY):	$(BIN_DIR) $(OBJ_FILES)
 	$(info --------------------------------------------------------------------------------)
 
 #
-# Disassembler binary (we assume $(LD) can also compile here, which is sloppy)
+# Disassembler binary (we assume $(LD) can also compile here, which is sloppy).
+# $(PLATFORM_DIRS) is required on macOS, whose $(PLATFORM_LDFLAGS) pulls in 
+# Frameworks that must be downloaded.
 #
-$(BIN_DIR)/$(DISASSEMBLER_BINARY):  $(BIN_DIR) Src/CPU/PowerPC/PPCDisasm.cpp
+$(BIN_DIR)/$(DISASSEMBLER_BINARY):  $(BIN_DIR) Src/CPU/PowerPC/PPCDisasm.cpp $(PLATFORM_DIRS)
 	$(info --------------------------------------------------------------------------------)
 	$(info Building Disassembler  : $(BIN_DIR)/$(DISASSEMBLER_BINARY))
 	$(SILENT)$(LD) -o $(BIN_DIR)/$(DISASSEMBLER_BINARY) Src/CPU/PowerPC/PPCDisasm.cpp -DSTANDALONE $(OPT) $(WARN) $(addprefix -I,$(sort $(INCLUDE_DIRS))) $(CXXSTD) $(PLATFORM_LDFLAGS)

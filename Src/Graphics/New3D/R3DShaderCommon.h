@@ -225,7 +225,7 @@ vec4 GetTextureValue()
 
 		blendFactor = ffL;
 	}
-	else if (microTexture && lod < -microTextureMinLOD)
+	else if (microTexture && lod < 0.0)
 	{
 		vec4 scaleIndex = vec4(2.0, 4.0, 16.0, 256.0);		// unsure if minLOD=4 has 256x scale? No games appear to use it
 		vec2 scale = (vec2(baseTexInfo.zw) / 128.0) * scaleIndex[int(microTextureMinLOD)];
@@ -234,8 +234,8 @@ vec4 GetTextureValue()
 		ivec2 tex2Pos = GetMicroTexturePos(microTextureID);
 		tex2Data = texBiLinear(textureBank[(texturePage+1)&1], ivec2(0), ivec2(128), tex2Pos, fsTexCoord * scale, 0);
 
-		blendFactor = -(lod + microTextureMinLOD) * 0.5;
-		blendFactor = clamp(blendFactor, 0.0, 0.5);
+		blendFactor = -lod * exp2(-microTextureMinLOD) * 0.5;
+		blendFactor = min(blendFactor, 0.5);
 	}
 
 	tex1Data = mix(tex1Data, tex2Data, blendFactor);
@@ -263,7 +263,7 @@ vec4 GetTextureValue()
 		}
 	}
 
-	if (textureAlpha == false) {
+	if (textureAlpha == false && alphaTest == false) {
 		tex1Data.a = 1.0;
 	}
 
@@ -305,11 +305,56 @@ float SqrLength(vec2 a)
 	return a.x*a.x + a.y*a.y;
 }
 
+// Computes spotlight lobe + fog lobe effects
+// ------------------------------------------------------------
+// Inputs:
+//   spotEllipse   - vec4(center.xy, radius.xy)
+//   spotRange     - vec2(startZ, extent)
+//   viewZ         - fsViewVertex.z
+//
+// Outputs:
+//   lobeEffect    - spotlight intensity
+//   lobeFogEffect - spotlight on fog intensity
+// ------------------------------------------------------------
+void ComputeSpotlight(vec4 spotEllipse, vec2 spotRange, float viewZ,
+    out float lobeEffect, 
+	out float lobeFogEffect)
+{
+    // Ellipse falloff
+    float ellipse = SqrLength((gl_FragCoord.xy - spotEllipse.xy) / spotEllipse.zw);
+    ellipse = 1.0 - ellipse;
+    ellipse = max(0.0, ellipse);
+
+    // Spotlight enable
+    float enable = step(spotRange.x, -viewZ);
+
+    // Spotlight range falloff
+    float range = 0.0;
+
+    if (spotRange.y != 0.0) {
+        float absExtent = abs(spotRange.y);
+
+        float d = spotRange.x + absExtent + viewZ;
+        d = min(d, 0.0);
+
+        float inv_r = 1.0 / (1.0 + absExtent);
+
+        // inverse-linear falloff
+        range = 1.0 / Sqr(d * inv_r - 1.0);
+        range *= enable;
+    }
+
+    // Final outputs
+    lobeEffect    = range * ellipse;
+    lobeFogEffect = enable * ellipse;
+}
+
 void WriteOutputs(vec4 colour, int layer)
 {
 	vec4 blank = vec4(0.0);
 
 	if(layer==LayerColour) {
+		colour.a = 1.0;		// always have alpha of 1
 		out0 = colour;
 		out1 = blank;
 		out2 = blank;
