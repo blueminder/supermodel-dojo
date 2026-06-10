@@ -17,21 +17,42 @@ std::string Dojo::Replay::currentISO8601TimeUTC()
 
 std::string Dojo::Replay::CreateReplayFile(const std::string& game_name, const std::string& state_path)
 {
-  // create timestamp string, iso8601 format
-  std::string timestamp = currentISO8601TimeUTC();
-  std::replace(timestamp.begin(), timestamp.end(), ':', '_');
-  std::string filename = "Replays/" + game_name + '_' + timestamp;
+  std::string filename;
+  if (!file_path.empty())
+  {
+    // honor output filename set via -replay-file
+    filename = file_path;
+    // relative paths (including bare filenames) are relative to the Replays folder
+    if (!std::filesystem::path(filename).is_absolute())
+      filename = "Replays/" + filename;
+  }
+  else
+  {
+    // create timestamp string, iso8601 format
+    std::string timestamp = currentISO8601TimeUTC();
+    std::replace(timestamp.begin(), timestamp.end(), ':', '_');
+    filename = "Replays/" + game_name + '_' + timestamp + ".supr";
+  }
+
+  // ensure the destination directory exists
+  std::filesystem::path parent = std::filesystem::path(filename).parent_path();
+  if (!parent.empty())
+    std::filesystem::create_directories(parent);
 
   if (!state_path.empty())
   {
     if (std::filesystem::exists(state_path))
     {
-      std::string state_filename = filename + ".st0";
+      // derive state filename from the replay filename base
+      std::string base = filename;
+      const std::string ext = ".supr";
+      if (base.size() >= ext.size() &&
+          base.compare(base.size() - ext.size(), ext.size(), ext) == 0)
+        base.erase(base.size() - ext.size());
+      std::string state_filename = base + ".st0";
       std::filesystem::copy_file(state_path, state_filename);
     }
   }
-
-  filename.append(".supr");
 
   // create replay file itself
   file_path = filename;
