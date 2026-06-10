@@ -52,11 +52,6 @@ ifeq ($(strip $(EXTRA_DEBUG)),1)
 	SUPERMODEL_BUILD_FLAGS += -DDEBUG
 endif
 
-# If Net Board support is enabled, need to define NET_BOARD
-ifeq ($(strip $(NET_BOARD)),1)
-	SUPERMODEL_BUILD_FLAGS += -DNET_BOARD
-endif
-
 # If built-in debugger enabled, need to define SUPERMODEL_DEBUGGER
 ifeq ($(strip $(ENABLE_DEBUGGER)),1)
 	SUPERMODEL_BUILD_FLAGS += -DSUPERMODEL_DEBUGGER
@@ -176,6 +171,11 @@ SRC_FILES = \
 	Src/Pkgs/imgui/imgui_tables.cpp \
 	Src/Pkgs/imgui/imgui_widgets.cpp \
 	Src/ROMSet.cpp \
+	Src/OSD/SDL/NetOutputs.cpp \
+	Src/Network/TCPReceive.cpp \
+	Src/Network/TCPSend.cpp \
+	Src/Network/NetBoard.cpp \
+	Src/Network/SimNetBoard.cpp \
 	Src/Dojo/Dojo.cpp \
 	Src/Dojo/Frame.cpp \
 	Src/Dojo/Message.cpp \
@@ -185,14 +185,6 @@ SRC_FILES = \
 	Src/Dojo/Receiver.cpp \
 	Src/Dojo/Netplay.cpp \
 	$(PLATFORM_SRC_FILES)
-
-ifeq ($(strip $(NET_BOARD)),1)
-	SRC_FILES += \
-		Src/Network/TCPReceive.cpp \
-		Src/Network/TCPSend.cpp \
-		Src/Network/NetBoard.cpp \
-		Src/Network/SimNetBoard.cpp
-endif
 
 ifeq ($(strip $(ENABLE_DEBUGGER)),1)
 	SRC_FILES += \
@@ -374,6 +366,9 @@ $(OBJ_DIR)/%.o:	%.cpp | $(OBJ_DIR)
 	$(SILENT)$(CXX) -MM -MP -MT $(OBJ_DIR)/$(*F).o -MT $(OBJ_DIR)/$(*F).d $(CXXFLAGS) $< > $(OBJ_DIR)/$(*F).d
 	$(info Compiling              : $< -> $@)
 	$(SILENT)$(CXX) $(CXXFLAGS) $< -o $@
+
+# Suppress all warnings for third-party packages that we cannot modify
+$(OBJ_DIR)/glew.o: CFLAGS += -w
 
 $(OBJ_DIR)/%.o:	%.c | $(OBJ_DIR)
 	$(info Generating dependencies: $< -> $(OBJ_DIR)/$(*F).d)
