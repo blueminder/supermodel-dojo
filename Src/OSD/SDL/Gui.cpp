@@ -425,8 +425,6 @@ static void BindKeys(Util::Config::Node& config, KeyBindState& kb, bool openPopu
             ImGui::EndDisabled();
         }
 
-        ImGui::EndPopup();
-
         if (kb.processKeyCount > 2) {           // kind of cludge logic. We need to draw at least once to update the GUI, configure is a blocking function so the GUI will basically freeze until we press a button.
 
             auto system = kb.input->GetInputSystem();
@@ -448,6 +446,8 @@ static void BindKeys(Util::Config::Node& config, KeyBindState& kb, bool openPopu
         if (appendPressed) {
             kb.waitingForInput = true;
         }
+
+        ImGui::EndPopup();
     }
 }
 
