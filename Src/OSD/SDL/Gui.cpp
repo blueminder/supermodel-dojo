@@ -532,19 +532,6 @@ static void DrawSettingsButtonOptions(Util::Config::Node& config, int selectedGa
         ImGui::EndPopup();
     }
 
-    {
-        const bool disabled = true;
-
-        if (disabled) {
-            ImGui::BeginDisabled(); // Disables interaction
-            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f); // Fade visuals
-        }
-
-        if (disabled) {
-            ImGui::PopStyleVar();
-            ImGui::EndDisabled();
-        }
-    }
 }
 
 static void DrawGameButtonOptions(Util::Config::Node& config, int selectedGameIndex, bool& exit, bool& saveSettings)
