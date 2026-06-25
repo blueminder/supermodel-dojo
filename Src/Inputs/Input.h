@@ -187,7 +187,7 @@ public:
 	 * If append is true, then the user's selected mapping is appended.  Otherwise, it overwrites the existing mapping(s).
 	 * escapeMapping holds the input mapping used to exit the configuration without applying the changes.
 	 */
-	bool Configure(bool append, const char *escapeMapping = "KEY_ESCAPE");
+	bool Configure(bool append, const char *escapeMapping = "KEY_ESCAPE", unsigned timeoutMs = 0);
 
 	/*
 	 * Polls (updates) this input, updating its value from the input source

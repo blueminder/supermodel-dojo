@@ -853,7 +853,7 @@ public:
    * mapping, eg return MOUSE_XAXIS rather than MOUSE3_XAXIS.
    * If fullAxisOnly is true, then only mappings representing a full axis are returned, eg JOY1_XAXIS is allowed but not JOY1_XAXIS_POS.
    */
-  bool ReadMapping(char *buffer, unsigned bufSize, bool fullAxisOnly = false, unsigned readFlags = READ_ALL, const char *escapeMapping = "KEY_ESCAPE");
+  bool ReadMapping(char *buffer, unsigned bufSize, bool fullAxisOnly = false, unsigned readFlags = READ_ALL, const char *escapeMapping = "KEY_ESCAPE", unsigned timeoutMs = 0);
 
   /*
    * Updates the current state of the input system (called by CInputs.Poll).

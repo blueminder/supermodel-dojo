@@ -1780,7 +1780,7 @@ void CInputSystem::StoreToConfig(Util::Config::Node *config)
     StoreJoySettings(config, *it);
 }
 
-bool CInputSystem::ReadMapping(char* buffer, unsigned bufSize, bool fullAxisOnly, unsigned readFlags, const char* escapeMapping)
+bool CInputSystem::ReadMapping(char* buffer, unsigned bufSize, bool fullAxisOnly, unsigned readFlags, const char* escapeMapping, unsigned timeoutMs)
 {
     // Map given escape mapping to an input source
     bool cancelled = false;
@@ -1796,6 +1796,7 @@ bool CInputSystem::ReadMapping(char* buffer, unsigned bufSize, bool fullAxisOnly
 
     // See which sources activated to begin with and from here on ignore these (this stops badly calibrated axes that are constantly "active"
     // from preventing the user from exiting read loop)
+    UINT32 startTime = CThread::GetTicks();
     if (!Poll())
         goto Cancelled;
 
@@ -1817,6 +1818,8 @@ bool CInputSystem::ReadMapping(char* buffer, unsigned bufSize, bool fullAxisOnly
                 if (!Poll())
                     goto Cancelled;
                 CThread::Sleep(1000 / 60);
+                if (timeoutMs > 0 && CThread::GetTicks() - startTime >= timeoutMs)
+                    goto Cancelled;
             }
             goto Cancelled;
         }
@@ -1852,6 +1855,10 @@ bool CInputSystem::ReadMapping(char* buffer, unsigned bufSize, bool fullAxisOnly
 
         // Don't poll continuously
         CThread::Sleep(1000 / 60);
+
+        // Check for timeout
+        if (timeoutMs > 0 && CThread::GetTicks() - startTime >= timeoutMs)
+            goto Cancelled;
     }
 
     // Copy mapping to buffer and return
