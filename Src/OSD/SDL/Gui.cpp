@@ -514,7 +514,6 @@ static void DrawSettingsButtonOptions(Util::Config::Node& config, int selectedGa
         ImGui::Separator();
 
         if (ImGui::Button("Yes", ImVec2(120, 0))) {
-            selectedGameIndex = -1;
             saveSettings = true;
             exit = true;
             ImGui::CloseCurrentPopup();
@@ -523,7 +522,6 @@ static void DrawSettingsButtonOptions(Util::Config::Node& config, int selectedGa
         ImGui::SameLine();
 
         if (ImGui::Button("No", ImVec2(120, 0))) {
-            selectedGameIndex = -1;
             saveSettings = false;
             exit = true;
             ImGui::CloseCurrentPopup();
@@ -630,7 +628,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
     ImGui::PushItemWidth(ImGui::GetWindowSize().x - 20.0f);
     static ImGuiTextFilter filter;
 
-    if (!ImGui::IsAnyItemActive())
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId))
         ImGui::SetKeyboardFocusHere();
 
     filter.Draw("   ");
