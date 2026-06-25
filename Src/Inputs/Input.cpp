@@ -192,10 +192,10 @@ void CInput::InputSystemChanged()
 	CreateSource();
 }
 
-bool CInput::Configure(bool append, const char *escapeMapping)
+bool CInput::Configure(bool append, const char *escapeMapping, unsigned timeoutMs)
 {
 	char mapping[MAX_MAPPING_LENGTH];
-	if (!m_system->ReadMapping(mapping, MAX_MAPPING_LENGTH, !!(flags & INPUT_FLAGS_AXIS), READ_ALL, escapeMapping))
+	if (!m_system->ReadMapping(mapping, MAX_MAPPING_LENGTH, !!(flags & INPUT_FLAGS_AXIS), READ_ALL, escapeMapping, timeoutMs))
 		return false;
 	if (append)
 		AppendMapping(mapping);

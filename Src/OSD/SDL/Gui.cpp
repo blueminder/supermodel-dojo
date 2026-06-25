@@ -330,25 +330,30 @@ struct KeyBindState
     std::shared_ptr<CInput> input;
     bool waitingForInput = false;
     int processKeyCount = 0;            // we need to let the gui draw a frame or two before blocking for key input
+    bool popupOpen = false;
 
     void Reset()
     {
         input = nullptr;
         waitingForInput = false;
         processKeyCount = 0;
+        popupOpen = false;
     }
 };
 
 static void BindKeys(Util::Config::Node& config, KeyBindState& kb, bool openPopup)
 {
-    bool finish = false;
     bool appendPressed = false;
 
     if (openPopup) {
         ImGui::OpenPopup("Key Binding");
     }
 
-    if (ImGui::BeginPopupModal("Key Binding", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_Always);
+    bool bpm = ImGui::BeginPopupModal("Key Binding", NULL);
+    if (bpm) {
+        ImGui::SetWindowFocus("Key Binding");
 
         if (ImGui::BeginTable("ShortcutTable", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
 
@@ -413,7 +418,7 @@ static void BindKeys(Util::Config::Node& config, KeyBindState& kb, bool openPopu
 
         if (ImGui::Button("Finish", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
-            finish = true;
+            kb.Reset();
         }
 
         if (kb.waitingForInput) {
@@ -422,30 +427,31 @@ static void BindKeys(Util::Config::Node& config, KeyBindState& kb, bool openPopu
 
         ImGui::EndPopup();
 
-        if (kb.processKeyCount > 2) {           // kind of cludge logic. We need to draw at least once to update the GUI, configure is a blocking function so the GUI will basically freeze until we press a button. Time out might make sense
+        if (kb.processKeyCount > 2) {           // kind of cludge logic. We need to draw at least once to update the GUI, configure is a blocking function so the GUI will basically freeze until we press a button.
 
             auto system = kb.input->GetInputSystem();
 
             system->UngrabMouse();
-            kb.input->Configure(true);
+            bool configured = kb.input->Configure(true, "KEY_ESCAPE", 30000);  // 30 second timeout
             system->GrabMouse();
 
-            kb.input->StoreToConfig(&config);
-            kb.processKeyCount = 0;
-            kb.waitingForInput = false;
+            if (configured) {
+                kb.input->StoreToConfig(&config);
+                ImGui::CloseCurrentPopup();
+                kb.Reset();
+            } else {
+                kb.processKeyCount = 0;
+                kb.waitingForInput = false;
+            }
         }
 
         if (appendPressed) {
             kb.waitingForInput = true;
         }
-
-        if (finish) {
-            kb.Reset();
-        }
     }
 }
 
-static void AddKeys(Util::Config::Node& config, KeyBindState& kb, std::vector<std::shared_ptr<CInput>> keyInputs)
+static bool AddKeys(Util::Config::Node& config, KeyBindState& kb, std::vector<std::shared_ptr<CInput>> keyInputs)
 {
     bool openPopup = false;
 
@@ -468,7 +474,7 @@ static void AddKeys(Util::Config::Node& config, KeyBindState& kb, std::vector<st
         ImGui::Text("%s", mapping);
     }
 
-    BindKeys(config, kb, openPopup);
+    return openPopup;
 }
 
 static void DrawSettingsButtonOptions(Util::Config::Node& config, int selectedGameIndex, bool& exit, bool& saveSettings)
@@ -755,6 +761,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
             }
 
             auto inputList = inputs->GetGameInputs(GetGame(games,selectedGameIndex));
+            bool openPopup = false;
 
             if (ImGui::BeginTable("KeyTable", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
 
@@ -763,10 +770,12 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
                 ImGui::TableSetupColumn("Keys");
                 ImGui::TableHeadersRow();
 
-                AddKeys(config, kb, inputList);
+                openPopup = AddKeys(config, kb, inputList);
 
                 ImGui::EndTable();
             }
+
+            BindKeys(config, kb, openPopup);
             
             ImGui::EndTabItem();
         }
