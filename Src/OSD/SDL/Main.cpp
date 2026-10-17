@@ -2533,8 +2533,11 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  // Flag as DPI-aware, otherwise the window content might be scaled by some graphics drivers
+  // Flag as DPI-aware, otherwise the window content might be scaled by some graphics drivers.
+  // SDL_HINT_WINDOWS_DPI_AWARENESS requires SDL 2.24.0+ (Ubuntu 22.04 ships 2.0.20).
+#if SDL_VERSION_ATLEAST(2, 24, 0)
   SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "system");
+#endif
 
   // Begin initializing various subsystems...
   int exitCode = 0;
