@@ -61,7 +61,7 @@ Quick description on the GUI stuff
 // ROM folder scan: only games whose "<name>.zip" exists in the ROM folder are shown as owned
 // ---------------------------------------------------------------------------------------------------------------
 
-static const bool  s_hideUnownedGames = false;   // true: unowned games are removed from the list
+static const bool  s_hideUnownedGames = true;   // true: unowned games are removed from the list
                                                 // false: unowned games are greyed out so the list layout is kept
 
 static std::string ToLowerStr(std::string s)
@@ -945,13 +945,41 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
 
     ImGui::BeginChild("TableRegion", ScaledSize(0.0f, 200.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
 
+    // Column widths are static: measured once over all games (owned and unowned),
+    // so hidden or filtered rows cannot shrink the table layout
+    static float s_gameTableColWidths[5];
+    static const std::map<std::string, Game>* s_sizedGames = nullptr;
+    if (s_sizedGames != &games)
+    {
+        s_sizedGames = &games;
+        s_gameTableColWidths[0] = ImGui::CalcTextSize("Title").x;
+        s_gameTableColWidths[1] = ImGui::CalcTextSize("Rom Name").x;
+        s_gameTableColWidths[2] = ImGui::CalcTextSize("Version").x;
+        s_gameTableColWidths[3] = ImGui::CalcTextSize("Year").x;
+        s_gameTableColWidths[4] = ImGui::CalcTextSize("Stepping").x;
+        for (const auto& g : games)
+        {
+            const float cellWidths[5] = {
+                ImGui::CalcTextSize(g.second.title.c_str()).x,
+                ImGui::CalcTextSize(g.second.name.c_str()).x,
+                ImGui::CalcTextSize(g.second.version.c_str()).x,
+                ImGui::CalcTextSize(std::to_string(g.second.year).c_str()).x,
+                ImGui::CalcTextSize(g.second.stepping.c_str()).x
+            };
+            for (int i = 0; i < 5; i++) {
+                s_gameTableColWidths[i] = std::max(s_gameTableColWidths[i], cellWidths[i]);
+            }
+        }
+    }
+
     if (ImGui::BeginTable("Games", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
     {
-        ImGui::TableSetupColumn("Title");
-        ImGui::TableSetupColumn("Rom Name");
-        ImGui::TableSetupColumn("Version");
-        ImGui::TableSetupColumn("Year");
-        ImGui::TableSetupColumn("Stepping");
+        // fixed widths: init width is honored because the table is not resizable
+        ImGui::TableSetupColumn("Title", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[0]);
+        ImGui::TableSetupColumn("Rom Name", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[1]);
+        ImGui::TableSetupColumn("Version", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[2]);
+        ImGui::TableSetupColumn("Year", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[3]);
+        ImGui::TableSetupColumn("Stepping", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[4]);
 
         ImGui::TableHeadersRow();
 
