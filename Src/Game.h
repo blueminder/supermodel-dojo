@@ -14,7 +14,19 @@ struct Game
   std::string manufacturer;
   unsigned year = 0;
   std::string stepping;
-  std::string mpeg_board;
+  enum Platform
+  {
+    PLATFORM_MODEL3 = 0,  // Sega Model 3 arcade hardware
+    PLATFORM_PRO1000      // Real3D Pro-1000 image generator
+  };
+  Platform platform = Platform::PLATFORM_MODEL3;
+  enum MpegBoardType
+  {
+    MPEG_BOARD_NONE = 0,
+    MPEG_BOARD_DSB1,
+    MPEG_BOARD_DSB2
+  };
+  MpegBoardType mpeg_board = MpegBoardType::MPEG_BOARD_NONE;
   enum AudioTypes
   {
       MONO = 0,             // Merge DSB+SCSP1+SCSP2 to 1 channel mono
@@ -27,8 +39,6 @@ struct Game
       QUAD_1_LR_2_FR_MIX,   // Specific srally2: Split SCSP2 and mix first channel to DSB+SCP11 Front Left/Right and second to Read Left/Right
   };
   AudioTypes audio = STEREO_LR;
-  std::string pci_bridge;               // overrides default PCI bridge type for stepping (empty string for default)
-  uint32_t real3d_pci_id = 0;           // overrides default Real3D PCI ID for stepping (0 for default)
   uint32_t encryption_key = 0;
   bool netboard_present = false;
 

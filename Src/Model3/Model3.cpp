@@ -1,8 +1,7 @@
 /**
  ** Supermodel
  ** A Sega Model 3 Arcade Emulator.
- ** Copyright 2011-2021 Bart Trzynadlowski, Nik Henson, Ian Curtis,
- **                     Harry Tuttle, and Spindizzi
+ ** Copyright 2003-2026 The Supermodel Team
  **
  ** This file is part of Supermodel.
  **
@@ -1098,7 +1097,9 @@ UINT16 CModel3::Read16(UINT32 addr)
 
     // MPC105
     case 0xC0:  // F0C00CF8
-      return PCIBridge.ReadPCIConfigData(16,addr&3);
+      if (PCIBridge.GetModel() == 0x105)
+        return PCIBridge.ReadPCIConfigData(16,addr&3);
+      break;
 
     // MPC106
     case 0xE0:
@@ -1117,7 +1118,9 @@ UINT16 CModel3::Read16(UINT32 addr)
     case 0xED:
     case 0xEE:
     case 0xEF:
-      return PCIBridge.ReadPCIConfigData(16,addr&3);
+      if (PCIBridge.GetModel() == 0x106)
+        return PCIBridge.ReadPCIConfigData(16,addr&3);
+      break;
 
     // Unknown
     default:
@@ -1233,7 +1236,9 @@ UINT32 CModel3::Read32(UINT32 addr)
 
     // MPC105
     case 0xC0:  // F0C00CF8
-      return PCIBridge.ReadPCIConfigData(32,0);
+      if (PCIBridge.GetModel() == 0x105)
+        return PCIBridge.ReadPCIConfigData(32,0);
+      break;
 
     // MPC106
     case 0xE0:
@@ -1252,7 +1257,9 @@ UINT32 CModel3::Read32(UINT32 addr)
     case 0xED:
     case 0xEE:
     case 0xEF:
-      return PCIBridge.ReadPCIConfigData(32,0);
+      if (PCIBridge.GetModel() == 0x106)
+        return PCIBridge.ReadPCIConfigData(32,0);
+      break;
 
     // RTC
     case 0x14:
@@ -1444,9 +1451,10 @@ void CModel3::Write8(UINT32 addr, UINT8 data)
     }
     goto Unknown8;
 
-  // MPC105/106
+  // MPC105
   case 0xF8:
-    PCIBridge.WriteRegister(addr&0xFF,data);
+    if (PCIBridge.GetModel() == 0x105)
+      PCIBridge.WriteRegister(addr&0xFF,data);
     break;
 
   // 53C810 SCSI
@@ -1535,7 +1543,8 @@ void CModel3::Write16(UINT32 addr, UINT16 data)
 
     // MPC105
     case 0xC0:  // F0C00CF8
-      PCIBridge.WritePCIConfigData(16,addr&2,data);
+      if (PCIBridge.GetModel() == 0x105)
+        PCIBridge.WritePCIConfigData(16,addr&2,data);
       break;
 
     // Unknown
@@ -1556,11 +1565,14 @@ void CModel3::Write16(UINT32 addr, UINT16 data)
     }
     goto Unknown16;
 
-  // MPC105/106
+  // MPC105
   case 0xF8:
-    // Write in big endian order, like a real PowerPC
-    PCIBridge.WriteRegister((addr&0xFF)+0,data>>8);
-    PCIBridge.WriteRegister((addr&0xFF)+1,data&0xFF);
+    if (PCIBridge.GetModel() == 0x105)
+    {
+      // Write in big endian order, like a real PowerPC
+      PCIBridge.WriteRegister((addr&0xFF)+0,data>>8);
+      PCIBridge.WriteRegister((addr&0xFF)+1,data&0xFF);
+    }
     break;
 
   case 0xC0: // skichamp only
@@ -1672,8 +1684,9 @@ void CModel3::Write32(UINT32 addr, UINT32 data)
       break;
 
     // MPC105
-    case 0x80:  // F0800CF8 (never observed at 0xFExxxxxx)
-      PCIBridge.WritePCIConfigAddress(data);
+    case 0x80:  // F0800CF8
+      if (PCIBridge.GetModel() == 0x105)
+        PCIBridge.WritePCIConfigAddress(data);
       break;
 
     // MPC105/106
@@ -1693,11 +1706,11 @@ void CModel3::Write32(UINT32 addr, UINT32 data)
     case 0xCD: case 0xDD: case 0xED:
     case 0xCE: case 0xDE: case 0xEE:
     case 0xCF: case 0xDF: case 0xEF:
-      if ((addr>=0xF0C00CF8) && (addr<0xF0C00D00))    // MPC105
+      if ((PCIBridge.GetModel() == 0x105) && (addr>=0xF0C00CF8) && (addr<0xF0C00D00))    // MPC105
         PCIBridge.WritePCIConfigData(32,0,data);
-      else if ((addr>=0xFEC00000) && (addr<0xFEE00000)) // MPC106
+      else if ((PCIBridge.GetModel() == 0x106) && (addr>=0xFEC00000) && (addr<0xFEE00000)) // MPC106
         PCIBridge.WritePCIConfigAddress(data);
-      else if ((addr>=0xFEE00000) && (addr<0xFEF00000)) // MPC106
+      else if ((PCIBridge.GetModel() == 0x106) && (addr>=0xFEE00000) && (addr<0xFEF00000)) // MPC106
         PCIBridge.WritePCIConfigData(32,0,data);
       break;
 
@@ -1754,13 +1767,16 @@ void CModel3::Write32(UINT32 addr, UINT32 data)
 
     goto Unknown32;
 
-  // MPC105/106
-  case 0xF8:  // F8FFF000-F8FFF100
-    // Write in big endian order, like a real PowerPC
-    PCIBridge.WriteRegister((addr&0xFF)+0,(data>>24)&0xFF);
-    PCIBridge.WriteRegister((addr&0xFF)+1,(data>>16)&0xFF);
-    PCIBridge.WriteRegister((addr&0xFF)+2,(data>>8)&0xFF);
-    PCIBridge.WriteRegister((addr&0xFF)+3,data&0xFF);
+  // MPC105
+  case 0xF8:  // F8FFF000-F8FFF0FF
+    if (PCIBridge.GetModel() == 0x105)
+    {
+      // Write in big endian order, like a real PowerPC
+      PCIBridge.WriteRegister((addr&0xFF)+0,(data>>24)&0xFF);
+      PCIBridge.WriteRegister((addr&0xFF)+1,(data>>16)&0xFF);
+      PCIBridge.WriteRegister((addr&0xFF)+2,(data>>8)&0xFF);
+      PCIBridge.WriteRegister((addr&0xFF)+3,data&0xFF);
+    }
     break;
 
   // 53C810 SCSI
@@ -2923,16 +2939,6 @@ Result CModel3::LoadGame(const Game &game, const ROMSet &rom_set)
     return Result::FAIL;
   }
 
-  if (!game.pci_bridge.empty())
-  {
-    if (game.pci_bridge == "MPC105")
-      PCIBridge.SetModel(0x105);
-    else if (game.pci_bridge == "MPC106")
-      PCIBridge.SetModel(0x106);
-    else
-      ErrorLog("Unknown PCI bridge specified in ROM set definition file (%s). Defaulting to MPC%X.", game.pci_bridge.c_str(), PCIBridge.GetModel());
-  }
-
   // Initialize CPU
   ppc_init(&ppc_config);
   ppc_attach_bus(this);
@@ -2955,23 +2961,21 @@ Result CModel3::LoadGame(const Game &game, const ROMSet &rom_set)
   // MPEG board (if present)
   if (rom_set.get_rom("mpeg_program").size)
   {
-    if (game.mpeg_board == "DSB1")
+    if (game.mpeg_board == Game::MPEG_BOARD_DSB1)
     {
       DSB = new(std::nothrow) CDSB1(m_config);
       if (NULL == DSB)
         return ErrorLog("Insufficient memory for Digital Sound Board object.");
     }
-    else if (game.mpeg_board == "DSB2")
+    else if (game.mpeg_board == Game::MPEG_BOARD_DSB2)
     {
       Util::FlipEndian16(dsbROM, 128*1024); // 68K program needs to be byte swapped
       DSB = new(std::nothrow) CDSB2(m_config);
       if (NULL == DSB)
         return ErrorLog("Insufficient memory for Digital Sound Board object.");
     }
-    else if (game.mpeg_board.empty())
-      ErrorLog("No MPEG board type defined in game XML for MPEG ROMs.");
     else
-      ErrorLog("Unknown MPEG board type '%s'. Only 'DSB1' and 'DSB2' are supported.", game.mpeg_board.c_str());
+      ErrorLog("No MPEG board type defined in game XML for MPEG ROMs.");
     if (DSB && Result::OKAY != DSB->Init(dsbROM, mpegROM))
       return Result::FAIL;
   }
@@ -3017,7 +3021,7 @@ Result CModel3::LoadGame(const Game &game, const ROMSet &rom_set)
   std::set<std::string> extra_hw;
 
   if (DSB)
-    extra_hw.insert(Util::Format() << "Digital Sound Board (Type " << game.mpeg_board << ")");
+    extra_hw.insert(Util::Format() << "Digital Sound Board (Type " << (game.mpeg_board == Game::MPEG_BOARD_DSB1 ? 1 : 2) << ")");
   if (DriveBoard->IsAttached())
   {
     if (DriveBoard->GetType() == Game::DRIVE_BOARD_BILLBOARD)
@@ -3149,12 +3153,12 @@ Result CModel3::Init(void)
   IRQ.Init();
   PCIBridge.Init();
   PCIBus.Init();
-  SCSI.Init(this,&IRQ,0x100); // SCSI is actually a non-maskable interrupt, so we give it a bit number outside of 8-bit range
+  SCSI.Init(this,&IRQ,CIRQ::NMI); // SCSI is actually a non-maskable interrupt
   RTC.Init();
   EEPROM.Init();
   if (Result::OKAY != TileGen.Init(&IRQ))
     return Result::FAIL;
-  if (Result::OKAY != GPU.Init(vrom,this,&IRQ,0x100)) // same for Real3D DMA interrupt
+  if (Result::OKAY != GPU.Init(vrom,this,&IRQ,CIRQ::NMI)) // same for Real3D DMA interrupt
     return Result::FAIL;
   if (Result::OKAY != SoundBoard.Init(soundROM,sampleROM))
     return Result::FAIL;

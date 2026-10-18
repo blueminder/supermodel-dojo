@@ -19,7 +19,6 @@
     <hardware>
       <platform>Sega Model 3</platform>
       <stepping>1.0</stepping>
-      <pci_bridge>MPC106</pci_bridge>
       <inputs>
         <input type="common" />
         <input type="fishing" />
@@ -87,7 +86,6 @@
     <hardware>
       <platform>Sega Model 3</platform>
       <stepping>1.0</stepping>
-      <pci_bridge>MPC106</pci_bridge>
       <inputs>
         <input type="common" />
         <input type="fishing" />
@@ -113,7 +111,6 @@
     <hardware>
       <platform>Sega Model 3</platform>
       <stepping>1.0</stepping>
-      <pci_bridge>MPC106</pci_bridge>
       <inputs>
         <input type="common" />
         <input type="fishing" />
@@ -139,7 +136,6 @@
     <hardware>
       <platform>Sega Model 3</platform>
       <stepping>1.0</stepping>
-      <pci_bridge>MPC106</pci_bridge>
       <inputs>
         <input type="common" />
         <input type="fishing" />
@@ -346,7 +342,6 @@
       <stepping>2.1</stepping>
       <mpeg_board>DSB2</mpeg_board>
       <drive_board>Wheel</drive_board>
-      <real3d_pci_id>0x16C311DB</real3d_pci_id>
       <netboard>true</netboard>
       <inputs>
         <input type="common" />
@@ -420,7 +415,6 @@
       <stepping>2.1</stepping>
       <mpeg_board>DSB2</mpeg_board>
       <drive_board>Wheel</drive_board>
-      <real3d_pci_id>0x16C311DB</real3d_pci_id>
       <netboard>true</netboard>
       <inputs>
         <input type="common" />
@@ -452,7 +446,6 @@
       <stepping>2.1</stepping>
       <mpeg_board>DSB2</mpeg_board>
       <drive_board>Wheel</drive_board>
-      <real3d_pci_id>0x16C311DB</real3d_pci_id>
       <netboard>true</netboard>
       <inputs>
         <input type="common" />
@@ -484,7 +477,6 @@
       <stepping>2.1</stepping>
       <mpeg_board>DSB2</mpeg_board>
       <drive_board>Wheel</drive_board>
-      <real3d_pci_id>0x16C311DB</real3d_pci_id>
       <netboard>true</netboard>
       <inputs>
         <input type="common" />
@@ -516,7 +508,6 @@
       <stepping>2.1</stepping>
       <mpeg_board>DSB2</mpeg_board>
       <drive_board>Wheel</drive_board>
-      <real3d_pci_id>0x16C311DB</real3d_pci_id>
       <netboard>true</netboard>
       <inputs>
         <input type="common" />
@@ -954,7 +945,6 @@
     <hardware>
       <platform>Sega Model 3</platform>
       <stepping>2.1</stepping>
-      <real3d_pci_id>0x16C311DB</real3d_pci_id>
       <inputs>
         <input type="common" />
         <input type="analog_gun1" />
@@ -1221,7 +1211,6 @@
     <hardware>
       <platform>Sega Model 3</platform>
       <stepping>2.1</stepping>
-      <real3d_pci_id>0x16C311DB</real3d_pci_id>
       <inputs>
         <input type="common" />
         <input type="magtruck" />
@@ -1292,7 +1281,6 @@
     <hardware>
       <platform>Sega Model 3</platform>
       <stepping>2.1</stepping>
-      <real3d_pci_id>0x16C311DB</real3d_pci_id>
       <inputs>
         <input type="common" />
         <input type="magtruck" />
@@ -1409,6 +1397,28 @@
         <file offset="2" name="epr-21116.19" crc32="0x69E31E85" />
         <file offset="4" name="epr-21115.18" crc32="0x0BB9C107" />
         <file offset="6" name="epr-21114.17" crc32="0x3ADFCB9D" />
+      </region>
+    </roms>
+  </game>
+
+  <game name="pro1000">
+    <identity>
+      <title>Real3D Pro-1000</title>
+      <version>SDK Firmware</version>
+      <manufacturer>Real3D</manufacturer>
+      <year>1997</year>
+    </identity>
+    <hardware>
+      <platform>Real3D Pro-1000</platform>
+    </hardware>
+    <roms>
+      <!-- Flash parts 1 and 4: boot stub and loop code (software revision 5.4), loaded at 0xFFF00000 -->
+      <region name="cpu_rom" stride="1" chunk_size="1">
+        <file offset="0" name="p1_p4.bin" crc32="0x6026A0DB" />
+      </region>
+      <!-- Flash part 2: INIT ROM (revision 54), loaded at 0xFFF80000 -->
+      <region name="init_rom" stride="1" chunk_size="1">
+        <file offset="0" name="p2.bin" crc32="0x945BBCF5" />
       </region>
     </roms>
   </game>
@@ -1738,7 +1748,6 @@
       <stepping>1.5</stepping>
       <mpeg_board>DSB1</mpeg_board>
       <drive_board>Wheel</drive_board>
-      <pci_bridge>MPC106</pci_bridge>
       <netboard>true</netboard>
       <audio>QuadFrontRear</audio>
       <inputs>
@@ -2614,7 +2623,6 @@
       <platform>Sega Model 3</platform>
       <stepping>2.0</stepping>
       <drive_board>Billboard</drive_board>
-      <real3d_pci_id>0x16C311DB</real3d_pci_id>
       <netboard>true</netboard>
       <inputs>
         <input type="common" />
@@ -2695,7 +2703,6 @@
       <platform>Sega Model 3</platform>
       <stepping>2.0</stepping>
       <drive_board>Billboard</drive_board>
-      <real3d_pci_id>0x16C311DB</real3d_pci_id>
       <netboard>true</netboard>
       <inputs>
         <input type="common" />
@@ -2724,7 +2731,6 @@
       <platform>Sega Model 3</platform>
       <stepping>2.0</stepping>
       <drive_board>Billboard</drive_board>
-      <real3d_pci_id>0x16C311DB</real3d_pci_id>
       <netboard>true</netboard>
       <inputs>
         <input type="common" />
@@ -2753,7 +2759,6 @@
       <platform>Sega Model 3</platform>
       <stepping>2.0</stepping>
       <drive_board>Billboard</drive_board>
-      <real3d_pci_id>0x16C311DB</real3d_pci_id>
       <netboard>true</netboard>
       <inputs>
         <input type="common" />
@@ -2860,7 +2865,6 @@
       <platform>Sega Model 3</platform>
       <stepping>1.5</stepping>
       <drive_board>Billboard</drive_board>
-      <pci_bridge>MPC106</pci_bridge>
       <inputs>
         <input type="common" />
         <input type="joystick1" />
@@ -2890,7 +2894,6 @@
       <platform>Sega Model 3</platform>
       <stepping>1.5</stepping>
       <drive_board>Billboard</drive_board>
-      <pci_bridge>MPC106</pci_bridge>
       <inputs>
         <input type="common" />
         <input type="joystick1" />
@@ -2944,7 +2947,7 @@
         <file offset="0" name="epr-20920.20" crc32="0x428D05FC" />
         <file offset="2" name="epr-20919.19" crc32="0x7A0713D2" />
         <file offset="4" name="epr-20918.18" crc32="0x0E9CDC5B" />
-        <file offset="6" name="epr-20917.17" crc32="0xC3BBB270" />
+        <file offset="6" name="epr-20917.17" crc32="0x969E4BDA" />
       </region>
       <region name="banked_crom" stride="8" chunk_size="2" byte_swap="true">
         <!-- CROM0 -->
@@ -3010,7 +3013,6 @@
       <platform>Sega Model 3</platform>
       <stepping>1.5</stepping>
       <drive_board>Billboard</drive_board>
-      <pci_bridge>MPC106</pci_bridge>
       <inputs>
         <input type="common" />
         <input type="joystick1" />
@@ -3205,7 +3207,6 @@
       <platform>Sega Model 3</platform>
       <stepping>1.5</stepping>
       <drive_board>Billboard</drive_board>
-      <pci_bridge>MPC106</pci_bridge>
       <inputs>
         <input type="common" />
         <input type="joystick1" />
@@ -3233,7 +3234,6 @@
     <hardware>
       <platform>Sega Model 3</platform>
       <stepping>1.5</stepping>
-      <pci_bridge>MPC106</pci_bridge>
       <drive_board>Billboard</drive_board>
       <inputs>
         <input type="common" />
@@ -3262,7 +3262,6 @@
     <hardware>
       <platform>Sega Model 3</platform>
       <stepping>1.5</stepping>
-      <pci_bridge>MPC106</pci_bridge>
       <drive_board>Billboard</drive_board>
       <inputs>
         <input type="common" />

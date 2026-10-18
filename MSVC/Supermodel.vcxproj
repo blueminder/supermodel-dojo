@@ -81,19 +81,17 @@
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <GenerateManifest>false</GenerateManifest>
     <EmbedManifest>true</EmbedManifest>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\Src;..\Src\OSD;..\Src\OSD\SDL;..\Src\OSD\Windows;..\Libraries\zlib-1.2.4;..\Libraries\SDL2-2.30.8\include;..\Libraries\SDL2_net-2.2.0;$(DXSDK_DIR)\Include;..\Src\Pkgs;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Src;..\Src\OSD;..\Src\OSD\SDL;..\Src\OSD\Windows;..\Libraries\zlib-1.3.1;..\Libraries\SDL2-2.30.11\include;..\Libraries\SDL2_net-2.4.0\include;$(DXSDK_DIR)\Include;..\Src\Pkgs;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SUPERMODEL_WIN32;INLINE=static __inline;_MBCS;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -130,7 +128,7 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\Src;..\Src\OSD;..\Src\OSD\SDL;..\Src\OSD\Windows;..\Libraries\zlib-1.2.4;..\Libraries\SDL2-2.30.8\include;..\Libraries\SDL2_net-2.2.0;$(DXSDK_DIR)\Include;..\Src\Pkgs;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Src;..\Src\OSD;..\Src\OSD\SDL;..\Src\OSD\Windows;..\Libraries\zlib-1.3.1;..\Libraries\SDL2-2.30.11\include;..\Libraries\SDL2_net-2.4.0\include;$(DXSDK_DIR)\Include;..\Src\Pkgs;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SUPERMODEL_WIN32;INLINE=static __inline;_MBCS;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -165,7 +163,7 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClCompile>
       <Optimization>Full</Optimization>
       <IntrinsicFunctions>false</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\Src;..\Src\OSD;..\Src\OSD\SDL;..\Src\OSD\Windows;..\Libraries\zlib-1.2.4;..\Libraries\SDL2-2.30.8\include;..\Libraries\SDL2_net-2.2.0;$(DXSDK_DIR)\Include;..\Src\Pkgs;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Src;..\Src\OSD;..\Src\OSD\SDL;..\Src\OSD\Windows;..\Libraries\zlib-1.3.1;..\Libraries\SDL2-2.30.11\include;..\Libraries\SDL2_net-2.4.0\include;$(DXSDK_DIR)\Include;..\Src\Pkgs;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SUPERMODEL_WIN32;INLINE=static __inline;_MBCS;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -204,7 +202,7 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClCompile>
       <Optimization>Full</Optimization>
       <IntrinsicFunctions>false</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\Src;..\Src\OSD;..\Src\OSD\SDL;..\Src\OSD\Windows;..\Libraries\zlib-1.2.4;..\Libraries\SDL2-2.30.8\include;..\Libraries\SDL2_net-2.2.0;$(DXSDK_DIR)\Include;..\Src\Pkgs;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Src;..\Src\OSD;..\Src\OSD\SDL;..\Src\OSD\Windows;..\Libraries\zlib-1.3.1;..\Libraries\SDL2-2.30.11\include;..\Libraries\SDL2_net-2.4.0\include;$(DXSDK_DIR)\Include;..\Src\Pkgs;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SUPERMODEL_WIN32;INLINE=static __inline;_MBCS;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -321,14 +319,6 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClCompile Include="..\Src\Debugger\Register.cpp" />
     <ClCompile Include="..\Src\Debugger\SupermodelDebugger.cpp" />
     <ClCompile Include="..\Src\Debugger\Watch.cpp" />
-    <ClCompile Include="..\Src\Dojo\Dojo.cpp" />
-    <ClCompile Include="..\Src\Dojo\Frame.cpp" />
-    <ClCompile Include="..\Src\Dojo\Message.cpp" />
-    <ClCompile Include="..\Src\Dojo\Netplay.cpp" />
-    <ClCompile Include="..\Src\Dojo\InputPoll.cpp" />
-    <ClCompile Include="..\Src\Dojo\Receiver.cpp" />
-    <ClCompile Include="..\Src\Dojo\Replay.cpp" />
-    <ClCompile Include="..\Src\Dojo\Training.cpp" />
     <ClCompile Include="..\Src\GameLoader.cpp" />
     <ClCompile Include="..\Src\Graphics\FBO.cpp" />
     <ClCompile Include="..\Src\Graphics\Legacy3D\Error.cpp" />
@@ -365,6 +355,7 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClCompile Include="..\Src\Model3\DriveBoard\JoystickBoard.cpp" />
     <ClCompile Include="..\Src\Model3\DriveBoard\SkiBoard.cpp" />
     <ClCompile Include="..\Src\Model3\DriveBoard\WheelBoard.cpp" />
+    <ClCompile Include="..\Src\Model3\DriveBoard\Z80CTC.cpp" />
     <ClCompile Include="..\Src\Model3\DSB.cpp" />
     <ClCompile Include="..\Src\Model3\IRQ.cpp" />
     <ClCompile Include="..\Src\Model3\JTAG.cpp" />
@@ -375,10 +366,15 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClCompile Include="..\Src\Model3\RTC72421.cpp" />
     <ClCompile Include="..\Src\Model3\SoundBoard.cpp" />
     <ClCompile Include="..\Src\Model3\TileGen.cpp" />
+    <ClCompile Include="..\Src\Pro1000\Pro1000.cpp" />
+    <ClCompile Include="..\Src\Pro1000\UART.cpp" />
+    <ClCompile Include="..\Src\Pro1000\8259.cpp" />
+    <ClCompile Include="..\Src\Pro1000\SCANPSC100F.cpp" />
     <ClCompile Include="..\Src\Network\NetBoard.cpp" />
     <ClCompile Include="..\Src\Network\SimNetBoard.cpp" />
     <ClCompile Include="..\Src\Network\TCPReceive.cpp" />
     <ClCompile Include="..\Src\Network\TCPSend.cpp" />
+    <ClCompile Include="..\Src\OSD\ConsoleInput.cpp" />
     <ClCompile Include="..\Src\OSD\Logger.cpp" />
     <ClCompile Include="..\Src\OSD\Outputs.cpp" />
     <ClCompile Include="..\Src\OSD\SDL\Audio.cpp" />
@@ -430,6 +426,14 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClCompile Include="..\Src\Util\ConfigBuilders.cpp" />
     <ClCompile Include="..\Src\Util\Format.cpp" />
     <ClCompile Include="..\Src\Util\NewConfig.cpp" />
+    <ClCompile Include="..\Src\Dojo\Dojo.cpp" />
+    <ClCompile Include="..\Src\Dojo\Frame.cpp" />
+    <ClCompile Include="..\Src\Dojo\Message.cpp" />
+    <ClCompile Include="..\Src\Dojo\Netplay.cpp" />
+    <ClCompile Include="..\Src\Dojo\InputPoll.cpp" />
+    <ClCompile Include="..\Src\Dojo\Receiver.cpp" />
+    <ClCompile Include="..\Src\Dojo\Replay.cpp" />
+    <ClCompile Include="..\Src\Dojo\Training.cpp" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\Src\CPU\68K\Turbo68K\Turbo68K.asm">
@@ -440,30 +444,6 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     </MASM>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\Makefiles\Makefile.SDL.OSX.GCC">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="..\Makefiles\Makefile.SDL.UNIX.GCC">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="..\Makefiles\Makefile.SDL.Win32.GCC">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="..\Makefiles\Makefile.SDL.Win32.MSVC">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CustomBuild>
     <None Include="..\Src\Graphics\Legacy3D\Shaders\Fragment.glsl" />
     <None Include="..\Src\Graphics\Legacy3D\Shaders\Fragment2D.glsl" />
     <None Include="..\Src\Graphics\Legacy3D\Shaders\Fragment_Flat.glsl" />
@@ -488,6 +468,7 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClInclude Include="..\Src\CPU\68K\Musashi\m68kops.h" />
     <ClInclude Include="..\Src\CPU\68K\Turbo68K\Turbo68K.h" />
     <ClInclude Include="..\Src\CPU\Bus.h" />
+    <ClInclude Include="..\Src\CPU\IRQController.h" />
     <ClInclude Include="..\Src\CPU\PowerPC\ppc.h" />
     <ClInclude Include="..\Src\CPU\PowerPC\PPCDisasm.h" />
     <ClInclude Include="..\Src\CPU\PowerPC\ppc_ops.h" />
@@ -510,16 +491,6 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClInclude Include="..\Src\Debugger\Register.h" />
     <ClInclude Include="..\Src\Debugger\SupermodelDebugger.h" />
     <ClInclude Include="..\Src\Debugger\Watch.h" />
-    <ClInclude Include="..\Src\Dojo\Dojo.h" />
-    <ClInclude Include="..\Src\Dojo\enet.h" />
-    <ClInclude Include="..\Src\Dojo\Frame.h" />
-    <ClInclude Include="..\Src\Dojo\Message.h" />
-    <ClInclude Include="..\Src\Dojo\Netplay.h" />
-    <ClInclude Include="..\Src\Dojo\InputPoll.h" />
-    <ClInclude Include="..\Src\Dojo\Receiver.h" />
-    <ClInclude Include="..\Src\Dojo\Replay.h" />
-    <ClInclude Include="..\Src\Dojo\Training.h" />
-    <ClInclude Include="..\Src\Dojo\tortellini.h" />
     <ClInclude Include="..\Src\GameLoader.h" />
     <ClInclude Include="..\Src\Graphics\FBO.h" />
     <ClInclude Include="..\Src\Graphics\IRender3D.h" />
@@ -561,6 +532,7 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClInclude Include="..\Src\Model3\DriveBoard\JoystickBoard.h" />
     <ClInclude Include="..\Src\Model3\DriveBoard\SkiBoard.h" />
     <ClInclude Include="..\Src\Model3\DriveBoard\WheelBoard.h" />
+    <ClInclude Include="..\Src\Model3\DriveBoard\Z80CTC.h" />
     <ClInclude Include="..\Src\Model3\DSB.h" />
     <ClInclude Include="..\Src\Model3\IRQ.h" />
     <ClInclude Include="..\Src\Model3\JTAG.h" />
@@ -571,15 +543,19 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClInclude Include="..\Src\Model3\RTC72421.h" />
     <ClInclude Include="..\Src\Model3\SoundBoard.h" />
     <ClInclude Include="..\Src\Model3\TileGen.h" />
+    <ClInclude Include="..\Src\Pro1000\Pro1000.h" />
+    <ClInclude Include="..\Src\Pro1000\UART.h" />
+    <ClInclude Include="..\Src\Pro1000\8259.h" />
+    <ClInclude Include="..\Src\Pro1000\SCANPSC100F.h" />
     <ClInclude Include="..\Src\Network\INetBoard.h" />
     <ClInclude Include="..\Src\Network\NetBoard.h" />
     <ClInclude Include="..\Src\Network\SimNetBoard.h" />
     <ClInclude Include="..\Src\Network\TCPReceive.h" />
     <ClInclude Include="..\Src\Network\TCPSend.h" />
     <ClInclude Include="..\Src\OSD\Audio.h" />
+    <ClInclude Include="..\Src\OSD\ConsoleInput.h" />
     <ClInclude Include="..\Src\OSD\Logger.h" />
     <ClInclude Include="..\Src\OSD\Outputs.h" />
-    <ClInclude Include="..\Src\OSD\SDL\roboto_medium.h" />
     <ClInclude Include="..\Src\OSD\SDL\Crosshair.h" />
     <ClInclude Include="..\Src\OSD\SDL\Gui.h" />
     <ClInclude Include="..\Src\OSD\SDL\Main.h" />
@@ -617,6 +593,17 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClInclude Include="..\Src\Util\Format.h" />
     <ClInclude Include="..\Src\Util\GenericValue.h" />
     <ClInclude Include="..\Src\Util\NewConfig.h" />
+    <ClInclude Include="..\Src\Dojo\Dojo.h" />
+    <ClInclude Include="..\Src\Dojo\enet.h" />
+    <ClInclude Include="..\Src\Dojo\Frame.h" />
+    <ClInclude Include="..\Src\Dojo\Message.h" />
+    <ClInclude Include="..\Src\Dojo\Netplay.h" />
+    <ClInclude Include="..\Src\Dojo\InputPoll.h" />
+    <ClInclude Include="..\Src\Dojo\Receiver.h" />
+    <ClInclude Include="..\Src\Dojo\Replay.h" />
+    <ClInclude Include="..\Src\Dojo\Training.h" />
+    <ClInclude Include="..\Src\Dojo\tortellini.h" />
+    <ClInclude Include="..\Src\OSD\SDL\roboto_medium.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

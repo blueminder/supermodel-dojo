@@ -1,3 +1,24 @@
+/**
+ ** Supermodel
+ ** A Sega Model 3 Arcade Emulator.
+ ** Copyright 2003-2026 The Supermodel Team
+ **
+ ** This file is part of Supermodel.
+ **
+ ** Supermodel is free software: you can redistribute it and/or modify it under
+ ** the terms of the GNU General Public License as published by the Free
+ ** Software Foundation, either version 3 of the License, or (at your option)
+ ** any later version.
+ **
+ ** Supermodel is distributed in the hope that it will be useful, but WITHOUT
+ ** ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ ** FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ ** more details.
+ **
+ ** You should have received a copy of the GNU General Public License along
+ ** with Supermodel.  If not, see <http://www.gnu.org/licenses/>.
+ **/
+
 #include "Util/NewConfig.h"
 #include "OSD/Logger.h"
 #include "Pkgs/tinyxml2.h"
@@ -19,7 +40,7 @@ namespace Util
 
       // Push the top level of the XML tree
       for (const XMLElement *e = xml.RootElement(); e != 0; e = e->NextSiblingElement())
-        q.push( { e, config } );
+        q.emplace(e, config);
 
       // Process the elements in order, pushing subsequent levels along with the
       // config nodes to add them to
@@ -38,7 +59,7 @@ namespace Util
 
         // Push all child elements
         for (const XMLElement *e = element->FirstChildElement(); e != 0; e = e->NextSiblingElement())
-          q.push( { e, node } );
+          q.emplace(e, node);
       }
     }
 
@@ -269,6 +290,29 @@ namespace Util
                 }
             }
           }
+      }
+    }
+
+    /*
+     * Copies the settings of one INI section into another.
+     *
+     * - Settings from src overwrite those already present in dest; settings not
+     *   present in dest are appended.
+     * - Nodes with children are ignored as per INI semantics (they are sections,
+     *   not settings), so any sections hanging off dest are left untouched. This
+     *   allows the global section of a config to be updated in place without
+     *   disturbing the game-specific sections.
+     * - Values are copied rather than shared so that dest does not alias src.
+     * - dest's key is retained.
+     */
+    void CopyINISection(Node *dest, const Node &src)
+    {
+      for (auto it = src.begin(); it != src.end(); ++it)
+      {
+        if (it->IsLeaf() && it->Exists())
+        {
+          dest->Set(it->Key(), it->GetValue()->MakeCopy());
+        }
       }
     }
 

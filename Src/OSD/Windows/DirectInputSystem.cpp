@@ -1,7 +1,7 @@
 /**
  ** Supermodel
  ** A Sega Model 3 Arcade Emulator.
- ** Copyright 2011 Bart Trzynadlowski, Nik Henson
+ ** Copyright 2003-2026 The Supermodel Team
  **
  ** This file is part of Supermodel.
  **
@@ -122,7 +122,7 @@ DIKeyMapStruct CDirectInputSystem::s_keyMap[] =
 	{ "Y",					DIK_Y },
 	{ "Z",					DIK_Z },
 	{ "DEL",				DIK_DELETE },
-	
+
 	// Keypad
 	{ "KEYPAD0",			DIK_NUMPAD0 },
 	{ "KEYPAD1",			DIK_NUMPAD1 },
@@ -169,8 +169,8 @@ DIKeyMapStruct CDirectInputSystem::s_keyMap[] =
 	{ "F13",				DIK_F13 },
 	{ "F14",				DIK_F14 },
 	{ "F15",				DIK_F15 },
-    
-	// Modifier Keys  
+
+	// Modifier Keys
 	{ "NUMLOCK",			DIK_NUMLOCK },
 	{ "CAPSLOCK",			DIK_CAPITAL },
 	{ "SCROLLLOCK",			DIK_SCROLL },
@@ -186,12 +186,12 @@ DIKeyMapStruct CDirectInputSystem::s_keyMap[] =
 	{ "LEFTWINDOWS",		DIK_LWIN },
 	//{ "ALTGR",			?? },
 	//{ "COMPOSE",			?? },
-    
+
 	// Other
 	//{ "HELP",				?? },
 	{ "PRINT",				DIK_SYSRQ },
 	//{ "SYSREQ",			?? },
-	//{ "BREAK",			?? },								
+	//{ "BREAK",			?? },
 	//{ "MENU",				?? },
 	//{ "POWER",			?? },
 	//{ "EURO",				?? },
@@ -200,10 +200,10 @@ DIKeyMapStruct CDirectInputSystem::s_keyMap[] =
 
 static bool IsXInputDevice(const GUID &devProdGUID)
 {
-	// Following code taken from MSDN
-	IWbemLocator* pIWbemLocator  = NULL;
+    // Following code taken from MSDN
+    IWbemLocator* pIWbemLocator  = NULL;
     IEnumWbemClassObject* pEnumDevices = NULL;
-    IWbemClassObject* pDevices[20] = {0};
+    IWbemClassObject* pDevices[20] = {};
     IWbemServices* pIWbemServices = NULL;
     BSTR bstrNamespace = NULL;
     BSTR bstrDeviceID = NULL;
@@ -1263,7 +1263,7 @@ void CDirectInputSystem::OpenJoysticks()
 			}
 		
 			// Keep track of DirectInput device number
-			it->dInputNum = m_di8Joysticks.size();
+			it->dInputNum = (int)m_di8Joysticks.size();
 
 			m_di8Joysticks.push_back(joystick);
 		}
@@ -1629,7 +1629,7 @@ int CDirectInputSystem::GetKeyIndex(const char *keyName)
 	for (size_t i = 0; i < NUM_DI_KEYS; i++)
 	{
 		if (stricmp(keyName, s_keyMap[i].keyName) == 0)
-			return i;
+			return (int)i;
 	}
 	return -1;
 }
@@ -2003,19 +2003,19 @@ CInputSource *CDirectInputSystem::CreateAnyMouseSource(EMousePart msePart)
 int CDirectInputSystem::GetNumKeyboards() const
 {
 	// If RawInput enabled, then return number of keyboards found.  Otherwise, return ANY_KEYBOARD as DirectInput cannot handle multiple keyboards
-	return (m_useRawInput ? m_rawKeyboards.size() : ANY_KEYBOARD);
+	return (m_useRawInput ? (int)m_rawKeyboards.size() : ANY_KEYBOARD);
 }
 
 int CDirectInputSystem::GetNumMice() const
 {
 	// If RawInput enabled, then return number of mice found.  Otherwise, return ANY_MOUSE as DirectInput cannot handle multiple keyboards
-	return (m_useRawInput ? m_rawMice.size() : ANY_MOUSE);
+	return (m_useRawInput ? (int)m_rawMice.size() : ANY_MOUSE);
 }
 
 int CDirectInputSystem::GetNumJoysticks() const
 {
 	// Return number of joysticks found
-	return m_diJoyInfos.size();
+	return (int)m_diJoyInfos.size();
 }
 
 const KeyDetails *CDirectInputSystem::GetKeyDetails(int kbdNum)
@@ -2097,14 +2097,14 @@ bool CDirectInputSystem::Poll()
 	}
 
 	// SDL2: I'm not sure how the SDL1.x code was detecting quit events but in
-  // SDL2, it seems that we want to explicitly run SDL_PollEvent() after we
-  // have peeked at the message queue ourselves (above).
-	// Wait or poll for event from SDL
+	// SDL2, it seems that we want to explicitly run SDL_PollEvent() after we
+	// have peeked at the message queue ourselves (above).
+	// Wait or poll for event from SDL, unless the host handles the events itself (see SetPollConsumesEvents)
 	SDL_Event e;
-	while (SDL_PollEvent(&e))
+	while (m_pollConsumesEvents && SDL_PollEvent(&e))
 	{
 		if (e.type == SDL_QUIT)
-			return false;	
+			return false;
 	}
 
 	// Poll keyboards, mice and joysticks

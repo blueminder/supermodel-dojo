@@ -3,7 +3,7 @@
 
 static const char* vertexShaderR3DQuads = R"glsl(
 
-#version 450 core
+#version 410 core
 
 // uniforms
 uniform float	modelScale;
@@ -72,7 +72,7 @@ void main(void)
 
 static const char* geometryShaderR3DQuads = R"glsl(
 
-#version 450 core
+#version 410 core
 
 layout (lines_adjacency) in;
 layout (triangle_strip, max_vertices = 4) out;
@@ -101,7 +101,7 @@ out GS_OUT
 	flat vec4	color;
 	flat float	fixedShade[4];
 	flat float	LODBase;
-	vec3 barycentricCoords;
+	vec4 barycentricCoords;			// w = 1: triangle (see main)
 } gs_out;
 
 //a*b - c*d, computed in a stable fashion (Kahan)
@@ -113,41 +113,67 @@ float DifferenceOfProducts(float a, float b, float c, float d)
     return dop + err;
 }
 
+// writes vertex i's attributes, returns its projected position
+vec2 SetVertexAttribs(int i)
+{
+	float oneOverW			= 1.0 / gl_in[i].gl_Position.w;
+	gs_out.oneOverW[i]		= oneOverW;
+
+	// our regular vertex attribs
+	gs_out.viewVertex[i]	= gs_in[i].viewVertex * oneOverW;
+	gs_out.viewNormal[i]	= gs_in[i].viewNormal * oneOverW;
+	gs_out.texCoord[i]		= gs_in[i].texCoord   * oneOverW;
+	gs_out.fixedShade[i]	= gs_in[i].fixedShade * oneOverW;
+
+	return gl_in[i].gl_Position.xy * oneOverW;
+}
+
 void main(void)
 {
 	if(gs_in[0].discardPoly > 0.0) {
 		return;					//emulate back face culling here (all vertices in poly have same value)
 	}
 
-	vec2 v[4];
-
-	for (int i=0; i<4; i++) {
-		float oneOverW		= 1.0 / gl_in[i].gl_Position.w;
-		gs_out.oneOverW[i]	= oneOverW;
-		v[i]				= gl_in[i].gl_Position.xy * oneOverW;
-
-		// our regular vertex attribs
-		gs_out.viewVertex[i]	= gs_in[i].viewVertex * oneOverW;
-		gs_out.viewNormal[i]	= gs_in[i].viewNormal * oneOverW;
-		gs_out.texCoord[i]		= gs_in[i].texCoord   * oneOverW;
-		gs_out.fixedShade[i]	= gs_in[i].fixedShade * oneOverW;
-	}
+	// Triangles: stored as quads with vertex 3 being a copy of vertex 2 (CNew3D::CopyVertexData), and the same transform makes both
+	// positions bit-identical (not spec guaranteed though). The quad code can't handle a duplicate vertex, so emit just 0-2, flagged
+	// (barycentricCoords.w) for the fragment shader's barycentric path, which is exact for it. Slot 3 must still be set
+	// below: the fragment shader reads its oneOverW in the coplanar depth test, and the rest with weight 0.
+	bool triangle = (gl_in[3].gl_Position == gl_in[2].gl_Position);
 
 	// flat attributes
 	gs_out.color = gs_in[0].color;
 	gs_out.LODBase = gs_in[0].LODBase;
 
+	if (triangle) {
+		for (int i=0; i<4; i++) {
+			SetVertexAttribs(i);
+		}
+		for (int i=0; i<3; i++) {
+			gs_out.barycentricCoords = vec4(i==0, i==1, i==2, 1.0);
+			gl_Position = gl_in[i].gl_Position;
+			EmitVertex();
+		}
+		return;
+	}
+
+	vec2 v[4];
+
+	for (int i=0; i<4; i++) {
+		v[i] = SetVertexAttribs(i);
+	}
+
 	// precompute crossproducts for all vertex combinations to be looked up in loop below for area computation
-	precise float cross[4][4];
+	// (cross[i*4+j] for vertices i and j; a flat array because arrays of arrays would need GLSL 4.30)
+	precise float cross[16];
 	for (int i=0; i<4; i++)
 	{
-		cross[i][i] = 0.0;
+		cross[i*4+i] = 0.0;
 		for (int j=i+1; j<4; j++)
-			cross[i][j] = DifferenceOfProducts(gl_in[i].gl_Position.x, gl_in[j].gl_Position.y, gl_in[j].gl_Position.x, gl_in[i].gl_Position.y) / (gl_in[i].gl_Position.w * gl_in[j].gl_Position.w);
+			cross[i*4+j] = DifferenceOfProducts(gl_in[i].gl_Position.x, gl_in[j].gl_Position.y, gl_in[j].gl_Position.x, gl_in[i].gl_Position.y) / (gl_in[i].gl_Position.w * gl_in[j].gl_Position.w);
 	}
 	for (int i=1; i<4; i++)
 		for (int j=0; j<i; j++)
-			cross[i][j] = -cross[j][i];
+			cross[i*4+j] = -cross[j*4+i];
 
 	for (int i=0; i<4; i++) {
 		// Mapping of polygon vertex order to triangle strip vertex order.
@@ -168,7 +194,7 @@ void main(void)
 			int j_next = (j+1) % 4;
 			// compute area via shoelace algorithm BUT divided by w afterwards to improve precision!
 			// in addition also use Kahans algorithm to further improve precision of the 2D crossproducts
-			gs_out.area[j] = cross[j][j_next] + cross[j_next][ii] + cross[ii][j];
+			gs_out.area[j] = cross[j*4+j_next] + cross[j_next*4+ii] + cross[ii*4+j];
 		}
 
 		const vec3 bary[4] = vec3[](
@@ -178,7 +204,7 @@ void main(void)
 			vec3(0.0,-1.0, 0.0)		// make the last coordinate negative so we can tell the difference between the triangles
 		);
 
-		gs_out.barycentricCoords = bary[ii];
+		gs_out.barycentricCoords = vec4(bary[ii], 0.0);
 
 		gl_Position = gl_in[ii].gl_Position;
 
@@ -190,7 +216,7 @@ void main(void)
 
 static const char* fragmentShaderR3DQuads = R"glsl(
 
-#version 450 core
+#version 410 core
 
 uniform usampler2D textureBank[2];			// entire texture sheet
 
@@ -228,9 +254,9 @@ uniform float	fogAttenuation;
 uniform float	fogAmbient;
 uniform bool	fixedShading;
 uniform bool	smoothShading;
+uniform float	layerDepthBias;		// PRO-1000: >1.0 pulls layered polys towards the viewer (reverse z)
 uniform int		hardwareStep;
 uniform int		colourLayer;
-uniform bool	polyAlpha;
 
 // matrices (shared with vertex shader)
 uniform mat4	projMat;
@@ -250,7 +276,7 @@ in GS_OUT
 	flat vec4	color;
 	flat float	fixedShade[4];
 	flat float	LODBase;
-	vec3 barycentricCoords;
+	vec4 barycentricCoords;
 } fs_in;
 
 //our calculated vertex attributes from the above
@@ -288,7 +314,7 @@ void QuadraticInterpolation()
 	float uSum				= 0.0;
 
 	const float hpFMin		= 0.00006103515625;		// half precision FLT_MIN
-	bool extreme_edge		= (fs_in.barycentricCoords.x <= hpFMin || fs_in.barycentricCoords.z <= hpFMin); 
+	bool extreme_edge		= (fs_in.barycentricCoords.w > 0.5 || fs_in.barycentricCoords.x <= hpFMin || fs_in.barycentricCoords.z <= hpFMin); // w: triangle
 
 	// As the coordinates get closer to the poly edge the interpolated areas can approach zero which can blow up the maths leading to bad interpolation.
 	// In this case we fall back to 3 point triangle interpolation (really 2 because 1 coord will be zero).
@@ -331,9 +357,7 @@ void QuadraticInterpolation()
 		}
 
 		if (lambdaSignCount == 0) { // one can either check for == 0 or abs(...) != 4, both should(!) be equivalent (but in practice its not due to precision issues, but these cases are extremely rare)
-			if(!gl_HelperInvocation) {
-				discard;
-			}
+			discard;	// fine for helper invocations too: nothing here uses derivatives (textures are read with texelFetch)
 		}
 
 		for (int i=0; i<4; i++) {
@@ -388,7 +412,7 @@ void QuadraticInterpolation()
 	fsColor			= fs_in.color;
 	fsLODBase		= fs_in.LODBase;
 
-	gl_FragDepth = depth;
+	gl_FragDepth = depth * layerDepthBias;
 }
 
 void main()
