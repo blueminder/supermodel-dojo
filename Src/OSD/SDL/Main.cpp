@@ -2488,10 +2488,15 @@ int main(int argc, char **argv)
       Util::Config::Node fileConfig("Global");
       Util::Config::FromINIFile(&fileConfig, s_configFilePath);
 
-      cmd_line.rom_files = RunGUI(s_configFilePath, fileConfig);
+      bool launchTraining = false;
+      cmd_line.rom_files = RunGUI(s_configFilePath, fileConfig, launchTraining);
 
       if (cmd_line.rom_files.empty()) {
           return 0;
+      }
+
+      if (launchTraining) {
+          cmd_line.config.Set("TrainingSession", true);
       }
   }
 

@@ -595,13 +595,18 @@ static void AddDojoKeys(Util::Config::Node& config, KeyBindState& kb, CInputs& i
     BindKeys(config, kb, openPopup);
 }
 
-static void DrawButtonOptions(int& selectedGameIndex, bool& exit)
+static void DrawButtonOptions(int& selectedGameIndex, bool& exit, bool& launchTraining)
 {
     const ImVec2 btnSize = ScaledSize(140.0f, 0.0f);
     if (selectedGameIndex < 0) {
         ImGui::BeginDisabled();
     }
     if (ImGui::Button("Load Game", btnSize)) {
+        exit = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Start Training", btnSize)) {
+        launchTraining = true;
         exit = true;
     }
     if (selectedGameIndex < 0) {
@@ -908,7 +913,7 @@ static Game GetGame(const std::map<std::string, Game>& games, int selectedGameIn
     return {};
 }
 
-static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<std::string, Game>& games, const std::set<std::string>& ownedZips, int& selectedGameIndex, bool& exit, bool& saveSettings, SDL_Window* window, std::shared_ptr<CInputs>& inputs, KeyBindState& kb, CalibrationState& cal, bool closeRequested, bool& exitPromptOpen, bool& saveNow)
+static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<std::string, Game>& games, const std::set<std::string>& ownedZips, int& selectedGameIndex, bool& exit, bool& launchTraining, bool& saveSettings, SDL_Window* window, std::shared_ptr<CInputs>& inputs, KeyBindState& kb, CalibrationState& cal, bool closeRequested, bool& exitPromptOpen, bool& saveNow)
 {
     ImVec4 clear_color = ImVec4(0.0f, 0.5f, 192/255.f, 1.00f);
 
@@ -1026,7 +1031,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
     ImGui::EndChild();
 
     // draw button options
-    DrawButtonOptions(selectedGameIndex, exit);
+    DrawButtonOptions(selectedGameIndex, exit, launchTraining);
 
     // Load Defaults, Save Settings and Exit
     ImGui::SameLine();
@@ -1312,8 +1317,10 @@ void StyleColorsAM3Wave()
   colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
 }
 
-std::vector<std::string> RunGUI(const std::string& configPath, const Util::Config::Node& fileConfig)
+std::vector<std::string> RunGUI(const std::string& configPath, const Util::Config::Node& fileConfig, bool& launchTraining)
 {
+    launchTraining = false;
+
     // Our own copy of the complete config file. The GUI only ever edits the global
     // section but the game-specific sections are carried along so that they survive
     // being written back out.
@@ -1446,7 +1453,7 @@ std::vector<std::string> RunGUI(const std::string& configPath, const Util::Confi
             selectedGame = -1;
         }
 
-        GUI(io, config, games, ownedZips, selectedGame, exit, saveSettings, window, inputs, kb, cal, closeRequested, exitPromptOpen, saveNow);
+        GUI(io, config, games, ownedZips, selectedGame, exit, launchTraining, saveSettings, window, inputs, kb, cal, closeRequested, exitPromptOpen, saveNow);
 
         if (saveNow) {
             saveNow = false;
