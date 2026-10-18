@@ -1,3 +1,24 @@
+/**
+ ** Supermodel
+ ** A Sega Model 3 Arcade Emulator.
+ ** Copyright 2003-2026 The Supermodel Team
+ **
+ ** This file is part of Supermodel.
+ **
+ ** Supermodel is free software: you can redistribute it and/or modify it under
+ ** the terms of the GNU General Public License as published by the Free
+ ** Software Foundation, either version 3 of the License, or (at your option)
+ ** any later version.
+ **
+ ** Supermodel is distributed in the hope that it will be useful, but WITHOUT
+ ** ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ ** FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ ** more details.
+ **
+ ** You should have received a copy of the GNU General Public License along
+ ** with Supermodel.  If not, see <http://www.gnu.org/licenses/>.
+ **/
+
 /*
  * TODO:
  * -----
@@ -139,6 +160,13 @@ namespace Util
       Variant GetMin() { return m_min; }
       Variant GetMax() { return m_max; }
       std::vector<Variant>& GetList() { return m_list; }
+      // GUI names for the list entries, in list order
+      void SetLabels(const std::vector<std::string>& labels) { m_labels = labels; }
+      const std::vector<std::string>& GetLabels() { return m_labels; }
+      // GUI slider display format (e.g. "%u MHz"), and optional text shown instead at the minimum (e.g. "Auto")
+      void SetSliderFormat(const std::string& format, const std::string& minLabel = "") { m_sliderFormat = format; m_sliderMinLabel = minLabel; }
+      const std::string& GetSliderFormat() { return m_sliderFormat; }
+      const std::string& GetSliderMinLabel() { return m_sliderMinLabel; }
       int GetIndex() { return (int)m_min.index(); }      // gets the variant index (basically the type)
 
   private:
@@ -146,6 +174,9 @@ namespace Util
       Variant m_min;
       Variant m_max;
       std::vector<Variant> m_list;
+      std::vector<std::string> m_labels;
+      std::string m_sliderFormat;
+      std::string m_sliderMinLabel;
   };
 
   class GenericValue

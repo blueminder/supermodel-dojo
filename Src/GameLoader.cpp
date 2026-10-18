@@ -90,7 +90,7 @@ const GameLoader::ZippedFile *GameLoader::LookupFile(const File::ptr_t &file, co
   return nullptr;
 }
 
-bool GameLoader::LoadZippedFile(std::shared_ptr<uint8_t> *buffer, size_t *file_size, const GameLoader::File::ptr_t &file, const ZipArchive &zip) const
+bool GameLoader::LoadZippedFile(std::shared_ptr<uint8_t> *buffer, uint32_t *file_size, const GameLoader::File::ptr_t &file, const ZipArchive &zip) const
 {
   // Locate file
   const ZippedFile *zipped_file = LookupFile(file, zip);
@@ -110,7 +110,7 @@ bool GameLoader::LoadZippedFile(std::shared_ptr<uint8_t> *buffer, size_t *file_s
   }
   *file_size = zipped_file->uncompressed_size;
   buffer->reset(new uint8_t[*file_size], std::default_delete<uint8_t[]>());
-  size_t bytes_read = (size_t) unzReadCurrentFile(zipped_file->zf, buffer->get(), *file_size);
+  auto bytes_read = unzReadCurrentFile(zipped_file->zf, buffer->get(), *file_size);
   if (bytes_read != *file_size)
   {
     ErrorLog("Unable to read '%s' from '%s'. Is zip file corrupt?", zipped_file->filename.c_str(), zipped_file->zipfilename.c_str());
@@ -182,14 +182,14 @@ GameLoader::Region::ptr_t GameLoader::Region::Create(const GameLoader &loader, c
 
   region->region_name = region_node["name"].Value<std::string>();
 
-  region->stride = region_node["stride"].ValueAs<size_t>();
+  region->stride = region_node["stride"].ValueAs<uint32_t>();
   if (region->stride == 0)
   {
     ErrorLog("%s: '%s' stride length must be greater than 0.", loader.m_xml_filename.c_str(), region->region_name.c_str());
     return ptr_t();
   }
 
-  region->chunk_size = region_node["chunk_size"].ValueAs<size_t>();
+  region->chunk_size = region_node["chunk_size"].ValueAs<uint32_t>();
   if (region->chunk_size == 0)
   {
     ErrorLog("%s: '%s' chunk size must be greater than 0.", loader.m_xml_filename.c_str(), region->region_name.c_str());
@@ -214,9 +214,9 @@ GameLoader::Region::ptr_t GameLoader::Region::Create(const GameLoader &loader, c
       }
 
       std::string byte_layout;
-      for (size_t i = 0; i < region->stride; i++)
+      for (uint32_t i = 0; i < region->stride; i++)
       {
-        byte_layout += '0' + (i ^ 1);
+        byte_layout += '0' + char(i ^ 1);
       }
       region->byte_layout = byte_layout;
     }
@@ -257,7 +257,26 @@ static void PopulateGameInfo(Game *game, const Util::Config::Node &game_node)
   game->manufacturer = game_node["identity/manufacturer"].ValueAsDefault<std::string>("Unknown");
   game->year = game_node["identity/year"].ValueAsDefault<unsigned>(0);
   game->stepping = game_node["hardware/stepping"].ValueAsDefault<std::string>("");
-  game->mpeg_board = game_node["hardware/mpeg_board"].ValueAsDefault<std::string>("");
+  std::map<std::string, Game::Platform> platforms
+  {
+    { "",                 Game::PLATFORM_MODEL3 },  // default to Model 3
+    { "Sega Model 3",     Game::PLATFORM_MODEL3 },
+    { "Real3D Pro-1000",  Game::PLATFORM_PRO1000 }
+  };
+  std::string platform = game_node["hardware/platform"].ValueAsDefault<std::string>("");
+  if (platforms.find(platform) == platforms.end())
+    ErrorLog("Unknown platform '%s' for '%s'. Defaulting to Sega Model 3.", platform.c_str(), game->name.c_str());
+  game->platform = platforms[platform];
+  std::map<std::string, Game::MpegBoardType> mpeg_board_types
+  {
+    { "",     Game::MPEG_BOARD_NONE },
+    { "DSB1", Game::MPEG_BOARD_DSB1 },
+    { "DSB2", Game::MPEG_BOARD_DSB2 }
+  };
+  std::string mpeg_board_type = game_node["hardware/mpeg_board"].ValueAsDefault<std::string>("");
+  if (mpeg_board_types.find(mpeg_board_type) == mpeg_board_types.end())
+    ErrorLog("Unknown MPEG board type '%s' for '%s'. Only 'DSB1' and 'DSB2' are supported.", mpeg_board_type.c_str(), game->name.c_str());
+  game->mpeg_board = mpeg_board_types[mpeg_board_type];
   std::map<std::string, Game::AudioTypes> audio_types
   {
     { "",                      Game::STEREO_LR }, // default to stereo
@@ -272,8 +291,6 @@ static void PopulateGameInfo(Game *game, const Util::Config::Node &game_node)
   };
   std::string audio_type = game_node["hardware/audio"].ValueAsDefault<std::string>("");
   game->audio = audio_types[audio_type];
-  game->pci_bridge = game_node["hardware/pci_bridge"].ValueAsDefault<std::string>("");
-  game->real3d_pci_id = game_node["hardware/real3d_pci_id"].ValueAsDefault<uint32_t>(0);
   game->encryption_key = game_node["hardware/encryption_key"].ValueAsDefault<uint32_t>(0);
   game->netboard_present = game_node["hardware/netboard"].ValueAsDefault<bool>(false);
 
@@ -861,7 +878,7 @@ bool GameLoader::LoadRegion(ROM *rom, const GameLoader::Region::ptr_t &region, c
   for (auto &file: region->files)
   {
     std::shared_ptr<uint8_t> tmp;
-    size_t file_size;
+    uint32_t file_size;
     error |= LoadZippedFile(&tmp, &file_size, file, zip);
     if (!error)
     {

@@ -131,6 +131,9 @@ make
 
 Make sure `dojo.exe` and `supermodel.exe` are placed together in the same folder, following the same structure found in the latest Release archive.
 
+If you wish to build via Visual Studio 2026,
+Make sure to run the Get_Libs.cmd files in the libraries directory. It will automatically pull in the required dependencies. Then either build inside the GUI or use the Build.cmd file in the MSVC folder.
+
 ### Linux
 
 Ensure SDL2 is installed. Most package managers ought to have this available. For example, on Ubuntu, it should be sufficient to run:
