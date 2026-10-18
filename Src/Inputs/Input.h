@@ -216,8 +216,10 @@ inline bool CInput::IsUIInput() const
 
 inline bool CInput::IsConfigurable() const
 {
-	// All inputs except UI and virtual ones can be configured by the user
-	return (gameFlags != Game::INPUT_UI) && !(flags & INPUT_FLAGS_VIRTUAL);
+	// All inputs except virtual ones can be configured by the user. UI inputs are kept out
+	// of per-game input lists by their game flags (Game::INPUT_UI == 0); making them
+	// configurable here only lets their mappings load from / store to the config file.
+	return !(flags & INPUT_FLAGS_VIRTUAL);
 }
 
 inline bool CInput::IsVirtual() const

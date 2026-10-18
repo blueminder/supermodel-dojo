@@ -380,10 +380,13 @@ static void SetDefaultKeyVal(std::shared_ptr<CInput> input)
 
     auto defaultConfig = DefaultConfig();
 
-    auto mapping = defaultConfig[key].ValueAs<std::string>();
-
-    // update input with value from our default config
-    input->SetMapping(mapping.c_str());
+    // Game inputs have a default in DefaultConfig. UI inputs (the Dojo hotkeys) do not, so fall
+    // back to the mapping hardcoded on the CInput itself.
+    auto* node = defaultConfig.TryGet(key);
+    if (node && !node->Empty())
+        input->SetMapping(node->ValueAs<std::string>().c_str());
+    else
+        input->ResetToDefaultMapping();
 }
 
 static std::vector<std::string> SplitByComma(const std::string& input) 
@@ -547,6 +550,46 @@ static void AddKeys(Util::Config::Node& config, KeyBindState& kb, const std::vec
         }
         ImGui::TableSetColumnIndex(2);
         ImGui::Text("%s", mapping);
+    }
+
+    BindKeys(config, kb, openPopup);
+}
+
+// Dojo hotkeys shown in the "Dojo Key bindings" tab.
+static void AddDojoKeys(Util::Config::Node& config, KeyBindState& kb, CInputs& inputs)
+{
+    struct Group { const char* name; std::vector<std::shared_ptr<CInput>> cmds; };
+    const std::vector<Group> groups = {
+        { "Emulator",      { inputs.uiClipRecord, inputs.uiScreenshot, inputs.uiLoadState, inputs.uiChangeSlot, inputs.uiSaveState } },
+        { "Replays",        { inputs.uiPause, inputs.uiTakeoverReplay2, inputs.uiTakeoverReplay1 } },
+        { "Training Mode",  { inputs.uiTogglePlayLoop, inputs.uiPlaySlot1, inputs.uiPlaySlot2, inputs.uiPlaySlot3,
+                              inputs.uiRecordSlot1, inputs.uiRecordSlot2, inputs.uiRecordSlot3, inputs.uiSwitchPlayer } },
+    };
+
+    bool openPopup = false;
+    int groupIdx = 0;
+    for (const auto& g : groups) {
+        ImGui::SeparatorText(g.name);
+        if (ImGui::BeginTable((std::string("DojoKeys") + std::to_string(groupIdx++)).c_str(), 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+            ImGui::TableSetupColumn("Action");
+            ImGui::TableSetupColumn("Keys");
+            ImGui::TableHeadersRow();
+            for (auto& k : g.cmds) {
+                if (!k)
+                    continue;
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                if (ImGui::Selectable(k->label, false, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_SpanAllColumns)) {
+                    if (ImGui::IsMouseDoubleClicked(0)) {
+                        kb.input = k;
+                        openPopup = true;
+                    }
+                }
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("%s", k->GetMapping());
+            }
+            ImGui::EndTable();
+        }
     }
 
     BindKeys(config, kb, openPopup);
@@ -1107,6 +1150,21 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
                 ImGui::EndTable();
             }
             
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Dojo Key bindings")) {
+
+            if (inputs == nullptr) {
+                inputs = GetInputSystem(config, window);
+            }
+
+            if (inputs == nullptr) {
+                DrawInputSystemError(config);
+            }
+            else {
+                AddDojoKeys(config, kb, *inputs);
+            }
+
             ImGui::EndTabItem();
         }
 
