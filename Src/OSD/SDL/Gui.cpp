@@ -595,9 +595,10 @@ static void AddDojoKeys(Util::Config::Node& config, KeyBindState& kb, CInputs& i
     BindKeys(config, kb, openPopup);
 }
 
-static void DrawButtonOptions(Util::Config::Node& config, int& selectedGameIndex, bool& exit, bool& saveSettings, std::shared_ptr<CInputs>& inputs, bool closeRequested, bool& exitPromptOpen)
+static void DrawButtonOptions(int& selectedGameIndex, bool& exit)
 {
-    if (ImGui::Button("Load Game")) {
+    const ImVec2 btnSize = ScaledSize(140.0f, 0.0f);
+    if (ImGui::Button("Load Game", btnSize)) {
 
         if (selectedGameIndex < 0) {
             ImGui::OpenPopup("Load game");
@@ -614,64 +615,6 @@ static void DrawButtonOptions(Util::Config::Node& config, int& selectedGameIndex
 
         if (ImGui::Button("OK", ScaledSize(120, 0))) { 
             ImGui::CloseCurrentPopup(); 
-        }
-
-        ImGui::EndPopup();
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("Load Defaults")) {
-        ImGui::OpenPopup("Confirm Load");
-    }
-
-    if (ImGui::BeginPopupModal("Confirm Load", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-
-        ImGui::Text("Are you sure you want to load defaults?");
-        ImGui::Separator();
-
-        if (ImGui::Button("Yes", ScaledSize(120, 0))) { 
-            config = DefaultConfig();
-            inputs = nullptr; // rebuilt from the defaults when Key bindings is next shown
-            ImGui::CloseCurrentPopup(); 
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Cancel", ScaledSize(120, 0))) { 
-            ImGui::CloseCurrentPopup(); 
-        }
-
-        ImGui::EndPopup();
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("Exit") || closeRequested) {
-        // ImGui::OpenPopup("Save On Exit");
-        selectedGameIndex = -1;
-        saveSettings = false;
-        exit = true;
-    }
-
-    exitPromptOpen = ImGui::BeginPopupModal("Save On Exit", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-    if (exitPromptOpen) {
-
-        ImGui::Text("Save settings upon exit?");
-        ImGui::Separator();
-
-        if (ImGui::Button("Yes", ScaledSize(120, 0))) {
-            selectedGameIndex = -1;
-            saveSettings = true;
-            exit = true;
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::SameLine();
-
-        if (ImGui::Button("No", ScaledSize(120, 0))) {
-            selectedGameIndex = -1;
-            saveSettings = false;
-            exit = true;
-            ImGui::CloseCurrentPopup();
         }
 
         ImGui::EndPopup();
@@ -1067,15 +1010,61 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
     ImGui::EndChild();
 
     // draw button options
-    DrawButtonOptions(config, selectedGameIndex, exit, saveSettings, inputs, closeRequested, exitPromptOpen);
+    DrawButtonOptions(selectedGameIndex, exit);
 
-    // create a space
-    ImGui::Dummy(ScaledSize(0.0f, 20.0f));
-
+    // Load Defaults, Save Settings and Exit
+    ImGui::SameLine();
     const ImVec2 saveBtnSize = ScaledSize(140.0f, 0.0f);
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - saveBtnSize.x);
+    const float itemSpacing = ImGui::GetStyle().ItemSpacing.x;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - saveBtnSize.x * 3.0f - itemSpacing * 2.0f);
+    if (ImGui::Button("Load Defaults", saveBtnSize)) {
+        ImGui::OpenPopup("Confirm Load");
+    }
+    ImGui::SameLine();
     if (ImGui::Button("Save Settings", saveBtnSize)) {
         saveNow = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Exit", saveBtnSize) || closeRequested) {
+        // ImGui::OpenPopup("Save On Exit");
+        selectedGameIndex = -1;
+        saveSettings = false;
+        exit = true;
+    }
+
+    if (ImGui::BeginPopupModal("Confirm Load", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Are you sure you want to load defaults?");
+        ImGui::Separator();
+        if (ImGui::Button("Yes", ScaledSize(120, 0))) {
+            config = DefaultConfig();
+            inputs = nullptr; // rebuilt from the defaults when Key bindings is next shown
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ScaledSize(120, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    exitPromptOpen = ImGui::BeginPopupModal("Save On Exit", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+    if (exitPromptOpen) {
+        ImGui::Text("Save settings upon exit?");
+        ImGui::Separator();
+        if (ImGui::Button("Yes", ScaledSize(120, 0))) {
+            selectedGameIndex = -1;
+            saveSettings = true;
+            exit = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("No", ScaledSize(120, 0))) {
+            selectedGameIndex = -1;
+            saveSettings = false;
+            exit = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
     }
 
     // draw the tabbed options
