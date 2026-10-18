@@ -972,7 +972,7 @@ static Game GetGame(const std::map<std::string, Game>& games, int selectedGameIn
     return {};
 }
 
-static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<std::string, Game>& games, const std::set<std::string>& ownedZips, int& selectedGameIndex, bool& exit, bool& saveSettings, SDL_Window* window, std::shared_ptr<CInputs>& inputs, KeyBindState& kb, CalibrationState& cal, bool closeRequested, bool& exitPromptOpen)
+static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<std::string, Game>& games, const std::set<std::string>& ownedZips, int& selectedGameIndex, bool& exit, bool& saveSettings, SDL_Window* window, std::shared_ptr<CInputs>& inputs, KeyBindState& kb, CalibrationState& cal, bool closeRequested, bool& exitPromptOpen, bool& saveNow)
 {
     ImVec4 clear_color = ImVec4(0.0f, 0.5f, 192/255.f, 1.00f);
 
@@ -993,6 +993,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
         ImGui::SetKeyboardFocusHere();
 
     filter.Draw("   ");
+    ImGui::PopItemWidth();
 
     ImGui::BeginChild("TableRegion", ScaledSize(0.0f, 200.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
 
@@ -1066,7 +1067,14 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
     // create a space
     ImGui::Dummy(ScaledSize(0.0f, 20.0f));
 
+    const ImVec2 saveBtnSize = ScaledSize(140.0f, 0.0f);
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - saveBtnSize.x);
+    if (ImGui::Button("Save Settings", saveBtnSize)) {
+        saveNow = true;
+    }
+
     // draw the tabbed options
+    ImGui::PushItemWidth(ImGui::GetWindowSize().x * 0.5f);
     if (ImGui::BeginTabBar("MyTabBar", ImGuiTabBarFlags_FittingPolicyResizeDown)) {
         if (ImGui::BeginTabItem("Core")) {
             UpdateTempValues(config, "Core", true);
@@ -1170,6 +1178,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
 
         ImGui::EndTabBar();
     }
+    ImGui::PopItemWidth();
 
     ImGui::End(); // Close the window
 
@@ -1370,11 +1379,17 @@ std::vector<std::string> RunGUI(const std::string& configPath, const Util::Confi
     std::shared_ptr<CInputs> inputs;
     bool saveSettings = true;
     bool running = true;
+    bool saveNow = false;
     KeyBindState kb{};
     CalibrationState cal{};
     bool exitPromptOpen = false;
     bool exit = false;
     SDL_Event event{};
+
+    auto saveSettingsToFile = [&]() {
+        Util::Config::CopyINISection(&fullConfig, config);
+        Util::Config::WriteINIFile(configPath, fullConfig, TimestampedConfigFileComment("Updated from GUI."));
+    };
 
     while (running) {
 
@@ -1401,7 +1416,12 @@ std::vector<std::string> RunGUI(const std::string& configPath, const Util::Confi
             selectedGame = -1;
         }
 
-        GUI(io, config, games, ownedZips, selectedGame, exit, saveSettings, window, inputs, kb, cal, closeRequested, exitPromptOpen);
+        GUI(io, config, games, ownedZips, selectedGame, exit, saveSettings, window, inputs, kb, cal, closeRequested, exitPromptOpen, saveNow);
+
+        if (saveNow) {
+            saveNow = false;
+            saveSettingsToFile();
+        }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
@@ -1418,10 +1438,7 @@ std::vector<std::string> RunGUI(const std::string& configPath, const Util::Confi
     }
     
     if (saveSettings) {
-        // Fold the edited global settings back into the complete config so that the
-        // game-specific sections are preserved by the write
-        Util::Config::CopyINISection(&fullConfig, config);
-        Util::Config::WriteINIFile(configPath, fullConfig, TimestampedConfigFileComment("Updated from GUI."));
+        saveSettingsToFile();
     }
 
 exitNoSave:
