@@ -1099,48 +1099,62 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
     ImGui::PushItemWidth(ImGui::GetWindowSize().x * 0.5f);
     if (ImGui::BeginTabBar("MyTabBar", ImGuiTabBarFlags_FittingPolicyResizeDown)) {
         if (ImGui::BeginTabItem("Core")) {
+            // internal scrolling region, same as the game list
+            ImGui::BeginChild("CoreSettings", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_HorizontalScrollbar);
             UpdateTempValues(config, "Core", true);
             CreateControls(config, "Core");
             UpdateTempValues(config, "Core", false);
+            ImGui::EndChild();
             ImGui::EndTabItem();
             inputs = nullptr;
         }
         if (ImGui::BeginTabItem("Video")) {
+            ImGui::BeginChild("VideoSettings", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_HorizontalScrollbar);
             UpdateTempValues(config, "Video", true);
             CreateControls(config, "Video");
             UpdateTempValues(config, "Video", false);
+            ImGui::EndChild();
             ImGui::EndTabItem();
             inputs = nullptr;
         }
         if (ImGui::BeginTabItem("Audio")) {
+            ImGui::BeginChild("AudioSettings", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_HorizontalScrollbar);
             UpdateTempValues(config, "Sound", true);
             CreateControls(config, "Sound");
             UpdateTempValues(config, "Sound", false);
+            ImGui::EndChild();
             ImGui::EndTabItem();
             inputs = nullptr;
         }
         if (ImGui::BeginTabItem("Networking")) {
+            ImGui::BeginChild("NetworkSettings", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_HorizontalScrollbar);
             UpdateTempValues(config, "Network", true);
             CreateControls(config, "Network");
             UpdateTempValues(config, "Network", false);
+            ImGui::EndChild();
             ImGui::EndTabItem();
             inputs = nullptr;
         }
         if (ImGui::BeginTabItem("Misc")) {
+            ImGui::BeginChild("MiscSettings", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_HorizontalScrollbar);
             UpdateTempValues(config, "Misc", true);
             CreateControls(config, "Misc");
             UpdateTempValues(config, "Misc", false);
+            ImGui::EndChild();
             ImGui::EndTabItem();
             inputs = nullptr;
         }
         if (ImGui::BeginTabItem("ForceFeedback")) {
+            ImGui::BeginChild("ForceFeedbackSettings", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_HorizontalScrollbar);
             UpdateTempValues(config, "ForceFeedback", true);
             CreateControls(config, "ForceFeedback");
             UpdateTempValues(config, "ForceFeedback", false);
+            ImGui::EndChild();
             ImGui::EndTabItem();
             inputs = nullptr;
         }
         if (ImGui::BeginTabItem("Sensitivity")) {
+            ImGui::BeginChild("SensitivitySettings", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_HorizontalScrollbar);
             UpdateTempValues(config, "Sensitivity", true);
             CreateControls(config, "Sensitivity");
             UpdateTempValues(config, "Sensitivity", false);
@@ -1154,10 +1168,12 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
                 openCalibration = true;
             }
             DrawCalibrationDialog(config, cal, openCalibration);
+            ImGui::EndChild();
             ImGui::EndTabItem();
             inputs = nullptr;
         }
         if (ImGui::BeginTabItem("Key bindings")) {
+            ImGui::BeginChild("KeyBindingsSettings", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_HorizontalScrollbar);
 
             if (inputs == nullptr) {
                 inputs = GetInputSystem(config, window);
@@ -1179,10 +1195,13 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
 
                 ImGui::EndTable();
             }
+
+            ImGui::EndChild();
             
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Dojo Key bindings")) {
+            ImGui::BeginChild("DojoKeyBindingsSettings", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_HorizontalScrollbar);
 
             if (inputs == nullptr) {
                 inputs = GetInputSystem(config, window);
@@ -1195,6 +1214,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
                 AddDojoKeys(config, kb, *inputs);
             }
 
+            ImGui::EndChild();
             ImGui::EndTabItem();
         }
 
