@@ -42,6 +42,8 @@ When watching a replay, you can assume control over a player by pressing `Shift 
 
 Supermodel Dojo's Training Mode lets you record, playback, and loop movements on training dummies you can cycle through with a "Switch Player" button.
 
+To open via the command line, add the `-train` argument when you load a game.
+
 Switch Player: `Shift + F7`
 Record Slot (1-3): `Shift + (F1-F3)`
 Record Slot (1-3): `Shift + (F4-F6)`
