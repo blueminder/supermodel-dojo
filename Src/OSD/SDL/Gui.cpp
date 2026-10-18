@@ -598,26 +598,14 @@ static void AddDojoKeys(Util::Config::Node& config, KeyBindState& kb, CInputs& i
 static void DrawButtonOptions(int& selectedGameIndex, bool& exit)
 {
     const ImVec2 btnSize = ScaledSize(140.0f, 0.0f);
-    if (ImGui::Button("Load Game", btnSize)) {
-
-        if (selectedGameIndex < 0) {
-            ImGui::OpenPopup("Load game");
-        }
-        else {
-            exit = true;
-        }
+    if (selectedGameIndex < 0) {
+        ImGui::BeginDisabled();
     }
-
-    if (ImGui::BeginPopupModal("Load game", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-
-        ImGui::Text("No game selected");
-        ImGui::Separator();
-
-        if (ImGui::Button("OK", ScaledSize(120, 0))) { 
-            ImGui::CloseCurrentPopup(); 
-        }
-
-        ImGui::EndPopup();
+    if (ImGui::Button("Load Game", btnSize)) {
+        exit = true;
+    }
+    if (selectedGameIndex < 0) {
+        ImGui::EndDisabled();
     }
 
     /*
