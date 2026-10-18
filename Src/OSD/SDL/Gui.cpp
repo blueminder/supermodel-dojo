@@ -597,7 +597,7 @@ static void AddDojoKeys(Util::Config::Node& config, KeyBindState& kb, CInputs& i
 
 static void DrawButtonOptions(Util::Config::Node& config, int& selectedGameIndex, bool& exit, bool& saveSettings, std::shared_ptr<CInputs>& inputs, bool closeRequested, bool& exitPromptOpen)
 {
-    if (ImGui::Button("Load game")) {
+    if (ImGui::Button("Load Game")) {
 
         if (selectedGameIndex < 0) {
             ImGui::OpenPopup("Load game");
@@ -646,7 +646,10 @@ static void DrawButtonOptions(Util::Config::Node& config, int& selectedGameIndex
     ImGui::SameLine();
 
     if (ImGui::Button("Exit") || closeRequested) {
-        ImGui::OpenPopup("Save On Exit");
+        // ImGui::OpenPopup("Save On Exit");
+        selectedGameIndex = -1;
+        saveSettings = false;
+        exit = true;
     }
 
     exitPromptOpen = ImGui::BeginPopupModal("Save On Exit", NULL, ImGuiWindowFlags_AlwaysAutoResize);
@@ -674,6 +677,7 @@ static void DrawButtonOptions(Util::Config::Node& config, int& selectedGameIndex
         ImGui::EndPopup();
     }
 
+    /*
     {
         const bool disabled = true;
 
@@ -693,6 +697,7 @@ static void DrawButtonOptions(Util::Config::Node& config, int& selectedGameIndex
             ImGui::EndDisabled();
         }
     }
+    */
 }
 
 static std::shared_ptr<CInputs> GetInputSystem(Util::Config::Node& config, SDL_Window* window)
