@@ -71,6 +71,7 @@
 #include <cstdarg>
 #include <memory>
 #include <vector>
+#include <filesystem>
 #include <algorithm>
 #include <GL/glew.h>
 
@@ -687,6 +688,15 @@ static void TestPolygonHeaderBits(IEmulator *Emu)
 
 #endif
 
+// zip name the session launched with, used to name replays
+static std::string s_replayGameName;
+
+// replay game name falls back to the CRC-identified set when no zip was launched
+static std::string ReplayGameName(const std::string &identifiedName)
+{
+  return s_replayGameName.empty() ? identifiedName : s_replayGameName;
+}
+
 
 /******************************************************************************
  Save States and NVRAM
@@ -1089,7 +1099,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
   }
 #endif
 
-  Dojo::Init(Emu->GetGame().name, recordSession, trainSession, receiving, hosting, netplay, initialState);
+  Dojo::Init(ReplayGameName(Emu->GetGame().name), recordSession, trainSession, receiving, hosting, netplay, initialState);
 
   while (!quit)
   {
@@ -1341,7 +1351,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
         SaveState(Emu, true);
 
         Dojo::Init(
-          Emu->GetGame().name,
+          ReplayGameName(Emu->GetGame().name),
           true,
           Dojo::training,
           false,
@@ -2604,6 +2614,8 @@ int main(int argc, char **argv)
       }
       if (loader.Load(&game, &rom_set, *cmd_line.rom_files.begin()))
         return 1;
+      std::string zipStem = std::filesystem::path(*cmd_line.rom_files.begin()).stem().string();
+      s_replayGameName = loader.GetGames().count(zipStem) ? zipStem : game.name;
       Util::Config::MergeINISections(&config4, config3, fileConfig[game.name]);   // apply game-specific config
     }
     else
