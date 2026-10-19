@@ -379,6 +379,7 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClCompile Include="..\Src\OSD\Outputs.cpp" />
     <ClCompile Include="..\Src\OSD\SDL\Audio.cpp" />
     <ClCompile Include="..\Src\OSD\SDL\Crosshair.cpp" />
+    <ClCompile Include="..\Src\OSD\SDL\Overlay.cpp" />
     <ClCompile Include="..\Src\OSD\SDL\Gui.cpp" />
     <ClCompile Include="..\Src\OSD\SDL\Main.cpp" />
     <ClCompile Include="..\Src\OSD\SDL\NetOutputs.cpp" />
@@ -557,6 +558,7 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
     <ClInclude Include="..\Src\OSD\Logger.h" />
     <ClInclude Include="..\Src\OSD\Outputs.h" />
     <ClInclude Include="..\Src\OSD\SDL\Crosshair.h" />
+    <ClInclude Include="..\Src\OSD\SDL\Overlay.h" />
     <ClInclude Include="..\Src\OSD\SDL\Gui.h" />
     <ClInclude Include="..\Src\OSD\SDL\Main.h" />
     <ClInclude Include="..\Src\OSD\SDL\OSDConfig.h" />
