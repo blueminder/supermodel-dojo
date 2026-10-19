@@ -939,6 +939,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
   bool        quit = false;
   bool        paused = false;
   bool        dumpTimings = false;
+  bool        fastForward = false;
 
   Dojo::Replay::file_path = s_runtime_config["ReplayFile"].ValueAs<std::string>();
   Dojo::target_ip = s_runtime_config["TargetIP"].ValueAs<std::string>();
@@ -1500,6 +1501,19 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
       s_runtime_config.Get("Throttle").SetValue(!s_runtime_config["Throttle"].ValueAs<bool>());
       printf("Frame limiting: %s\n", s_runtime_config["Throttle"].ValueAs<bool>() ? "On" : "Off");
     }
+    else if (Inputs->uiFastForward->Pressed())
+    {
+      if (Dojo::netplay || Dojo::receiving)
+        puts("Fast forward not available in network sessions.");
+      else
+      {
+        fastForward = !fastForward;
+        // vsync would otherwise cap frame rate during fast forward
+        SDL_GL_SetSwapInterval(!fastForward && s_runtime_config["VSync"].ValueAs<bool>() ? 1 : 0);
+        printf("Fast forward: %s\n", fastForward ? "On" : "Off");
+        ShowNotice(fastForward ? "Fast Forward Enabled" : "Fast Forward Disabled");
+      }
+    }
     else if (Inputs->uiScreenshot->Pressed())
     {
       // Make a screenshot
@@ -1514,8 +1528,9 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
     }
 #endif // SUPERMODEL_DEBUGGER
 
-    // Refresh rate (frame limiting)
-    if (paused || s_runtime_config["Throttle"].ValueAs<bool>())
+    // mute audio during fast forward
+    SetAudioEnabled(!paused && !fastForward);
+    if (paused || (!fastForward && s_runtime_config["Throttle"].ValueAs<bool>()))
     {
         SuperSleepUntil(nextTime);
         nextTime = SDL_GetPerformanceCounter() + perfCountPerFrame;
