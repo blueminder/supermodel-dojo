@@ -13,6 +13,9 @@
 #include <set>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
+#include <cstdint>
+#include <ctime>
 #include <system_error>
 #include <sstream>
 #include "GameLoader.h"
@@ -24,6 +27,8 @@
 #include "../Src/OSD/SDL/SDLInputSystem.h"
 #include "../Src/Inputs/Inputs.h"
 #include "OSD/ConfigFile.h"
+#include "OSD/FileSystemPath.h"
+#include "Dojo/Replay.h"
 #include "Main.h"
 #include "Gui.h"
 #include "roboto_medium.h"
@@ -595,6 +600,12 @@ static void AddDojoKeys(Util::Config::Node& config, KeyBindState& kb, CInputs& i
     BindKeys(config, kb, openPopup);
 }
 
+struct ReplaySelection
+{
+    std::string path;
+    std::string gameName;
+};
+
 static void DrawButtonOptions(int& selectedGameIndex, bool& exit, bool& launchTraining)
 {
     const ImVec2 btnSize = ScaledSize(140.0f, 0.0f);
@@ -911,6 +922,216 @@ static Game GetGame(const std::map<std::string, Game>& games, int selectedGameIn
     }
 
     return {};
+}
+
+static int GetGameIndex(const std::map<std::string, Game>& games, const std::string& gameName)
+{
+    int index = 0;
+    for (const auto& g : games) {
+        if (g.second.name == gameName) {
+            return index;
+        }
+        index++;
+    }
+    return -1;
+}
+
+// parse iso8601 utc timestamp from replay filename (colons replaced by underscores)
+static std::time_t ParseReplayTimestamp(const std::string& ts)
+{
+    std::tm tm = {};
+    if (sscanf(ts.c_str(), "%d-%d-%dT%d_%d_%d",
+            &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
+            &tm.tm_hour, &tm.tm_min, &tm.tm_sec) != 6)
+        return -1;
+    tm.tm_year -= 1900;
+    tm.tm_mon -= 1;
+    tm.tm_isdst = 0;
+#ifdef _WIN32
+    return _mkgmtime(&tm);
+#else
+    return timegm(&tm);
+#endif
+}
+
+static std::time_t ParseReplayFilenameTimestamp(const std::string& stem, size_t& gameNameLen)
+{
+    size_t pos = 0;
+    while ((pos = stem.find('_', pos)) != std::string::npos) {
+        const std::time_t t = ParseReplayTimestamp(stem.substr(pos + 1));
+        if (t != -1) {
+            // the game name ends before whole separator underscore run ("_" or "__")
+            gameNameLen = pos;
+            while (gameNameLen > 0 && stem[gameNameLen - 1] == '_') {
+                gameNameLen--;
+            }
+            return t;
+        }
+        pos++;
+    }
+    return -1;
+}
+
+static std::time_t FileTimeToTimeT(const std::filesystem::file_time_type& ftime)
+{
+    return std::time_t(std::chrono::duration_cast<std::chrono::seconds>(ftime.time_since_epoch()).count());
+}
+
+// player names from lobby file names "<game>__<timestamp>__<p1>__<p2>__";
+static bool ParseReplayFilenamePlayers(const std::string& stem, size_t gameNameLen, std::string& player1, std::string& player2)
+{
+    if (gameNameLen == std::string::npos) {
+        return false;   // no timestamp found, not a lobby file name
+    }
+
+    // remainder after separator underscores "<timestamp>__<p1>__<p2>__"
+    size_t sepEnd = gameNameLen;
+    while (sepEnd < stem.size() && stem[sepEnd] == '_') {
+        sepEnd++;
+    }
+    const std::string rest = stem.substr(sepEnd);
+    std::vector<std::string> parts;
+    size_t start = 0;
+    for (;;) {
+        const size_t end = rest.find("__", start);
+        parts.push_back(rest.substr(start, end == std::string::npos ? std::string::npos : end - start));
+        if (end == std::string::npos) {
+            break;
+        }
+        start = end + 2;
+    }
+
+    // parts: [timestamp, player 1, player 2, (trailing empty)]
+    if (parts.size() < 2 || ParseReplayTimestamp(parts[0]) == -1) {
+        return false;
+    }
+
+    auto name = [](std::string s) {
+        std::replace(s.begin(), s.end(), '_', ' ');
+        return s;
+    };
+    const std::string p1 = name(parts[1]);
+    const std::string p2 = parts.size() > 2 ? name(parts[2]) : "";
+
+    if (p1.empty() && p2.empty()) {
+        return false;
+    }
+
+    player1 = p1;
+    player2 = p2;
+    return true;
+}
+
+struct ReplayEntry
+{
+    std::string path;
+    std::string gameName; // game name from replay header, else filename
+    std::string player1;
+    std::string player2;
+    std::time_t timestamp = -1; // recording time from filename, else file modification time
+    uint32_t frameCount = 0;
+};
+
+struct ReplayMetaCacheEntry
+{
+    Dojo::Replay::ReplayHeader header;
+    uint32_t frameCount = 0;
+    std::uintmax_t fileSize = 0;
+    std::filesystem::file_time_type mtime{};
+};
+static std::map<std::string, ReplayMetaCacheEntry> s_replayMetaCache;
+
+static ReplayEntry LoadReplayEntry(const std::string& path, const std::string& stem)
+{
+    ReplayEntry entry;
+    entry.path = path;
+
+    size_t gameNameLen = std::string::npos;
+    entry.timestamp = ParseReplayFilenameTimestamp(stem, gameNameLen);
+    if (gameNameLen != std::string::npos) {
+        entry.gameName = stem.substr(0, gameNameLen);
+    }
+
+    std::error_code ecSize, ecMtime;
+    const auto fileSize = std::filesystem::file_size(path, ecSize);
+    const auto mtime = std::filesystem::last_write_time(path, ecMtime);
+    if (entry.timestamp == -1 && !ecMtime) {
+        entry.timestamp = FileTimeToTimeT(mtime);
+    }
+
+    // full frame count pass runs once per file, not once per GUI frame
+    auto& meta = s_replayMetaCache[path];
+    if (meta.fileSize != fileSize || meta.mtime != mtime) {
+        meta.header = Dojo::Replay::ReadReplayHeader(path);
+        meta.frameCount = Dojo::Replay::GetReplayFrameCount(path);
+        meta.fileSize = fileSize;
+        meta.mtime = mtime;
+    }
+
+    entry.frameCount = meta.frameCount;
+    if (meta.header.valid) {
+        entry.gameName = meta.header.game_name;
+    }
+
+    // lobby file names carry the players if any player present
+    // when neither present, replay header used
+    std::string fileNamePlayer1, fileNamePlayer2;
+    if (ParseReplayFilenamePlayers(stem, gameNameLen, fileNamePlayer1, fileNamePlayer2)) {
+        entry.player1 = fileNamePlayer1;
+        entry.player2 = fileNamePlayer2;
+    }
+    else if (meta.header.valid) {
+        entry.player1 = meta.header.player1;
+        entry.player2 = meta.header.player2;
+    }
+    else {
+        entry.player1 = "Player1";
+        entry.player2 = "Player2";
+    }
+
+    if (entry.gameName.empty()) {
+        entry.gameName = stem;   // unparsable file name: use all of it
+    }
+
+    return entry;
+}
+
+// scan the replays directory for *.supr files, newest first
+// absent directory returns empty list
+static std::vector<ReplayEntry> ScanReplays()
+{
+    std::vector<ReplayEntry> replays;
+    const std::string dir = FileSystemPath::GetPath(FileSystemPath::Replays);
+
+    std::error_code ec;
+    for (std::filesystem::directory_iterator it(dir, ec), end; !ec && it != end; it.increment(ec)) {
+        std::error_code ec2;
+        if (!it->is_regular_file(ec2) || ec2) {
+            continue;
+        }
+        if (ToLowerStr(it->path().extension().string()) != ".supr") {
+            continue;
+        }
+        replays.emplace_back(LoadReplayEntry(it->path().string(), it->path().stem().string()));
+    }
+
+    std::sort(replays.begin(), replays.end(),
+        [](const ReplayEntry& a, const ReplayEntry& b) { return a.timestamp > b.timestamp; });
+
+    return replays;
+}
+
+static std::string FormatReplayDuration(uint32_t frameCount, float fps)
+{
+    const uint32_t secs = uint32_t(frameCount / fps);
+    char buf[16];
+    if (secs >= 3600) {
+        std::snprintf(buf, sizeof(buf), "%u:%02u:%02u", secs / 3600, (secs / 60) % 60, secs % 60);
+    }
+    else {
+        std::snprintf(buf, sizeof(buf), "%u:%02u", secs / 60, secs % 60);
+    }
+    return buf;
 }
 
 static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<std::string, Game>& games, const std::set<std::string>& ownedZips, int& selectedGameIndex, bool& exit, bool& launchTraining, bool& saveSettings, SDL_Window* window, std::shared_ptr<CInputs>& inputs, KeyBindState& kb, CalibrationState& cal, bool closeRequested, bool& exitPromptOpen, bool& saveNow)
