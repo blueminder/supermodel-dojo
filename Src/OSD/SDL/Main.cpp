@@ -1317,11 +1317,13 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
     {
       std::string notice = Dojo::Replay::Takeover(0);
       std::cout << notice << std::endl;
+      ShowNotice(notice);
     }
     else if (Dojo::playback && Inputs->uiTakeoverReplay2->Pressed())
     {
       std::string notice = Dojo::Replay::Takeover(1);
       std::cout << notice << std::endl;
+      ShowNotice(notice);
     }
     else if (Inputs->uiClipRecord->Pressed())
     {
