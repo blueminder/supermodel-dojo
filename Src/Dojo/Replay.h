@@ -7,6 +7,14 @@
 #include <filesystem>
 
 namespace Dojo::Replay {
+  struct ReplayHeader
+  {
+    bool valid = false;
+    std::string game_name;
+    std::string player1;
+    std::string player2;
+  };
+
   std::string currentISO8601TimeUTC();
 
   std::string CreateReplayFile(const std::string& game_name, const std::string& state_path);
@@ -14,6 +22,8 @@ namespace Dojo::Replay {
   void AppendPlayerInfoToFile();
   void AppendFrameToFile(const std::string& frame);
   void LoadFile(const std::string& path);
+
+  ReplayHeader ReadReplayHeader(const std::string& path);
   std::string GetStatePath();
 
   std::string Takeover(int player);
