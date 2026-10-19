@@ -2056,7 +2056,7 @@ Util::Config::Node DefaultConfig()
 
 
   // Replays
-  config.Set("RecordSession", false);
+  config.Set("RecordSession", false, "Core");
   config.Set("ReplayFile", "");
   config.Set("TrainingSession", false);
   config.Set("Receiving", false);
