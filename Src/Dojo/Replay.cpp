@@ -1,6 +1,10 @@
 #include "Dojo.h"
 #include "OSD/FileSystemPath.h"
 
+// replay recording state, internal to this file
+static uint32_t replay_frame_count;
+static Dojo::Message::Writer replay_msg;
+
 std::string Dojo::Replay::currentISO8601TimeUTC()
 {
   time_t itt;
