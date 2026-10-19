@@ -565,7 +565,7 @@ static void AddDojoKeys(Util::Config::Node& config, KeyBindState& kb, CInputs& i
 {
     struct Group { const char* name; std::vector<std::shared_ptr<CInput>> cmds; };
     const std::vector<Group> groups = {
-        { "Emulator",      { inputs.uiClipRecord, inputs.uiScreenshot, inputs.uiLoadState, inputs.uiChangeSlot, inputs.uiSaveState } },
+        { "Emulator",      { inputs.uiClipRecord, inputs.uiScreenshot, inputs.uiLoadState, inputs.uiChangeSlot, inputs.uiSaveState, inputs.uiFastForward } },
         { "Replays",        { inputs.uiPause, inputs.uiTakeoverReplay2, inputs.uiTakeoverReplay1 } },
         { "Training Mode",  { inputs.uiTogglePlayLoop, inputs.uiPlaySlot1, inputs.uiPlaySlot2, inputs.uiPlaySlot3,
                               inputs.uiRecordSlot1, inputs.uiRecordSlot2, inputs.uiRecordSlot3, inputs.uiSwitchPlayer } },
