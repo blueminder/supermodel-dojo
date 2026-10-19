@@ -280,6 +280,23 @@ static int InputTextResizeCallback(ImGuiInputTextCallbackData* data)
     return 0;
 }
 
+static void ShowHelpMarker(const char *desc)
+{
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 25.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
+
+static const std::map<std::string, std::string> s_settingsDesc = {
+    { "RecordSession", "Record all sessions as replays. Found in Replays folder." },
+};
+
 static void CreateControls(Util::Config::Node& config, const std::string& group)
 {
     for (auto it = config.begin(); it != config.end(); ++it)
@@ -337,6 +354,10 @@ static void CreateControls(Util::Config::Node& config, const std::string& group)
                         {
                             auto p = std::get_if<bool>(&vRange->tempValue);
                             ImGui::Checkbox(key.c_str(), p);
+                            if (s_settingsDesc.count(key)) {
+                                ImGui::SameLine();
+                                ShowHelpMarker(s_settingsDesc.at(key).c_str());
+                            }
                             break;
                         }
                         case 1:             // unsigned
