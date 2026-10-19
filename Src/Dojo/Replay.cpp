@@ -234,6 +234,68 @@ Dojo::Replay::ReplayHeader Dojo::Replay::ReadReplayHeader(const std::string& pat
   return meta;
 }
 
+// count game frames by scanning message headers, skipping message bodies;
+// frame byte 0 is the player index, so max frames per player gives game frames
+uint32_t Dojo::Replay::GetReplayFrameCount(const std::string& path)
+{
+  std::ifstream fin(path,
+    std::ios::in | std::ios::binary);
+  if (!fin.is_open())
+    return 0;
+
+  fin.seekg(0, std::ios_base::end);
+  const std::streamoff file_size = fin.tellg();
+  fin.seekg(0, std::ios_base::beg);
+  if (!fin.good() || file_size < HEADER_LEN)
+    return 0;
+
+  uint32_t player_frames[2] = { 0, 0 };
+  char header_buf[HEADER_LEN] = { 0 };
+  std::vector<char> body;
+  std::streamoff pos = 0;
+
+  while (pos + (std::streamoff)HEADER_LEN <= file_size)
+  {
+    fin.read(header_buf, HEADER_LEN);
+    if (fin.gcount() != (std::streamsize)HEADER_LEN)
+      break;
+    pos += HEADER_LEN;
+
+    const uint32_t body_size = Message::GetSize((uint8_t*)header_buf);
+    const uint32_t cmd = Message::GetCmd((uint8_t*)header_buf);
+
+    // guard against truncated or corrupt files
+    if (body_size > file_size - pos)
+      break;
+
+    if (cmd == GAME_BUFFER && body_size > 4)
+    {
+      body.resize(body_size);
+      fin.read(body.data(), body_size);
+      if (fin.gcount() != (std::streamsize)body_size)
+        break;
+
+      const uint32_t num_frames = (body_size - 4) / FRAME_SIZE;
+      for (uint32_t i = 0; i < num_frames; i++)
+      {
+        const uint32_t player = (uint32_t)(uint8_t)body[4 + i * FRAME_SIZE];
+        if (player < 2)
+          player_frames[player]++;
+      }
+    }
+    else
+    {
+      // skip the message body
+      fin.seekg(pos + body_size);
+      if (!fin.good())
+        break;
+    }
+    pos += body_size;
+  }
+
+  return std::max(player_frames[0], player_frames[1]);
+}
+
 std::string Dojo::Replay::Takeover(int player)
 {
   if (Dojo::Replay::p1_override || Dojo::Replay::p2_override || player > 1)
