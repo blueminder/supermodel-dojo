@@ -13,6 +13,7 @@ namespace Dojo::Replay {
     std::string game_name;
     std::string player1;
     std::string player2;
+    uint32_t frame_count = 0;
   };
 
   std::string currentISO8601TimeUTC();
@@ -24,6 +25,7 @@ namespace Dojo::Replay {
   void LoadFile(const std::string& path);
 
   ReplayHeader ReadReplayHeader(const std::string& path);
+  uint32_t GetReplayFrameCount(const std::string& path);
   std::string GetStatePath();
 
   std::string Takeover(int player);
