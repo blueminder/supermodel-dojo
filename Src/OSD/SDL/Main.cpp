@@ -112,6 +112,8 @@
 
 #include "Dojo/Dojo.h"
 
+#include "Overlay.h"
+
 /******************************************************************************
  Global Run-time Config
 ******************************************************************************/
@@ -862,6 +864,9 @@ void EndFrameVideo()
   if (videoInputs)
     s_crosshair->Update(currentInputs, videoInputs, xOffset, yOffset, xRes, yRes);
 
+  // Training Mode notice overlay
+  DrawOverlay();
+
   // Swap the buffers
   SDL_GL_SwapWindow(s_window);
 }
@@ -1040,6 +1045,9 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
     goto QuitError;
 
   Emu->AttachRenderers(Render2D,Render3D, superAA);
+
+  // Overlay for Training Mode notices
+  InitOverlay(s_window);
 
   // Reset emulator
   Emu->Reset();
@@ -1255,46 +1263,55 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
     {
       std::string notice = Dojo::Training::TogglePlayerSwap();
       std::cout << notice << std::endl;
+      ShowNotice(notice);
     }
     else if (Dojo::training && Inputs->uiRecordSlot1->Pressed())
     {
       std::string notice = Dojo::Training::ToggleRecording(0);
       std::cout << notice << std::endl;
+      ShowNotice(notice);
     }
     else if (Dojo::training && Inputs->uiRecordSlot2->Pressed())
     {
       std::string notice = Dojo::Training::ToggleRecording(1);
       std::cout << notice << std::endl;
+      ShowNotice(notice);
     }
     else if (Dojo::training && Inputs->uiRecordSlot3->Pressed())
     {
       std::string notice = Dojo::Training::ToggleRecording(2);
       std::cout << notice << std::endl;
+      ShowNotice(notice);
     }
     else if (Dojo::training && Inputs->uiPlaySlot1->Pressed())
     {
       std::string notice = Dojo::Training::TogglePlayback(0);
       std::cout << notice << std::endl;
+      ShowNotice(notice);
     }
     else if (Dojo::training && Inputs->uiPlaySlot2->Pressed())
     {
       std::string notice = Dojo::Training::TogglePlayback(1);
       std::cout << notice << std::endl;
+      ShowNotice(notice);
     }
     else if (Dojo::training && Inputs->uiPlaySlot3->Pressed())
     {
       std::string notice = Dojo::Training::TogglePlayback(2);
       std::cout << notice << std::endl;
+      ShowNotice(notice);
     }
     else if (Dojo::training && Inputs->uiPlayRandomSlot->Pressed())
     {
       std::string notice = Dojo::Training::ToggleRandomPlayback();
       std::cout << notice << std::endl;
+      ShowNotice(notice);
     }
     else if (Dojo::training && Inputs->uiTogglePlayLoop->Pressed())
     {
       std::string notice = Dojo::Training::ToggleLoop();
       std::cout << notice << std::endl;
+      ShowNotice(notice);
     }
     else if (Dojo::playback && Inputs->uiTakeoverReplay1->Pressed())
     {
@@ -1529,6 +1546,8 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
 
   // Make sure all threads are paused before shutting down
   Emu->PauseThreads();
+
+  ShutdownOverlay();
 
 #ifdef SUPERMODEL_DEBUGGER
   // If debugger was supplied, detach it from system and restore old logger
@@ -2757,4 +2776,3 @@ Exit:
 
   return exitCode;
 }
-
