@@ -606,45 +606,40 @@ struct ReplaySelection
     std::string gameName;
 };
 
-static void DrawButtonOptions(int& selectedGameIndex, bool& exit, bool& launchTraining)
+static void DrawButtonOptions(int& selectedGameIndex, bool& exit, bool& launchTraining, bool gamesTabActive, const ReplaySelection& selectedReplay, ReplaySelection& replayLaunch)
 {
     const ImVec2 btnSize = ScaledSize(140.0f, 0.0f);
-    if (selectedGameIndex < 0) {
-        ImGui::BeginDisabled();
-    }
-    if (ImGui::Button("Load Game", btnSize)) {
-        exit = true;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Start Training", btnSize)) {
-        launchTraining = true;
-        exit = true;
-    }
-    if (selectedGameIndex < 0) {
-        ImGui::EndDisabled();
-    }
 
-    /*
-    {
-        const bool disabled = true;
-
-        if (disabled) {
-            ImGui::BeginDisabled(); // Disables interaction
-            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f); // Fade visuals
+    if (gamesTabActive) {
+        if (selectedGameIndex < 0) {
+            ImGui::BeginDisabled();
         }
-
-        static bool perGameSettings = false;
-        bool perGamesSettingsCopy = perGameSettings;
-        ImGui::Checkbox("Per game settings", &perGamesSettingsCopy);
-
-
-
-        if (disabled) {
-            ImGui::PopStyleVar();
+        if (ImGui::Button("Load Game", btnSize)) {
+            exit = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Start Training", btnSize)) {
+            launchTraining = true;
+            exit = true;
+        }
+        if (selectedGameIndex < 0) {
             ImGui::EndDisabled();
         }
     }
-    */
+    else {
+        // only loadable rows can be selected, so any selection is loadable
+        if (selectedReplay.path.empty()) {
+            ImGui::BeginDisabled();
+        }
+        if (ImGui::Button("Load Replay", btnSize)) {
+            replayLaunch = selectedReplay;
+            launchTraining = false;
+            exit = true;
+        }
+        if (selectedReplay.path.empty()) {
+            ImGui::EndDisabled();
+        }
+    }
 }
 
 static std::shared_ptr<CInputs> GetInputSystem(Util::Config::Node& config, SDL_Window* window)
@@ -1134,7 +1129,136 @@ static std::string FormatReplayDuration(uint32_t frameCount, float fps)
     return buf;
 }
 
-static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<std::string, Game>& games, const std::set<std::string>& ownedZips, int& selectedGameIndex, bool& exit, bool& launchTraining, bool& saveSettings, SDL_Window* window, std::shared_ptr<CInputs>& inputs, KeyBindState& kb, CalibrationState& cal, bool closeRequested, bool& exitPromptOpen, bool& saveNow)
+static void DrawReplaysTable(const ImGuiTextFilter& filter, const Util::Config::Node& config, const std::map<std::string, Game>& games, const std::set<std::string>& ownedZips, int& selectedGameIndex, ReplaySelection& selectedReplay, ReplaySelection& replayLaunch, bool& exit)
+{
+    const std::vector<ReplayEntry> replays = ScanReplays();
+
+    // forget a selection whose file is no longer there
+    if (!selectedReplay.path.empty()) {
+        bool selectionStillThere = false;
+        for (const auto& r : replays) {
+            if (r.path == selectedReplay.path) {
+                selectionStillThere = true;
+                break;
+            }
+        }
+        if (!selectionStillThere) {
+            selectedReplay = {};
+        }
+    }
+
+    static float s_replayTableColWidths[6];
+    static std::vector<std::string> s_sizedReplayPaths;
+    if (s_sizedReplayPaths.size() != replays.size() || !std::equal(s_sizedReplayPaths.begin(), s_sizedReplayPaths.end(), replays.begin(), replays.end(),
+        [](const std::string& p, const ReplayEntry& r) { return p == r.path; }))
+    {
+        s_sizedReplayPaths.clear();
+        for (const auto& r : replays) {
+            s_sizedReplayPaths.push_back(r.path);
+        }
+        s_replayTableColWidths[0] = ImGui::CalcTextSize("Date").x;
+        s_replayTableColWidths[1] = ImGui::CalcTextSize("Game Title").x;
+        s_replayTableColWidths[2] = ImGui::CalcTextSize("Rom Name").x;
+        s_replayTableColWidths[3] = ImGui::CalcTextSize("Player 1").x;
+        s_replayTableColWidths[4] = ImGui::CalcTextSize("Player 2").x;
+        s_replayTableColWidths[5] = std::max(ImGui::CalcTextSize("Duration").x, ImGui::CalcTextSize("0:00:00").x);
+        for (const auto& r : replays) {
+            const std::string title = games.count(r.gameName) ? games.at(r.gameName).title : r.gameName;
+            const float cellWidths[5] = {
+                ImGui::CalcTextSize("0000-00-00 00:00:00").x,
+                ImGui::CalcTextSize(title.c_str()).x,
+                ImGui::CalcTextSize(r.gameName.c_str()).x,
+                ImGui::CalcTextSize(r.player1.c_str()).x,
+                ImGui::CalcTextSize(r.player2.c_str()).x
+            };
+            for (int i = 0; i < 5; i++) {
+                s_replayTableColWidths[i] = std::max(s_replayTableColWidths[i], cellWidths[i]);
+            }
+        }
+    }
+
+    if (ImGui::BeginTable("ReplaysList", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
+    {
+        ImGui::TableSetupColumn("Date", ImGuiTableColumnFlags_WidthFixed, s_replayTableColWidths[0]);
+        ImGui::TableSetupColumn("Game Title", ImGuiTableColumnFlags_WidthFixed, s_replayTableColWidths[1]);
+        ImGui::TableSetupColumn("Rom Name", ImGuiTableColumnFlags_WidthFixed, s_replayTableColWidths[2]);
+        ImGui::TableSetupColumn("Player 1", ImGuiTableColumnFlags_WidthStretch, s_replayTableColWidths[3]);
+        ImGui::TableSetupColumn("Player 2", ImGuiTableColumnFlags_WidthStretch, s_replayTableColWidths[4]);
+        ImGui::TableSetupColumn("Duration", ImGuiTableColumnFlags_WidthFixed, s_replayTableColWidths[5]);
+        ImGui::TableHeadersRow();
+
+        // durations follow current RefreshRate setting, falls back to original hardware rate
+        float fps = std::fabs(config["RefreshRate"].ValueAs<float>());
+        if (fps <= 0.0f) {
+            fps = 57.524f;
+        }
+
+        for (const auto& r : replays) {
+            const std::string title = games.count(r.gameName) ? games.at(r.gameName).title : r.gameName;
+            std::string replaySearchStr = title + " " + r.gameName + " " + r.player1 + " " + r.player2;
+            if (!filter.PassFilter(replaySearchStr.c_str())) {
+                continue;
+            }
+
+            const bool loadable = games.count(r.gameName) > 0 && ownedZips.count(ToLowerStr(r.gameName)) > 0;
+
+            ImGui::TableNextRow();
+
+            ImGui::PushID(r.path.c_str());
+
+            if (!loadable) {
+                // grey out the row and make it non-interactive, the name stays readable
+                ImGui::BeginDisabled();
+            }
+
+            ImGui::TableSetColumnIndex(0);
+            const std::tm* ptm = std::localtime(&r.timestamp);
+            if (ptm) {
+                char dateBuf[32];
+                std::strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%d %H:%M:%S", ptm);
+                ImGui::TextUnformatted(dateBuf);
+            }
+            else {
+                ImGui::TextUnformatted("-");
+            }
+
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", title.c_str());
+
+            ImGui::TableSetColumnIndex(2);
+            if (ImGui::Selectable(r.gameName.c_str(), selectedReplay.path == r.path, ImGuiSelectableFlags_SpanAllColumns)) {
+                selectedReplay.path = r.path;
+                selectedReplay.gameName = r.gameName;
+                if (loadable) {
+                    // the Key bindings tab shows the replay's game
+                    selectedGameIndex = GetGameIndex(games, r.gameName);
+                }
+            }
+
+            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                replayLaunch = selectedReplay;
+                exit = true;
+            }
+
+            ImGui::TableSetColumnIndex(3);
+            ImGui::Text("%s", r.player1.c_str());
+            ImGui::TableSetColumnIndex(4);
+            ImGui::Text("%s", r.player2.c_str());
+            ImGui::TableSetColumnIndex(5);
+            ImGui::Text("%s", FormatReplayDuration(r.frameCount, fps).c_str());
+
+            ImGui::PopID();
+
+            if (!loadable) {
+                ImGui::EndDisabled();
+            }
+        }
+
+        ImGui::EndTable();
+    }
+}
+
+static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<std::string, Game>& games, const std::set<std::string>& ownedZips, int& selectedGameIndex, bool& exit, bool& launchTraining, bool& saveSettings, ReplaySelection& selectedReplay, ReplaySelection& replayLaunch, SDL_Window* window, std::shared_ptr<CInputs>& inputs, KeyBindState& kb, CalibrationState& cal, bool closeRequested, bool& exitPromptOpen, bool& saveNow)
 {
     ImVec4 clear_color = ImVec4(0.0f, 0.5f, 192/255.f, 1.00f);
 
@@ -1157,102 +1281,120 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
     filter.Draw("   ");
     ImGui::PopItemWidth();
 
-    ImGui::BeginChild("TableRegion", ScaledSize(0.0f, 200.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
-
-    // Column widths are static: measured once over all games (owned and unowned),
-    // so hidden or filtered rows cannot shrink the table layout
-    static float s_gameTableColWidths[5];
-    static const std::map<std::string, Game>* s_sizedGames = nullptr;
-    if (s_sizedGames != &games)
+    // games and replays tabs; the filter box above applies to the active tab
+    bool gamesTabActive = true;
+    if (ImGui::BeginTabBar("GameReplayTabs", 0))
     {
-        s_sizedGames = &games;
-        s_gameTableColWidths[0] = ImGui::CalcTextSize("Title").x;
-        s_gameTableColWidths[1] = ImGui::CalcTextSize("Rom Name").x;
-        s_gameTableColWidths[2] = ImGui::CalcTextSize("Version").x;
-        s_gameTableColWidths[3] = ImGui::CalcTextSize("Year").x;
-        s_gameTableColWidths[4] = ImGui::CalcTextSize("Stepping").x;
-        for (const auto& g : games)
+        if (ImGui::BeginTabItem("Games"))
         {
-            const float cellWidths[5] = {
-                ImGui::CalcTextSize(g.second.title.c_str()).x,
-                ImGui::CalcTextSize(g.second.name.c_str()).x,
-                ImGui::CalcTextSize(g.second.version.c_str()).x,
-                ImGui::CalcTextSize(std::to_string(g.second.year).c_str()).x,
-                ImGui::CalcTextSize(g.second.stepping.c_str()).x
-            };
-            for (int i = 0; i < 5; i++) {
-                s_gameTableColWidths[i] = std::max(s_gameTableColWidths[i], cellWidths[i]);
+            ImGui::BeginChild("GamesRegion", ScaledSize(0.0f, 200.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+
+        // Column widths are static: measured once over all games (owned and unowned),
+        // so hidden or filtered rows cannot shrink the table layout
+        static float s_gameTableColWidths[5];
+        static const std::map<std::string, Game>* s_sizedGames = nullptr;
+        if (s_sizedGames != &games)
+        {
+            s_sizedGames = &games;
+            s_gameTableColWidths[0] = ImGui::CalcTextSize("Title").x;
+            s_gameTableColWidths[1] = ImGui::CalcTextSize("Rom Name").x;
+            s_gameTableColWidths[2] = ImGui::CalcTextSize("Version").x;
+            s_gameTableColWidths[3] = ImGui::CalcTextSize("Year").x;
+            s_gameTableColWidths[4] = ImGui::CalcTextSize("Stepping").x;
+            for (const auto& g : games)
+            {
+                const float cellWidths[5] = {
+                    ImGui::CalcTextSize(g.second.title.c_str()).x,
+                    ImGui::CalcTextSize(g.second.name.c_str()).x,
+                    ImGui::CalcTextSize(g.second.version.c_str()).x,
+                    ImGui::CalcTextSize(std::to_string(g.second.year).c_str()).x,
+                    ImGui::CalcTextSize(g.second.stepping.c_str()).x
+                };
+                for (int i = 0; i < 5; i++) {
+                    s_gameTableColWidths[i] = std::max(s_gameTableColWidths[i], cellWidths[i]);
+                }
             }
         }
-    }
 
-    if (ImGui::BeginTable("Games", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
-    {
-        // fixed widths: init width is honored because the table is not resizable
-        ImGui::TableSetupColumn("Title", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[0]);
-        ImGui::TableSetupColumn("Rom Name", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[1]);
-        ImGui::TableSetupColumn("Version", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[2]);
-        ImGui::TableSetupColumn("Year", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[3]);
-        ImGui::TableSetupColumn("Stepping", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[4]);
+        if (ImGui::BeginTable("GamesList", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
+        {
+            // fixed widths: init width is honored because the table is not resizable
+            ImGui::TableSetupColumn("Title", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[0]);
+            ImGui::TableSetupColumn("Rom Name", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[1]);
+            ImGui::TableSetupColumn("Version", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[2]);
+            ImGui::TableSetupColumn("Year", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[3]);
+            ImGui::TableSetupColumn("Stepping", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[4]);
 
-        ImGui::TableHeadersRow();
+            ImGui::TableHeadersRow();
 
-        int row = 0;
-        for (const auto& g : games) {
+            int row = 0;
+            for (const auto& g : games) {
 
-            std::string gameSearchStr = g.second.title + " " + g.second.name;
-            if (!filter.PassFilter(gameSearchStr.c_str())) {
+                std::string gameSearchStr = g.second.title + " " + g.second.name;
+                if (!filter.PassFilter(gameSearchStr.c_str())) {
+                    row++;
+                    continue;
+                }
+
+                const bool owned = ownedZips.count(ToLowerStr(g.second.name)) > 0;
+
+                // row must always advance, GetGame() / GetRomPath() index the full games map
+                if (!owned && s_hideUnownedGames) {
+                    row++;
+                    continue;
+                }
+
+                ImGui::TableNextRow();
+
+                if (!owned) {
+                    // grey out the row and make it non-interactive, the name stays readable
+                    ImGui::BeginDisabled();
+                }
+
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("%s", g.second.title.c_str());
+                ImGui::TableSetColumnIndex(1);
+                if (ImGui::Selectable(g.second.name.c_str(), selectedGameIndex == row, ImGuiSelectableFlags_SpanAllColumns)) {
+                    selectedGameIndex = row;
+                }
+
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                    exit = true;
+                }
+
+                ImGui::TableSetColumnIndex(2);
+                ImGui::Text("%s", g.second.version.c_str());
+                ImGui::TableSetColumnIndex(3);
+                ImGui::Text("%d", g.second.year);
+                ImGui::TableSetColumnIndex(4);
+                ImGui::Text("%s", g.second.stepping.c_str());
+
+                if (!owned) {
+                    ImGui::EndDisabled();
+                }
+
                 row++;
-                continue;
             }
 
-            const bool owned = ownedZips.count(ToLowerStr(g.second.name)) > 0;
-
-            // row must always advance, GetGame() / GetRomPath() index the full games map
-            if (!owned && s_hideUnownedGames) {
-                row++;
-                continue;
-            }
-
-            ImGui::TableNextRow();
-
-            if (!owned) {
-                // grey out the row and make it non-interactive, the name stays readable
-                ImGui::BeginDisabled();
-            }
-
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("%s", g.second.title.c_str());
-            ImGui::TableSetColumnIndex(1);
-            if (ImGui::Selectable(g.second.name.c_str(), selectedGameIndex == row, ImGuiSelectableFlags_SpanAllColumns)) {
-                selectedGameIndex = row;
-            }
-
-            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-                exit = true;
-            }
-
-            ImGui::TableSetColumnIndex(2);
-            ImGui::Text("%s", g.second.version.c_str());
-            ImGui::TableSetColumnIndex(3);
-            ImGui::Text("%d", g.second.year);
-            ImGui::TableSetColumnIndex(4);
-            ImGui::Text("%s", g.second.stepping.c_str());
-
-            if (!owned) {
-                ImGui::EndDisabled();
-            }
-
-            row++;
+            ImGui::EndTable();
         }
 
-        ImGui::EndTable();
+            ImGui::EndChild();
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Replays"))
+        {
+            gamesTabActive = false;
+            ImGui::BeginChild("ReplaysRegion", ScaledSize(0.0f, 200.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+            DrawReplaysTable(filter, config, games, ownedZips, selectedGameIndex, selectedReplay, replayLaunch, exit);
+            ImGui::EndChild();
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
     }
-
-    ImGui::EndChild();
 
     // draw button options
-    DrawButtonOptions(selectedGameIndex, exit, launchTraining);
+    DrawButtonOptions(selectedGameIndex, exit, launchTraining, gamesTabActive, selectedReplay, replayLaunch);
 
     // Load Defaults, Save Settings and Exit
     ImGui::SameLine();
@@ -1538,9 +1680,10 @@ void StyleColorsAM3Wave()
   colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
 }
 
-std::vector<std::string> RunGUI(const std::string& configPath, const Util::Config::Node& fileConfig, bool& launchTraining)
+std::vector<std::string> RunGUI(const std::string& configPath, const Util::Config::Node& fileConfig, bool& launchTraining, std::string& replayFile)
 {
     launchTraining = false;
+    replayFile.clear();
 
     // Our own copy of the complete config file. The GUI only ever edits the global
     // section but the game-specific sections are carried along so that they survive
@@ -1630,6 +1773,8 @@ std::vector<std::string> RunGUI(const std::string& configPath, const Util::Confi
     std::string scannedRomDirectory = config["ROMDirectory"].ValueAs<std::string>();
     std::set<std::string> ownedZips = ScanRomZips(scannedRomDirectory);
     int selectedGame = -1;  // -1 means no selection
+    ReplaySelection selectedReplay{};
+    ReplaySelection replayLaunch{};
     std::vector<std::string> romFiles;
     std::string path;
 
@@ -1674,7 +1819,7 @@ std::vector<std::string> RunGUI(const std::string& configPath, const Util::Confi
             selectedGame = -1;
         }
 
-        GUI(io, config, games, ownedZips, selectedGame, exit, launchTraining, saveSettings, window, inputs, kb, cal, closeRequested, exitPromptOpen, saveNow);
+        GUI(io, config, games, ownedZips, selectedGame, exit, launchTraining, saveSettings, selectedReplay, replayLaunch, window, inputs, kb, cal, closeRequested, exitPromptOpen, saveNow);
 
         if (saveNow) {
             saveNow = false;
@@ -1690,11 +1835,18 @@ std::vector<std::string> RunGUI(const std::string& configPath, const Util::Confi
         }
     }
 
-    path = GetRomPath(selectedGame, games, config["ROMDirectory"].ValueAs<std::string>());
-    if (!path.empty()) {
+    if (!replayLaunch.path.empty()) {
+        replayFile = replayLaunch.path;
+        path = (std::filesystem::path(config["ROMDirectory"].ValueAs<std::string>()) / (replayLaunch.gameName + ".zip")).string();
         romFiles.emplace_back(path);
     }
-    
+    else {
+        path = GetRomPath(selectedGame, games, config["ROMDirectory"].ValueAs<std::string>());
+        if (!path.empty()) {
+            romFiles.emplace_back(path);
+        }
+    }
+
     if (saveSettings) {
         saveSettingsToFile();
     }
