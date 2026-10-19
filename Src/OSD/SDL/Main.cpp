@@ -2510,7 +2510,8 @@ int main(int argc, char **argv)
       Util::Config::FromINIFile(&fileConfig, s_configFilePath);
 
       bool launchTraining = false;
-      cmd_line.rom_files = RunGUI(s_configFilePath, fileConfig, launchTraining);
+      std::string replayFile;
+      cmd_line.rom_files = RunGUI(s_configFilePath, fileConfig, launchTraining, replayFile);
 
       if (cmd_line.rom_files.empty()) {
           return 0;
@@ -2518,6 +2519,9 @@ int main(int argc, char **argv)
 
       if (launchTraining) {
           cmd_line.config.Set("TrainingSession", true);
+      }
+      if (!replayFile.empty()) {
+          cmd_line.config.Set("ReplayFile", replayFile);
       }
   }
 
