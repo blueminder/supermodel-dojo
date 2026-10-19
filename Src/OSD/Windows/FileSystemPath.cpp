@@ -50,6 +50,8 @@ namespace FileSystemPath
             return "";
         case ROMs:
             return "ROMs/";
+        case Replays:
+            return "Replays/";
         case Assets:
             return "Assets/";
         }
