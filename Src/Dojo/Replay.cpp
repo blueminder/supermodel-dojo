@@ -172,6 +172,68 @@ void Dojo::Replay::LoadFile(const std::string& path)
   std::cout << "Replay File Loaded: " << path << std::endl;
 }
 
+// read game and player names from the first SPECTATE_START message, without LoadFile side effects
+Dojo::Replay::ReplayHeader Dojo::Replay::ReadReplayHeader(const std::string& path)
+{
+  ReplayHeader meta;
+  std::ifstream fin(path,
+    std::ios::in | std::ios::binary);
+  if (!fin.is_open())
+    return meta;
+
+  char header_buf[HEADER_LEN] = { 0 };
+  fin.read(header_buf, HEADER_LEN);
+  if (fin.gcount() < (std::streamsize)HEADER_LEN)
+    return meta;
+
+  const uint32_t body_size = Message::GetSize((uint8_t*)header_buf);
+  const uint32_t cmd = Message::GetCmd((uint8_t*)header_buf);
+  if (cmd != SPECTATE_START || body_size < 4)
+    return meta;
+
+  std::vector<char> body(body_size);
+  fin.read(body.data(), body_size);
+  if (fin.gcount() < (std::streamsize)body_size)
+    return meta;
+
+  const char* buffer = body.data();
+  int offset = 0;
+  auto readInt = [&]() -> uint32_t {
+    if (offset + 4 > (int)body_size)
+      return 0;
+    uint32_t v;
+    memcpy(&v, buffer + offset, 4);
+    offset += 4;
+    return v;
+  };
+  auto readString = [&]() -> std::string {
+    const uint32_t len = readInt();
+    if (len > 0 && (int64_t)offset + (int64_t)len <= (int64_t)body_size)
+    {
+      std::string s(buffer + offset, len);
+      offset += len;
+      // stored strings carry trailing null byte
+      s.erase(std::find(s.begin(), s.end(), '\0'), s.end());
+      return s;
+    }
+    offset = (int)body_size + 1;
+    return "";
+  };
+
+  const uint32_t version = readInt();
+  if (version < 1 || version > 4)
+    return meta;
+
+  meta.game_name = readString();
+  meta.player1 = readString();
+  meta.player2 = readString();
+
+  if (offset <= (int)body_size)
+    meta.valid = true;
+
+  return meta;
+}
+
 std::string Dojo::Replay::Takeover(int player)
 {
   if (Dojo::Replay::p1_override || Dojo::Replay::p2_override || player > 1)
