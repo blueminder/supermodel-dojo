@@ -1,3 +1,5 @@
+#pragma once
+
 #include <fstream>
 #include <iomanip>
 #include <cstdio>
@@ -5,9 +7,6 @@
 #include <filesystem>
 
 namespace Dojo::Replay {
-  static uint32_t replay_frame_count;
-  static Message::Writer replay_msg;
-
   std::string currentISO8601TimeUTC();
 
   std::string CreateReplayFile(const std::string& game_name, const std::string& state_path);
