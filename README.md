@@ -3,8 +3,6 @@
 
 **Supermodel Dojo** is a fork of [**Supermodel**](https://github.com/trzy/Supermodel), a Sega Model 3 emulator, with a focus on netplay features, replay, and training options for competitive play.  We intend to keep **Supermodel Dojo** updated with the latest downstream changes made to the parent project.
 
-In addition to the features described above, Supermodel Dojo also contains a frontend for the emulator to make launching your favorite games and adjusting settings easier than ever.
-
 # Netplay & Replay Supported Games
 
 Currently, Supermodel Dojo's __netplay & replay__ functionality only supports games with 2 joysticks and digital buttons. These games include:
@@ -16,21 +14,11 @@ Currently, Supermodel Dojo's __netplay & replay__ functionality only supports ga
 
 Replay and netplay functionality is planned for all games with local multiplayer on the same physical cabinet.
 
-# Frontend
-
-Open `dojo.exe` to start the frontend. You may select any game and a menu will po up with available options.
-
-![GAtgHsxWUAAN2Q7](https://github.com/blueminder/supermodel-dojo/assets/504581/1cd71f6b-081e-4ef0-8739-e5a2e46257c8)
-
-To adjust Supermodel settings, click on the "Settings" button to show and hide the window.
-
-![GAtgZA_XYAAUIKQ](https://github.com/blueminder/supermodel-dojo/assets/504581/ec8159a8-66b8-4c45-be24-dea9e94f5569)
-
 # Replays
 
-Session replay recording is enabled by default. To disable, be sure to disable the `RecordSession` option in `Supermode.ini`, or in the frontend's Settings Menu.
+Session replay recording is enabled by default. To disable, be sure to disable the `RecordSession` option in `Supermode.ini`, or in the in-emulator Settings Menu.
 
-To load a replay via the frontend, click on your game of choice and select "Open Replay File". To open via the command line, add the `-replay-file=` argument with the replay path included.
+To load a replay, add the `-replay-file=` argument with the replay path included.
 
 ## Replay Takeover
 
@@ -125,14 +113,6 @@ mingw32-make -f Makefiles/Makefile.Win32 NET_BOARD=1
 
 You will find `supermodel` in the `bin` folder.
 
-Build the frontend:
-```
-cd Frontend
-make
-```
-
-Make sure `dojo.exe` and `supermodel.exe` are placed together in the same folder, following the same structure found in the latest Release archive.
-
 If you wish to build via Visual Studio 2026,
 Make sure to run the Get_Libs.cmd files in the libraries directory. It will automatically pull in the required dependencies. Then either build inside the GUI or use the Build.cmd file in the MSVC folder.
 
@@ -152,10 +132,3 @@ make -f Makefiles/Makefile.UNIX NET_BOARD=1
 
 You will find `supermodel` in the `bin` folder.
 
-Build the frontend:
-```
-cd Frontend
-make
-```
-
-Make sure the `dojo` and `supermodel` binaries are placed together in the same folder, following the same structure found in the latest Release archive.
