@@ -1321,7 +1321,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
             s_gameTableColWidths[1] = ImGui::CalcTextSize("Rom Name").x;
             s_gameTableColWidths[2] = ImGui::CalcTextSize("Version").x;
             s_gameTableColWidths[3] = ImGui::CalcTextSize("Year").x;
-            s_gameTableColWidths[4] = ImGui::CalcTextSize("Stepping").x;
+            s_gameTableColWidths[4] = ImGui::CalcTextSize("Hardware").x;
             for (const auto& g : games)
             {
                 const float cellWidths[5] = {
@@ -1329,7 +1329,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
                     ImGui::CalcTextSize(g.second.name.c_str()).x,
                     ImGui::CalcTextSize(g.second.version.c_str()).x,
                     ImGui::CalcTextSize(std::to_string(g.second.year).c_str()).x,
-                    ImGui::CalcTextSize(g.second.stepping.c_str()).x
+                    ImGui::CalcTextSize(Game::SteppingName(g.second.stepping)).x
                 };
                 for (int i = 0; i < 5; i++) {
                     s_gameTableColWidths[i] = std::max(s_gameTableColWidths[i], cellWidths[i]);
@@ -1344,7 +1344,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
             ImGui::TableSetupColumn("Rom Name", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[1]);
             ImGui::TableSetupColumn("Version", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[2]);
             ImGui::TableSetupColumn("Year", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[3]);
-            ImGui::TableSetupColumn("Stepping", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[4]);
+            ImGui::TableSetupColumn("Hardware", ImGuiTableColumnFlags_WidthFixed, s_gameTableColWidths[4]);
 
             ImGui::TableHeadersRow();
 
@@ -1388,7 +1388,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
                 ImGui::TableSetColumnIndex(3);
                 ImGui::Text("%d", g.second.year);
                 ImGui::TableSetColumnIndex(4);
-                ImGui::Text("%s", g.second.stepping.c_str());
+                ImGui::Text("%s", Game::SteppingName(g.second.stepping));
 
                 if (!owned) {
                     ImGui::EndDisabled();
