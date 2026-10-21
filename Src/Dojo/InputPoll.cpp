@@ -7,16 +7,19 @@ void Dojo::Poll::StartAction()
 	outgoing.reset();
 	current.reset();
 
+	// may enqueue frames (AddNetFrame takes the lock itself)
+	if (Dojo::training)
+		Dojo::Training::TrainingFrameAction();
+
+	std::lock_guard<std::mutex> lock(Dojo::inputs_mtx);
+
 	if (Dojo::playback || Dojo::training)
 	{
-		if (Dojo::training)
-			Dojo::Training::TrainingFrameAction();
-
 		auto it = Dojo::net_inputs[0].find(Dojo::index);
 		if (it != Dojo::net_inputs[0].end())
 		{
 			uint32_t input_data = it->second;
-			if (playback && net_replay && PlayerInputsFilled(Dojo::index))
+			if (playback && net_replay && PlayerInputsFilledNoLock(Dojo::index))
 				input_data |= Dojo::net_inputs[1].at(Dojo::index);
 			if (Dojo::Replay::p1_override)
 				input_data = Dojo::WipePlayerInputs(0, input_data);
@@ -26,7 +29,7 @@ void Dojo::Poll::StartAction()
 		}
 	}
 
-	if (Dojo::netplay && PlayerInputsFilled(Dojo::index))
+	if (Dojo::netplay && PlayerInputsFilledNoLock(Dojo::index))
 	{
 		uint32_t p1_input_data = Dojo::net_inputs[0].at(Dojo::index);
 		uint32_t p2_input_data = Dojo::net_inputs[1].at(Dojo::index);

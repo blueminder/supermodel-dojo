@@ -95,7 +95,9 @@ void Dojo::AdvanceFrame()
     // replays: save previous frame to file
     if (record && index > 1)
     {
-      if (netplay && PlayerFramesFilled(index - 1))
+      std::lock_guard<std::mutex> lock(inputs_mtx);
+
+      if (netplay && PlayerFramesFilledNoLock(index - 1))
       {
         Replay::AppendFrameToFile(net_frames[0].at(index - 1));
         Replay::AppendFrameToFile(net_frames[1].at(index - 1));
@@ -120,30 +122,26 @@ void Dojo::AddNetFrame(const char* received_data)
 
   uint32_t frame_player = (uint8_t)data[0];
 
+  std::string data_to_queue(data, data + FRAME_SIZE);
+
+  std::lock_guard<std::mutex> lock(inputs_mtx);
+
   if (net_frames[frame_player].count(effective_frame_num))
     return;
 
-  std::string data_to_queue(data, data + FRAME_SIZE);
+  net_frames[frame_player].emplace(effective_frame_num, data_to_queue);
+  net_inputs[frame_player].emplace(effective_frame_num, Frame::GetDigital((uint8_t*)data));
 
-  //std::cout << frame_player << " " << effective_frame_num << " " << Frame::GetDigital((uint8_t*)data) << std::endl;
-
-  if (net_frames[frame_player].count(effective_frame_num) == 0 ||
-    effective_frame_num > lccf)
+  // idempotent advance: a lost update cannot freeze the chain
+  if (netplay)
   {
-    net_frames[frame_player].emplace(effective_frame_num, data_to_queue);
-    inputs_mtx.lock();
-    net_inputs[frame_player].emplace(effective_frame_num, Frame::GetDigital((uint8_t*)data));
-    inputs_mtx.unlock();
-
-    if (netplay && (effective_frame_num == lccf + 1) && PlayerInputsFilled(effective_frame_num))
-    {
+    while (PlayerInputsFilledNoLock(lccf + 1))
       lccf++;
-      //std::cout << "last consecutive common frame " << lccf << std::endl;
-    }
-
-    if (netplay && frame_player == player)
-      Netplay::frames_to_send.push(data_to_queue);
+    //std::cout << "last consecutive common frame " << lccf << std::endl;
   }
+
+  if (netplay && frame_player == player)
+    Netplay::frames_to_send.push(data_to_queue);
 
   //std::cout << Frame::Str((uint8_t*)data_to_queue.data()) << std::endl;
 }
@@ -159,14 +157,24 @@ uint32_t Dojo::WipePlayerInputs(int player_no, uint32_t digital)
   return digital & ~input_mask;
 }
 
-bool Dojo::PlayerInputsFilled(uint32_t i = index)
+bool Dojo::PlayerInputsFilled(uint32_t i)
 {
-  bool condition = net_inputs[0].count(i) && net_inputs[1].count(i);
-  return condition;
+  std::lock_guard<std::mutex> lock(inputs_mtx);
+  return PlayerInputsFilledNoLock(i);
 }
 
-bool Dojo::PlayerFramesFilled(uint32_t i = index)
+bool Dojo::PlayerFramesFilled(uint32_t i)
 {
-  bool condition = net_frames[0].count(i) && net_frames[1].count(i);
-  return condition;
+  std::lock_guard<std::mutex> lock(inputs_mtx);
+  return PlayerFramesFilledNoLock(i);
+}
+
+bool Dojo::PlayerInputsFilledNoLock(uint32_t i)
+{
+  return net_inputs[0].count(i) && net_inputs[1].count(i);
+}
+
+bool Dojo::PlayerFramesFilledNoLock(uint32_t i)
+{
+  return net_frames[0].count(i) && net_frames[1].count(i);
 }
