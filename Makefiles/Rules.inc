@@ -58,6 +58,14 @@ ifeq ($(strip $(ENABLE_DEBUGGER)),1)
 	SUPERMODEL_BUILD_FLAGS += -DSUPERMODEL_DEBUGGER
 endif
 
+# Build fingerprint: short git hash; "unknown" when git or the repo is absent.
+# Netplay peers compare build ids at session start to reject mixed builds.
+SUPERMODEL_BUILD_ID ?= $(strip $(shell git rev-parse --short HEAD))
+ifeq ($(strip $(SUPERMODEL_BUILD_ID)),)
+	SUPERMODEL_BUILD_ID = unknown
+endif
+SUPERMODEL_BUILD_FLAGS += -DSUPERMODEL_BUILD_ID=\"$(SUPERMODEL_BUILD_ID)\"
+
 # DEBUG will build a debug build but does *not* enable extra debug logging and
 # therefore does not modify SUPERMODEL_BUILD_FLAGS
 
