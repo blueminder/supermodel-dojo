@@ -13,6 +13,7 @@
 #include <map>
 #include <queue>
 #include <mutex>
+#include <atomic>
 
 #include "Message.h"
 #include "Frame.h"
@@ -42,14 +43,15 @@ namespace Dojo {
     bool PlayerFramesFilledNoLock(uint32_t i);
 
     inline uint32_t index = 0;
-    inline uint32_t delay = 0;
+    // cross-thread flags: written and read from the net and main threads
+    inline std::atomic<uint32_t> delay = 0;
     inline std::map<uint32_t, std::string> net_frames[2];
     inline std::map<uint32_t, uint32_t> net_inputs[2];
     inline std::string current_frame;
 
     inline std::string game_name;
     inline uint32_t ppc_frequency = 0;
-    inline bool mismatch = false;
+    inline std::atomic<bool> mismatch = false;
 
     inline uint32_t lccf = 0;
 
