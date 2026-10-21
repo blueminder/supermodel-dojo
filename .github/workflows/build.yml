@@ -8,6 +8,12 @@ on:
         description: "Optimization flags for compiler (e.g. -O3 -g)"
         type: string
         default: "-O3"
+  workflow_dispatch:
+    inputs:
+      opt:
+        description: "Optimization flags for compiler (e.g. -O3 -g)"
+        type: string
+        default: "-O3"
 
 jobs:
   Build:
