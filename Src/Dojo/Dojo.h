@@ -44,6 +44,10 @@ namespace Dojo {
     inline std::map<uint32_t, uint32_t> net_inputs[2];
     inline std::string current_frame;
 
+    inline std::string game_name;
+    inline uint32_t ppc_frequency = 0;
+    inline bool mismatch = false;
+
     inline uint32_t lccf = 0;
 
     inline bool record = false;
