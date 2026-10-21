@@ -26,14 +26,11 @@
  *
  * TO-DO List:
  * -----------
- * - Rather than returning the host system time, should compute the "virtual"
- *   time inside the Model 3, which could differ.
  * - Writes do nothing yet.
  */
 
 #include "RTC72421.h"
 
-#include <ctime>
 #include "Supermodel.h"
 
 
@@ -41,47 +38,41 @@
  Emulation Functions
 ******************************************************************************/
 
+/*
+ * Reads are frozen to a fixed timestamp: 1998-01-01 00:00:00 (Thursday).
+ * Host time is nondeterministic: it breaks netplay and replay determinism.
+ * Writes stay unimplemented; games may write, reads stay frozen.
+ */
 UINT8 CRTC72421::ReadRegister(unsigned reg)
 {
-	static time_t oldTime{};
-	time_t currentTime;
-	static struct tm *Time;
-
-	time(&currentTime);
-	if (currentTime != oldTime)
-	{
-		Time = localtime(&currentTime);
-		oldTime = currentTime;
-	}
-
 	switch (reg&0xF)
 	{
 		case 0:		// 1-second digit
-			return (Time->tm_sec % 10) & 0xF;
+			return 0;
 		case 1:		// 10-seconds digit
-			return (Time->tm_sec / 10) & 0x7;
+			return 0;
 		case 2:		// 1-minute digit
-			return (Time->tm_min % 10) & 0xF;
+			return 0;
 		case 3:		// 10-minute digit
-			return (Time->tm_min / 10) & 0x7;
+			return 0;
 		case 4:		// 1-hour digit
-			return (Time->tm_hour % 10) & 0xF;
+			return 0;
 		case 5:		// 10-hours digit
-			return (Time->tm_hour / 10) & 0x7;
+			return 0;
 		case 6:		// 1-day digit (days in month)
-			return (Time->tm_mday % 10) & 0xF;
+			return 1;
 		case 7:		// 10-days digit
-			return (Time->tm_mday / 10) & 0x3;
+			return 0;
 		case 8:		// 1-month digit
-			return ((Time->tm_mon + 1) % 10) & 0xF;
+			return 1;
 		case 9:		// 10-months digit
-			return ((Time->tm_mon + 1) / 10) & 0x1;
+			return 0;
 		case 10:	// 1-year digit
-			return (Time->tm_year % 10) & 0xF;
+			return 8;
 		case 11:	// 10-years digit
-			return ((Time->tm_year % 100) / 10) & 0xF;
+			return 9;
 		case 12:	// day of the week
-			return Time->tm_wday & 0x7;
+			return 4;	// Thursday
 		case 13:
 			break;
 		case 14:
