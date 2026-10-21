@@ -2,7 +2,7 @@ name: Build and Release
 
 on:
   push:
-    branches: [ master ]  # Auto-build on master
+    branches: [ dojo ]  # Auto-build on dojo
   workflow_dispatch:      # Manual triggering
     inputs:
       opt:
@@ -18,7 +18,7 @@ jobs:
   
   release:
     needs: build
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/dojo'
     runs-on: ubuntu-latest
     permissions:
       contents: write
