@@ -27,12 +27,20 @@ void Dojo::Netplay::ServerThread()
 	while (!done) { // server loop
 		if (peer != nullptr)
 		{
-			if (!frames_to_send.empty())
+			std::string frame;
 			{
-				std::string frame = frames_to_send.front();
+				std::lock_guard<std::mutex> lock(Dojo::inputs_mtx);
+				if (!frames_to_send.empty())
+				{
+					frame = frames_to_send.front();
+					frames_to_send.pop();
+				}
+			}
+
+			if (!frame.empty())
+			{
 				ENetPacket* packet = enet_packet_create(frame.data(), FRAME_SIZE, ENET_PACKET_FLAG_RELIABLE);
 				enet_peer_send(peer, 0, packet);
-				frames_to_send.pop();
 			}
 		}
 
@@ -134,12 +142,20 @@ void Dojo::Netplay::ClientThread()
 
 		if (peer != nullptr)
 		{
-			if (!frames_to_send.empty())
+			std::string frame;
 			{
-				std::string frame = frames_to_send.front();
+				std::lock_guard<std::mutex> lock(Dojo::inputs_mtx);
+				if (!frames_to_send.empty())
+				{
+					frame = frames_to_send.front();
+					frames_to_send.pop();
+				}
+			}
+
+			if (!frame.empty())
+			{
 				ENetPacket* packet = enet_packet_create(frame.data(), FRAME_SIZE, ENET_PACKET_FLAG_RELIABLE);
 				enet_peer_send(peer, 0, packet);
-				frames_to_send.pop();
 			}
 		}
 

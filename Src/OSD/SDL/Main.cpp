@@ -1122,6 +1122,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
 
     if (Dojo::receiving)
     {
+      std::lock_guard<std::mutex> lock(Dojo::inputs_mtx);
       if (Dojo::net_inputs[0].size() < 600)
         paused = true;
       else
@@ -1130,7 +1131,12 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
 
     if (Dojo::playback && !paused)
     {
-      if(Dojo::index == Dojo::net_inputs[0].size())
+      uint32_t net_input_count;
+      {
+        std::lock_guard<std::mutex> lock(Dojo::inputs_mtx);
+        net_input_count = (uint32_t)Dojo::net_inputs[0].size();
+      }
+      if(Dojo::index == net_input_count)
       {
         std::cout << "End of Replay" << std::endl;
         Dojo::playback = false;
@@ -1152,10 +1158,14 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
     {
       if (Dojo::netplay)
       {
-        paused = !(
-          Dojo::PlayerInputsFilled(Dojo::index) &&
-          Dojo::index <= Dojo::lccf
-        );
+        bool inputs_ready;
+        {
+          std::lock_guard<std::mutex> lock(Dojo::inputs_mtx);
+          inputs_ready = Dojo::PlayerInputsFilledNoLock(Dojo::index) &&
+            Dojo::index <= Dojo::lccf;
+        }
+
+        paused = !inputs_ready;
 
         if (paused)
         {
