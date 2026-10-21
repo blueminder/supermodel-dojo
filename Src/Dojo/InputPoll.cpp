@@ -13,6 +13,10 @@ void Dojo::Poll::StartAction()
 
 	std::lock_guard<std::mutex> lock(Dojo::inputs_mtx);
 
+	// netplay only: replays and spectate still need full history
+	if (Dojo::netplay)
+		Dojo::TrimNetMapsNoLock();
+
 	if (Dojo::playback || Dojo::training)
 	{
 		auto it = Dojo::net_inputs[0].find(Dojo::index);
@@ -38,9 +42,12 @@ void Dojo::Poll::StartAction()
 
 		current = std::bitset<32>(input_data);
 
-		std::ostringstream LogStream;
-		LogStream << Dojo::index << ": " << current.to_string();
-		InfoLog(LogStream.str().data());
+		if (Dojo::debug)
+		{
+			std::ostringstream LogStream;
+			LogStream << Dojo::index << ": " << current.to_string();
+			InfoLog(LogStream.str().data());
+		}
 	}
 }
 

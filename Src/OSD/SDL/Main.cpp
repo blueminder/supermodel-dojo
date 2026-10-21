@@ -978,6 +978,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
   receiving = s_runtime_config.Get("Receiving").ValueAs<bool>();
   hosting = s_runtime_config.Get("ActAsServer").ValueAs<bool>();
   netplay = s_runtime_config.Get("Netplay").ValueAs<bool>();
+  Dojo::debug = s_runtime_config.Get("DojoDebug").ValueAs<bool>();
 
   // Initialize and load ROMs
   if (Result::OKAY != Emu->Init(game, *rom_set))
@@ -2101,6 +2102,7 @@ Util::Config::Node DefaultConfig()
   config.Set("TargetIP", "127.0.0.1");
   config.Set("TargetPort", 5000);
   config.Set("Netplay", false);
+  config.Set("DojoDebug", false);
   config.Set("Delay", 0);
   config.Set("SourcePort", 0);
 
@@ -2323,6 +2325,7 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
     { "-receive",             { "Receiving",        true } },
     { "-host",                { "ActAsServer",      true } },
     { "-netplay",             { "Netplay",          true } },
+    { "-dojo-debug",          { "DojoDebug",        true } },
   };
   for (int i = 1; i < argc; i++)
   {

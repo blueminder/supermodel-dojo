@@ -178,3 +178,16 @@ bool Dojo::PlayerFramesFilledNoLock(uint32_t i)
 {
   return net_frames[0].count(i) && net_frames[1].count(i);
 }
+
+void Dojo::TrimNetMapsNoLock()
+{
+  // drop stale entries: bounds memory on long sessions
+  // safety window matches receiving-buffer (600 frames)
+  const uint32_t cutoff = (index > 600) ? index - 600 : 0;
+
+  for (int p = 0; p < 2; p++)
+  {
+    net_frames[p].erase(net_frames[p].begin(), net_frames[p].lower_bound(cutoff));
+    net_inputs[p].erase(net_inputs[p].begin(), net_inputs[p].lower_bound(cutoff));
+  }
+}

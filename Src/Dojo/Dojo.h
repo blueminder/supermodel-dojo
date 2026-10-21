@@ -41,6 +41,7 @@ namespace Dojo {
     // no-lock variants: caller must already hold inputs_mtx
     bool PlayerInputsFilledNoLock(uint32_t i);
     bool PlayerFramesFilledNoLock(uint32_t i);
+    void TrimNetMapsNoLock();
 
     inline uint32_t index = 0;
     // cross-thread flags: written and read from the net and main threads
@@ -72,6 +73,9 @@ namespace Dojo {
     inline uint16_t source_port = 0;
 
     inline bool net_replay = false;
+
+    // per-frame input log switch (-dojo-debug)
+    inline bool debug = false;
 
     inline std::mutex inputs_mtx;
 };
