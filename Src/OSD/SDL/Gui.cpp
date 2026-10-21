@@ -293,8 +293,51 @@ static void ShowHelpMarker(const char *desc)
     }
 }
 
+// Descriptions mirror the command line help text in Main.cpp (Help())
 static const std::map<std::string, std::string> s_settingsDesc = {
+    // Core
+    { "PowerPCFrequency", "PowerPC frequency in MHz (default varies by stepping)." },
+    { "MultiThreaded", "Run multi-threaded. Disable to turn off multi-threading entirely." },
+    { "GPUMultiThreaded", "Run graphics rendering in separate thread. Disable to run graphics rendering in main thread." },
     { "RecordSession", "Record all sessions as replays. Found in Replays folder." },
+    // Video
+    { "New3DEngine", "New 3D engine by Ian Curtis. Disable for legacy 3D engine (faster but less accurate)." },
+    { "QuadRendering", "Enable proper quad rendering. Disable to render quads as triangles." },
+    { "XResolution", "Horizontal resolution [Default: 496]." },
+    { "YResolution", "Vertical resolution [Default: 384]." },
+    { "FullScreen", "Full screen mode. Disable for windowed mode." },
+    { "BorderlessWindow", "Windowed mode with no border." },
+    { "Supersampling", "Supersampling (range 1-8)." },
+    { "CRTcolors", "CRT color emulation (range 0-5)." },
+    { "UpscaleMode", "2D layer upscaling filter mode (range 0-3)." },
+    { "WideScreen", "Expand 3D field of view to screen width." },
+    { "Stretch", "Fit viewport to resolution, ignoring aspect ratio." },
+    { "WideBackground", "When wide-screen mode is enabled, also expand the 2D background layer to screen width." },
+    { "VSync", "Lock to vertical refresh rate." },
+    { "Throttle", "Frame rate lock. Disable to run unthrottled." },
+    { "RefreshRate", "Use true Model 3 refresh rate of 57.524 Hz, or 60 Hz." },
+    { "ShowFrameRate", "Display frame rate in window title bar." },
+    { "Crosshairs", "Crosshairs configuration for gun games: 0=none, 1=P1 only, 2=P2 only, 3=P1 & P2." },
+    { "CrosshairStyle", "Crosshair style: vector or bmp." },
+    { "NoWhiteFlash", "Disables white flash when games disable 3D rendering." },
+    // Sound
+    { "EmulateSound", "Sound board emulation (sound effects). Disable to turn off." },
+    { "Balance", "Relative front/rear balance in %." },
+    { "NbSoundChannels", "Number of sound channels to use on host." },
+    { "EmulateDSB", "Digital Sound Board (MPEG music) emulation. Disable to turn off." },
+    { "SoundVolume", "Volume of SCSP-generated sound in %, applies only when Digital Sound Board is present." },
+    { "MusicVolume", "Digital Sound Board volume in %." },
+    { "LegacySoundDSP", "Legacy SCSP engine by ElSemi. Disable for new SCSP engine based on MAME." },
+    { "FlipStereo", "Swap left and right audio channels." },
+    // Network
+    { "Network", "Enable net board. Disable to turn off." },
+    { "SimulateNet", "Simulate the net board. Disable to emulate the net board (requires multi-threading off)." },
+    // Misc
+    { "Outputs", "Outputs: none, win (Windows messages), or net (network TCP/UDP)." },
+    { "DumpMemory", "Write memory regions to files on exit." },
+    { "DumpTextures", "Write textures to bitmap image files on exit." },
+    // ForceFeedback
+    { "ForceFeedback", "Enable force feedback (DirectInput, XInput)." },
 };
 
 static void CreateControls(Util::Config::Node& config, const std::string& group)
@@ -335,6 +378,15 @@ static void CreateControls(Util::Config::Node& config, const std::string& group)
                             ImGui::SliderScalar(key.c_str(), type, valuePtr, &min_, &max_, format);
                         };
                         
+                        auto ShowSettingHelp = [&](const std::string& key)
+                        {
+                            auto it = s_settingsDesc.find(key);
+                            if (it != s_settingsDesc.end()) {
+                                ImGui::SameLine();
+                                ShowHelpMarker(it->second.c_str());
+                            }
+                        };
+
                         auto ProcessControls = [&](auto valuePtr, ImGuiDataType type)
                         {
                             if (vRange->HasMinMax()) {
@@ -354,28 +406,28 @@ static void CreateControls(Util::Config::Node& config, const std::string& group)
                         {
                             auto p = std::get_if<bool>(&vRange->tempValue);
                             ImGui::Checkbox(key.c_str(), p);
-                            if (s_settingsDesc.count(key)) {
-                                ImGui::SameLine();
-                                ShowHelpMarker(s_settingsDesc.at(key).c_str());
-                            }
+                            ShowSettingHelp(key);
                             break;
                         }
                         case 1:             // unsigned
                         {
                             auto p = std::get_if<unsigned>(&vRange->tempValue);
                             ProcessControls(p, ImGuiDataType_U32);
+                            ShowSettingHelp(key);
                             break;
                         }
                         case 2:             // int
                         {
                             auto p = std::get_if<int>(&vRange->tempValue);
                             ProcessControls(p, ImGuiDataType_S32);
+                            ShowSettingHelp(key);
                             break;
                         }
                         case 3:             // float
                         {
                             auto p = std::get_if<float>(&vRange->tempValue);
                             ProcessControls(p, ImGuiDataType_Float);
+                            ShowSettingHelp(key);
                             break;
                         }
                         case 4:             // std::string
@@ -390,6 +442,7 @@ static void CreateControls(Util::Config::Node& config, const std::string& group)
                                 ImGui::InputText(key.c_str(), option.data(), option.capacity() + 1, ImGuiInputTextFlags_CallbackResize, InputTextResizeCallback, &option);
                             }
 
+                            ShowSettingHelp(key);
                             break;
                         }
                         }
