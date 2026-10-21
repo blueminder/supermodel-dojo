@@ -193,6 +193,7 @@ void Dojo::Message::ProcessBody(uint32_t cmd, uint32_t body_size, const char* bu
     std::string host_version = Message::ReadString((const char*)buffer, offset);
     uint32_t host_ppc_frequency = Message::ReadInt((const char*)buffer, offset);
     std::string host_game_name = Message::ReadString((const char*)buffer, offset);
+    std::string host_build_id = Message::ReadString((const char*)buffer, offset);
 
     // settings parity check: abort the session instead of desyncing later
     bool mismatch = false;
@@ -209,6 +210,11 @@ void Dojo::Message::ProcessBody(uint32_t cmd, uint32_t body_size, const char* bu
     if (host_game_name != Dojo::game_name)
     {
       ErrorLog("netplay settings mismatch: game (host: %s, client: %s)\n", host_game_name.data(), Dojo::game_name.data());
+      mismatch = true;
+    }
+    if (host_build_id != SUPERMODEL_BUILD_ID)
+    {
+      ErrorLog("netplay settings mismatch: build id (host: %s, client: %s)\n", host_build_id.data(), SUPERMODEL_BUILD_ID);
       mismatch = true;
     }
 

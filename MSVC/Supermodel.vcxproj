@@ -109,6 +109,9 @@
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <PreBuildEvent>
+      <Command>"$(ProjectDir)gen_buildid.cmd"</Command>
+    </PreBuildEvent>
     <PostBuildEvent>
       <Command>if not exist "$(TargetDir)Config" mkdir "$(TargetDir)Config"
 if not exist "$(TargetDir)NVRAM" mkdir "$(TargetDir)NVRAM"
@@ -146,6 +149,9 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
+    <PreBuildEvent>
+      <Command>"$(ProjectDir)gen_buildid.cmd"</Command>
+    </PreBuildEvent>
     <PostBuildEvent>
       <Command>if not exist "$(TargetDir)Config" mkdir "$(TargetDir)Config"
 if not exist "$(TargetDir)NVRAM" mkdir "$(TargetDir)NVRAM"
@@ -182,6 +188,9 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Command>"$(ProjectDir)gen_buildid.cmd"</Command>
+    </PreBuildEvent>
     <PostBuildEvent>
       <Command>if not exist "$(TargetDir)Config" mkdir "$(TargetDir)Config"
 if not exist "$(TargetDir)NVRAM" mkdir "$(TargetDir)NVRAM"
@@ -222,6 +231,9 @@ xcopy /D /Y "$(ProjectDir)..\Assets\*" "$(TargetDir)Assets"</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
+    <PreBuildEvent>
+      <Command>"$(ProjectDir)gen_buildid.cmd"</Command>
+    </PreBuildEvent>
     <PostBuildEvent>
       <Command>if not exist "$(TargetDir)Config" mkdir "$(TargetDir)Config"
 if not exist "$(TargetDir)NVRAM" mkdir "$(TargetDir)NVRAM"

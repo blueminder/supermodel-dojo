@@ -352,6 +352,7 @@ Libraries/*
 !Libraries/Get_ZLib.cmd
 
 #ignore generated files and directories
+Src/BuildID.h
 bin/
 bin64/
 bin32/

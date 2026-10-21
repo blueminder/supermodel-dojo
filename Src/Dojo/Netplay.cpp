@@ -61,6 +61,7 @@ void Dojo::Netplay::ServerThread()
 			start_msg.AppendString(SUPERMODEL_VERSION);
 			start_msg.AppendInt(Dojo::ppc_frequency);
 			start_msg.AppendString(Dojo::game_name);
+			start_msg.AppendString(SUPERMODEL_BUILD_ID);
 
 			std::vector<uint8_t> message = start_msg.Msg();
 
