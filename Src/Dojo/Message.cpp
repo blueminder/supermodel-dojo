@@ -1,4 +1,5 @@
 #include "Dojo.h"
+#include "Version.h"
 
 uint32_t Dojo::Message::GetSize(const uint8_t* buffer)
 {
@@ -22,6 +23,9 @@ std::string Dojo::Message::ReadString(const char* buffer, int* offset)
   uint32_t len = ReadInt(buffer, offset);
   std::string out = std::string(buffer + *offset, len);
   offset[0] += len;
+  // AppendString includes the trailing NUL; strip it so string compares work
+  if (!out.empty() && out.back() == '\0')
+    out.pop_back();
   return out;
 }
 
@@ -185,6 +189,34 @@ void Dojo::Message::ProcessBody(uint32_t cmd, uint32_t body_size, const char* bu
   {
     uint32_t session_delay = Message::ReadInt((const char*)buffer, offset);
     Dojo::delay = session_delay;
+
+    std::string host_version = Message::ReadString((const char*)buffer, offset);
+    uint32_t host_ppc_frequency = Message::ReadInt((const char*)buffer, offset);
+    std::string host_game_name = Message::ReadString((const char*)buffer, offset);
+
+    // settings parity check: abort the session instead of desyncing later
+    bool mismatch = false;
+    if (host_version != SUPERMODEL_VERSION)
+    {
+      ErrorLog("netplay settings mismatch: version (host: %s, client: %s)\n", host_version.data(), SUPERMODEL_VERSION);
+      mismatch = true;
+    }
+    if (host_ppc_frequency != Dojo::ppc_frequency)
+    {
+      ErrorLog("netplay settings mismatch: PowerPCFrequency (host: %u MHz, client: %u MHz)\n", host_ppc_frequency, Dojo::ppc_frequency);
+      mismatch = true;
+    }
+    if (host_game_name != Dojo::game_name)
+    {
+      ErrorLog("netplay settings mismatch: game (host: %s, client: %s)\n", host_game_name.data(), Dojo::game_name.data());
+      mismatch = true;
+    }
+
+    if (mismatch)
+    {
+      Dojo::mismatch = true;
+      return;
+    }
 
     Dojo::FillDelay();
 

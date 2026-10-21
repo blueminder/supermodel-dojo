@@ -1,4 +1,5 @@
 #include "Dojo.h"
+#include "Version.h"
 
 #define ENET_IMPLEMENTATION
 #include "enet.h"
@@ -49,6 +50,9 @@ void Dojo::Netplay::ServerThread()
 			auto start_msg = Message::Writer();
 			start_msg.AppendHeader(0, GAME_START);
 			start_msg.AppendInt(Dojo::delay);
+			start_msg.AppendString(SUPERMODEL_VERSION);
+			start_msg.AppendInt(Dojo::ppc_frequency);
+			start_msg.AppendString(Dojo::game_name);
 
 			std::vector<uint8_t> message = start_msg.Msg();
 
@@ -120,6 +124,14 @@ void Dojo::Netplay::ClientThread()
 
 	bool done = false;
 	while(!done) { // client loop
+		if (Dojo::mismatch)
+		{
+			printf("[CLIENT] Disconnecting due to settings mismatch\n");
+			enet_peer_disconnect_now(peer, 0);
+			done = true;
+			break;
+		}
+
 		if (peer != nullptr)
 		{
 			if (!frames_to_send.empty())

@@ -4,6 +4,7 @@ void Dojo::Init(const std::string& game_name, bool record_session, bool train_se
 {
     index = 0;
     Dojo::hosting = hosting;
+    Dojo::game_name = game_name;
 
     if (!Replay::file_path.empty())
     {

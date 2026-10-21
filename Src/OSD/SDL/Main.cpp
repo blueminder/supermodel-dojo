@@ -1107,10 +1107,19 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
   }
 #endif
 
+  Dojo::ppc_frequency = s_runtime_config["PowerPCFrequency"].ValueAsDefault<unsigned>(0);
+
   Dojo::Init(ReplayGameName(Emu->GetGame().name), recordSession, trainSession, receiving, hosting, netplay, initialState);
 
   while (!quit)
   {
+    if (Dojo::mismatch)
+    {
+      ErrorLog("netplay session aborted: local settings do not match the host\n");
+      quit = true;
+      break;
+    }
+
     if (Dojo::receiving)
     {
       if (Dojo::net_inputs[0].size() < 600)
