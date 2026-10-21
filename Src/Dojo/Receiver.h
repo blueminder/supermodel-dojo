@@ -1,9 +1,10 @@
 #include "SDLIncludes.h"
 #include <thread>
+#include <atomic>
 
 namespace Dojo::Receiver {
     void ReceiverThread();
     void Launch();
 
-    inline bool started = false;
+    inline std::atomic<bool> started = false;
 }
