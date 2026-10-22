@@ -1785,8 +1785,8 @@ Util::Config::Node DefaultConfig()
   // CDSB
 
   config.Set("EmulateDSB", true, "Sound");
-  config.Set("SoundVolume", 100, "Sound", 0, 200);
-  config.Set("MusicVolume", 100, "Sound", 0, 200);
+  config.Set("SoundVolume", 75, "Sound", 0, 200);
+  config.Set("MusicVolume", 75, "Sound", 0, 200);
   // Other sound options
   config.Set("LegacySoundDSP", false, "Sound"); // New config option for games that do not play correctly with MAME's SCSP sound core.
   // CDriveBoard
@@ -1794,9 +1794,9 @@ Util::Config::Node DefaultConfig()
 
   // Platform-specific/UI
   config.Set("New3DEngine", true, "Video");
-  config.Set("QuadRendering", true, "Video");
-  config.Set("XResolution", 496, "Video");
-  config.Set("YResolution", 384, "Video");
+  config.Set("QuadRendering", false, "Video");
+  config.Set("XResolution", 992, "Video");
+  config.Set("YResolution", 768, "Video");
   config.SetEmpty("WindowXPosition");
   config.SetEmpty("WindowYPosition");
   config.Set("FullScreen", false, "Video");
@@ -1809,11 +1809,11 @@ Util::Config::Node DefaultConfig()
   config.Set("WideScreen", false, "Video");
   config.Set("Stretch", false, "Video");
   config.Set("WideBackground", false, "Video");
-  config.Set("VSync", true, "Video");
+  config.Set("VSync", false, "Video");
   config.Set("Throttle", true, "Video");
-  config.Set("RefreshRate", 60.0f, "Video", 0.0f, 0.0f, { 57.524f, 60.f });
+  config.Set("RefreshRate", 57.524f, "Video", 0.0f, 0.0f, { 57.524f, 60.f });
   SetLabels("RefreshRate", { "57.524 Hz (original hardware)", "60 Hz" });
-  config.Set("ShowFrameRate", false, "Video");
+  config.Set("ShowFrameRate", true, "Video");
   config.Set("Crosshairs", int(0), "Video", 0, 0, { 0,1,2,3 });
   SetLabels("Crosshairs", { "None", "Player 1 only", "Player 2 only", "Players 1 & 2" });
   config.Set<std::string>("CrosshairStyle", "vector", "Video", "", "", { "bmp","vector" });
@@ -1826,13 +1826,13 @@ Util::Config::Node DefaultConfig()
   // DirectInput ForceFeedback
   config.Set("DirectInputConstForceLeftMax", 100, "ForceFeedback", 0, 100);
   config.Set("DirectInputConstForceRightMax", 100, "ForceFeedback", 0, 100);
-  config.Set("DirectInputSelfCenterMax", 100, "ForceFeedback", 0, 100);
-  config.Set("DirectInputFrictionMax", 100, "ForceFeedback", 0, 100);
-  config.Set("DirectInputVibrateMax", 100, "ForceFeedback", 0, 100);
+  config.Set("DirectInputSelfCenterMax", 0, "ForceFeedback", 0, 100);
+  config.Set("DirectInputFrictionMax", 0, "ForceFeedback", 0, 100);
+  config.Set("DirectInputVibrateMax", 0, "ForceFeedback", 0, 100);
   // XInput ForceFeedback
-  config.Set("XInputConstForceThreshold", 30, "ForceFeedback", 0, 100);
-  config.Set("XInputConstForceMax", 100, "ForceFeedback", 0, 100);
-  config.Set("XInputVibrateMax", 100, "ForceFeedback", 0, 100);
+  config.Set("XInputConstForceThreshold", 0, "ForceFeedback", 0, 100);
+  config.Set("XInputConstForceMax", 0, "ForceFeedback", 0, 100);
+  config.Set("XInputVibrateMax", 0, "ForceFeedback", 0, 100);
   config.Set("XInputStereoVibration", true, "ForceFeedback");
   // SDL ForceFeedback
   config.Set("SDLConstForceMax", 100, "ForceFeedback", 0, 100);
@@ -2094,7 +2094,7 @@ Util::Config::Node DefaultConfig()
 
 
   // Replays
-  config.Set("RecordSession", false, "Core");
+  config.Set("RecordSession", true, "Core");
   config.Set("ReplayFile", "");
   config.Set("TrainingSession", false);
   config.Set("Receiving", false);

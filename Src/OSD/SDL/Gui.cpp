@@ -303,8 +303,8 @@ static const std::map<std::string, std::string> s_settingsDesc = {
     // Video
     { "New3DEngine", "New 3D engine by Ian Curtis. Disable for legacy 3D engine (faster but less accurate)." },
     { "QuadRendering", "Enable proper quad rendering. Disable to render quads as triangles." },
-    { "XResolution", "Horizontal resolution [Default: 496]." },
-    { "YResolution", "Vertical resolution [Default: 384]." },
+    { "XResolution", "Horizontal resolution [Default: 992]." },
+    { "YResolution", "Vertical resolution [Default: 768]." },
     { "FullScreen", "Full screen mode. Disable for windowed mode." },
     { "BorderlessWindow", "Windowed mode with no border." },
     { "Supersampling", "Supersampling (range 1-8)." },
@@ -1494,7 +1494,12 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
         ImGui::Text("Are you sure you want to load defaults?");
         ImGui::Separator();
         if (ImGui::Button("Yes", ScaledSize(120, 0))) {
+            // keep user set ROM directory; only fall back to default when empty
+            std::string romDirectory = config["ROMDirectory"].ValueAs<std::string>();
             config = DefaultConfig();
+            if (!romDirectory.empty()) {
+                config.Set<std::string>("ROMDirectory", romDirectory, "Core", "", "");
+            }
             inputs = nullptr; // rebuilt from the defaults when Key bindings is next shown
             ImGui::CloseCurrentPopup();
         }
