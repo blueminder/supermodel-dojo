@@ -119,15 +119,6 @@ void Dojo::Replay::AppendFrameToFile(const std::string& frame)
       replay_msg.AppendInt(FRAME_SIZE);
     }
 
-    if (memcmp(frame.data(), "000000000000", FRAME_SIZE) == 0)
-    {
-      // send remaining frames
-      if (replay_frame_count % FRAME_BATCH > 0)
-      {
-        std::vector<uint8_t> message = replay_msg.Msg();
-        fout.write((const char*)message.data(), message.size());
-      }
-    }
     fout.close();
   }
 }
