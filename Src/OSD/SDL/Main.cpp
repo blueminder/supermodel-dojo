@@ -1082,6 +1082,8 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
     auto statePath = Dojo::Replay::GetStatePath();
     if (statePath.length() > 0)
       LoadState(Emu, statePath);
+    else
+      Dojo::clear_nvram = true;  // netplay replays start from cleared NVRAM
   }
 
 #ifdef SUPERMODEL_DEBUGGER
@@ -1119,6 +1121,13 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
       ErrorLog("netplay session aborted: local settings do not match the host\n");
       quit = true;
       break;
+    }
+
+    // wipe NVRAM before the first emulated frame so both players start identically
+    if (Dojo::clear_nvram)
+    {
+      Emu->ClearNVRAM();
+      Dojo::clear_nvram = false;
     }
 
     if (Dojo::receiving)
