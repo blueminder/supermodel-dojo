@@ -2661,6 +2661,14 @@ int main(int argc, char **argv)
       config4 = config3;
     Util::Config::MergeINISections(&s_runtime_config, config4, cmd_line.config);  // apply command line overrides once more
   }
+
+  // netplay, replay playback, and recording need deterministic frame loop
+  // sound board must not run ahead of main board on its own thread
+  if (s_runtime_config["Netplay"].ValueAs<bool>()
+    || s_runtime_config["RecordSession"].ValueAs<bool>()
+    || s_runtime_config["ReplayFile"].ValueAs<std::string>().length() > 0)
+    s_runtime_config.Get("MultiThreaded").SetValue(false);
+
   LogConfig(s_runtime_config);
 
   // Initialize SDL (individual subsystems get initialized later)
