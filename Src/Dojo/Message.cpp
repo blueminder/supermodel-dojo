@@ -226,6 +226,9 @@ void Dojo::Message::ProcessBody(uint32_t cmd, uint32_t body_size, const char* bu
 
     Dojo::FillDelay();
 
+    // start every session from identical NVRAM state
+    Dojo::clear_nvram = true;
+
     std::cout << "Starting Netplay Session, P" << Dojo::player + 1 << " D" << Dojo::delay << std::endl;
   }
 }
