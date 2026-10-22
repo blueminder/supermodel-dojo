@@ -1384,6 +1384,9 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
           SetAudioEnabled(false);
         }
 
+        // clip recording needs the same deterministic frame loop as playback
+        Emu->SetSingleThreadedMode();
+
         // Save game state
         SaveState(Emu, true);
 
