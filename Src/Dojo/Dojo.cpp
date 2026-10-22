@@ -79,15 +79,6 @@ void Dojo::FillDelay()
     AddNetFrame(p1_frame.data());
     AddNetFrame(p2_frame.data());
   }
-
-  if (hosting)
-  {
-    for (uint32_t d = 0; d < (delay * 2) + 1; d++)
-    {
-      auto buffer_frame = Dojo::Frame::Create(d, 1, 0, 0);
-      AddNetFrame(buffer_frame.data());
-    }
-  }
 }
 
 void Dojo::AdvanceFrame()
