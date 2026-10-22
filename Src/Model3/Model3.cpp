@@ -2330,6 +2330,17 @@ ThreadError:
   return false;
 }
 
+// Controlled transition for mid-session clip recording:
+// stop worker threads so the frame loop matches single-threaded startup.
+void CModel3::SetSingleThreadedMode(void)
+{
+  if (m_multiThreaded)
+  {
+    StopThreads();
+    m_multiThreaded = false;
+  }
+}
+
 bool CModel3::StopThreads(void)
 {
   if (!startedThreads)
