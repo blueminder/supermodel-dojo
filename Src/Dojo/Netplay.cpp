@@ -70,6 +70,9 @@ void Dojo::Netplay::ServerThread()
 
 			FillDelay();
 
+			// start every session from identical NVRAM state
+			Dojo::clear_nvram = true;
+
 			std::cout << "Starting Netplay Session, P" << player + 1 << " D" << delay << std::endl;
 
 		} break;
