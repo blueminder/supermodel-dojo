@@ -212,6 +212,16 @@ public:
   virtual bool ResumeThreads(void) = 0;
 
   /*
+   * SetSingleThreadedMode(void):
+   *
+   * Switches to single-threaded execution at a controlled boundary.
+   * Stops worker threads first. Default implementation does nothing.
+   */
+  virtual void SetSingleThreadedMode(void)
+  {
+  }
+
+  /*
    * ~IEmulator(void):
    *
    * Destructor. Must free all resources.

@@ -82,6 +82,7 @@ public:
   // IEmulator interface
   bool PauseThreads(void);
   bool ResumeThreads(void);
+  void SetSingleThreadedMode(void);
   void SaveState(CBlockFile *SaveState);
   void LoadState(CBlockFile *SaveState);
   void SaveNVRAM(CBlockFile *NVRAM);
