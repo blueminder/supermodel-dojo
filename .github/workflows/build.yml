@@ -109,9 +109,9 @@ jobs:
           
           # Copy package with platform-specific name
           if [[ "$PKG_FILE" == *.zip ]]; then
-            NEW_NAME="supermodel-${VERSION}-${PLATFORM_LOWER}.zip"
+            NEW_NAME="supermodel-dojo-${VERSION}-${PLATFORM_LOWER}.zip"
           else
-            NEW_NAME="supermodel-${VERSION}-${PLATFORM_LOWER}.tar.gz"
+            NEW_NAME="supermodel-dojo-${VERSION}-${PLATFORM_LOWER}.tar.gz"
           fi
           
           cp "$PKG_FILE" "$NEW_NAME"
