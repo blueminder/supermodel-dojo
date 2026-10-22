@@ -1123,6 +1123,13 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
       break;
     }
 
+    if (Dojo::replay_rejected)
+    {
+      ErrorLog("replay rejected: empty, gapped, or incomplete player pair frame sequence\n");
+      quit = true;
+      break;
+    }
+
     // wipe NVRAM before the first emulated frame so both players start identically
     if (Dojo::clear_nvram)
     {
@@ -1141,12 +1148,15 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
 
     if (Dojo::playback && !paused)
     {
-      uint32_t net_input_count;
+      // recorded replay: stop after the explicit final frame executes
+      bool replay_ended = Dojo::index > Dojo::Replay::final_frame;
+      if (Dojo::receiving)
       {
+        // live spectate: buffered frame count still defines the endpoint
         std::lock_guard<std::mutex> lock(Dojo::inputs_mtx);
-        net_input_count = (uint32_t)Dojo::net_inputs[0].size();
+        replay_ended = Dojo::index == (uint32_t)Dojo::net_inputs[0].size();
       }
-      if(Dojo::index == net_input_count)
+      if (replay_ended)
       {
         std::cout << "End of Replay" << std::endl;
         Dojo::playback = false;

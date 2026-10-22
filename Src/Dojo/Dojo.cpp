@@ -5,6 +5,7 @@ void Dojo::Init(const std::string& game_name, bool record_session, bool train_se
     index = 0;
     Dojo::hosting = hosting;
     Dojo::game_name = game_name;
+    replay_rejected = false;
 
     if (!Replay::file_path.empty())
     {
@@ -64,6 +65,9 @@ void Dojo::Init(const std::string& game_name, bool record_session, bool train_se
         Replay::LoadFile(Replay::file_path);
         if (!net_inputs[1].empty())
           net_replay = true;
+        // recorded replays only: live spectate has no final frame
+        if (!receiving)
+          Replay::ValidateFinalFrame();
     }
 
     if (!netplay)
@@ -85,19 +89,27 @@ void Dojo::FillDelay()
 
 void Dojo::AdvanceFrame()
 {
-    // replays: save previous frame to file
-    if (record && index > 1)
+    // replays: record the frame about to execute
+    if (record)
     {
       std::lock_guard<std::mutex> lock(inputs_mtx);
 
-      if (netplay && PlayerFramesFilledNoLock(index - 1))
+      if (!netplay)
       {
-        Replay::AppendFrameToFile(net_frames[0].at(index - 1));
-        Replay::AppendFrameToFile(net_frames[1].at(index - 1));
+        // solo: delay prefix and local input are already in the map
+        Replay::AppendFrameToFile(net_frames[0].at(index));
+      }
+      else if (PlayerFramesFilledNoLock(index))
+      {
+        Replay::AppendFrameToFile(net_frames[0].at(index));
+        Replay::AppendFrameToFile(net_frames[1].at(index));
       }
       else
       {
-        Replay::AppendFrameToFile(net_frames[0].at(index - 1));
+        // reject incomplete player pairs: stop the recording
+        record = false;
+        Replay::FinalizeRecording();
+        std::cout << "Recording Stopped: Incomplete Player Pair At Frame " << index << std::endl;
       }
     }
 

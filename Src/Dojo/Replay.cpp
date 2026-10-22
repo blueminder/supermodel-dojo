@@ -141,6 +141,35 @@ void Dojo::Replay::FinalizeRecording()
   replay_msg = Message::Writer();
 }
 
+void Dojo::Replay::ValidateFinalFrame()
+{
+  final_frame = 0;
+
+  // must start at frame 0: min key 0 and max key size-1 means no gaps
+  if (net_inputs[0].empty() || net_inputs[0].begin()->first != 0)
+  {
+    Dojo::replay_rejected = true;
+    return;
+  }
+
+  const uint32_t last = net_inputs[0].rbegin()->first;
+  if (net_inputs[0].size() != last + 1)
+  {
+    Dojo::replay_rejected = true;
+    return;
+  }
+
+  // netplay replays: both players must cover the same complete sequence
+  if (net_replay &&
+      (net_inputs[1].size() != last + 1 || net_inputs[1].begin()->first != 0))
+  {
+    Dojo::replay_rejected = true;
+    return;
+  }
+
+  final_frame = last;
+}
+
 void Dojo::Replay::LoadFile(const std::string& path)
 {
   if (path.empty())
