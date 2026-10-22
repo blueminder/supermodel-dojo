@@ -53,6 +53,8 @@ namespace Dojo {
     inline std::string game_name;
     inline uint32_t ppc_frequency = 0;
     inline std::atomic<bool> mismatch = false;
+    // set at replay load, consumed by the main loop before frame 0
+    inline bool replay_rejected = false;
     // set by the net thread at handshake, consumed by the main loop before frame 0
     inline std::atomic<bool> clear_nvram = false;
 
