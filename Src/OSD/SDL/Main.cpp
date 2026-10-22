@@ -1410,6 +1410,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
       else
       {
         Dojo::record= false;
+        Dojo::Replay::FinalizeRecording();
         notice = "Clip Recording Stopped";
       }
       std::cout << notice << std::endl;
@@ -1614,6 +1615,9 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
   // Make sure all threads are paused before shutting down
   Emu->PauseThreads();
 
+  // flush pending replay data on normal stop
+  Dojo::Replay::FinalizeRecording();
+
   ShutdownOverlay();
 
 #ifdef SUPERMODEL_DEBUGGER
@@ -1643,6 +1647,8 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
 
   // Quit with an error
 QuitError:
+  // flush pending replay data on handled error exits
+  Dojo::Replay::FinalizeRecording();
   delete Render2D;
   delete Render3D;
   delete superAA;
