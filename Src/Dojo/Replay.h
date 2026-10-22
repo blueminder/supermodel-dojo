@@ -22,6 +22,7 @@ namespace Dojo::Replay {
   void AppendHeaderToFile(const std::string& game_name);
   void AppendPlayerInfoToFile();
   void AppendFrameToFile(const std::string& frame);
+  void FinalizeRecording();
   void LoadFile(const std::string& path);
 
   ReplayHeader ReadReplayHeader(const std::string& path);

@@ -53,6 +53,8 @@ void Dojo::Init(const std::string& game_name, bool record_session, bool train_se
     if (record)
     {
         std::cout << "Recording Session" << std::endl;
+        // session replacement: flush the previous recording first
+        Replay::FinalizeRecording();
         std::string replay_fn = Replay::CreateReplayFile(game_name, state_path);
         std::cout << replay_fn << std::endl;
     }
