@@ -123,6 +123,24 @@ void Dojo::Replay::AppendFrameToFile(const std::string& frame)
   }
 }
 
+void Dojo::Replay::FinalizeRecording()
+{
+  if (replay_frame_count % FRAME_BATCH != 0)
+  {
+    std::ofstream fout(Dojo::Replay::file_path,
+      std::ios::out | std::ios::binary | std::ios_base::app);
+
+    std::vector<uint8_t> message = replay_msg.Msg();
+    fout.write((const char*)message.data(), (std::streamsize)message.size());
+  }
+
+  if (replay_frame_count > 0)
+    std::cout << "Recording Finalized: " << replay_frame_count << " Input Records" << std::endl;
+
+  replay_frame_count = 0;
+  replay_msg = Message::Writer();
+}
+
 void Dojo::Replay::LoadFile(const std::string& path)
 {
   if (path.empty())
