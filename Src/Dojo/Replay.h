@@ -23,6 +23,7 @@ namespace Dojo::Replay {
   void AppendPlayerInfoToFile();
   void AppendFrameToFile(const std::string& frame);
   void FinalizeRecording();
+  void ValidateFinalFrame();
   void LoadFile(const std::string& path);
 
   ReplayHeader ReadReplayHeader(const std::string& path);
@@ -35,4 +36,7 @@ namespace Dojo::Replay {
 
   inline std::string file_path;
   inline std::string clip_state;
+
+  // last recorded frame; playback stops after it executes
+  inline uint32_t final_frame = 0;
 } // namespace Dojo::Replay
