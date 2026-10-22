@@ -25,7 +25,9 @@ void Dojo::Netplay::ServerThread()
 
 	bool done = false;
 	while (!done) { // server loop
-		if (peer != nullptr)
+		// only drain the send queue once the peer is actually CONNECTED;
+		// enet_peer_send silently drops packets on a CONNECTING peer
+		if (peer != nullptr && peer->state == ENET_PEER_STATE_CONNECTED)
 		{
 			std::string frame;
 			{
@@ -40,7 +42,13 @@ void Dojo::Netplay::ServerThread()
 			if (!frame.empty())
 			{
 				ENetPacket* packet = enet_packet_create(frame.data(), FRAME_SIZE, ENET_PACKET_FLAG_RELIABLE);
-				enet_peer_send(peer, 0, packet);
+				if (enet_peer_send(peer, 0, packet) < 0)
+				{
+					enet_packet_destroy(packet);
+					// put the frame back so the sequence stays gapless
+					std::lock_guard<std::mutex> lock(Dojo::inputs_mtx);
+					frames_to_send.push(frame);
+				}
 			}
 		}
 
@@ -144,7 +152,9 @@ void Dojo::Netplay::ClientThread()
 			break;
 		}
 
-		if (peer != nullptr)
+		// only drain the send queue once the peer is actually CONNECTED;
+		// enet_peer_send silently drops packets on a CONNECTING peer
+		if (peer != nullptr && peer->state == ENET_PEER_STATE_CONNECTED)
 		{
 			std::string frame;
 			{
@@ -159,7 +169,13 @@ void Dojo::Netplay::ClientThread()
 			if (!frame.empty())
 			{
 				ENetPacket* packet = enet_packet_create(frame.data(), FRAME_SIZE, ENET_PACKET_FLAG_RELIABLE);
-				enet_peer_send(peer, 0, packet);
+				if (enet_peer_send(peer, 0, packet) < 0)
+				{
+					enet_packet_destroy(packet);
+					// put the frame back so the sequence stays gapless
+					std::lock_guard<std::mutex> lock(Dojo::inputs_mtx);
+					frames_to_send.push(frame);
+				}
 			}
 		}
 
