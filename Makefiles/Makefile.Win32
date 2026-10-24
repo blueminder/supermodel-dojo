@@ -126,6 +126,9 @@ else
 endif
 WNASPI32_BIN_DIR = bin32
 WNASPI32_DLL = $(WNASPI32_BIN_DIR)/wnaspi32.dll
+# mingw-w64 CRT r532 moved __mingw_fe_dfl_env into CRT_fp10.o, which the
+# -shared spec does not pull in (mingw-w64#189). Link it explicitly.
+WNASPI32_CRT_FP10 = $(wildcard $(dir $(CXX32))../lib/CRT_fp10.o)
 WNASPI32_SRC_FILES = Src/OSD/Windows/wnaspi32/wnaspi32.cpp Src/OSD/Windows/wnaspi32/ConnectDialog.cpp Src/OSD/Windows/wnaspi32/wnaspi32.def
 WNASPI32_HEADERS = Src/OSD/Windows/wnaspi32/aspi.h Src/OSD/Windows/wnaspi32/ConnectDialog.h Src/Pro1000/SCSITCPBridgeProtocol.h
 ifneq (,$(findstring i686,$(shell $(CXX32) -dumpmachine 2>&1)))
@@ -174,7 +177,8 @@ $(OBJ_DIR)/SupermodelResources.o:	Src/OSD/Windows/SupermodelResources.rc Src/OSD
 $(WNASPI32_DLL):	$(WNASPI32_SRC_FILES) $(WNASPI32_HEADERS) | $(WNASPI32_BIN_DIR)
 	$(info --------------------------------------------------------------------------------)
 	$(info Building ASPI DLL      : $@)
-	$(SILENT)$(CXX32_ENV) $(CXX32) -shared -o $@ $(WNASPI32_SRC_FILES) -ISrc $(OPT) $(WARN) $(CXXSTD) -static -static-libgcc -static-libstdc++ $(LDOPT) -lws2_32 -luser32
+	# CRT_fp10.o defines __mingw_fe_dfl_env; needed for static links (mingw-w64#189).
+	$(SILENT)$(CXX32_ENV) $(CXX32) -shared -o $@ $(WNASPI32_SRC_FILES) -ISrc $(OPT) $(WARN) $(CXXSTD) -static -static-libgcc -static-libstdc++ $(WNASPI32_CRT_FP10) $(LDOPT) -lws2_32 -luser32
 	$(info --------------------------------------------------------------------------------)
 
 ifneq ($(WNASPI32_BIN_DIR),$(BIN_DIR))
