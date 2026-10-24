@@ -899,6 +899,85 @@ static uint64_t GetDesiredRefreshRateMilliHz()
   return refreshRateMilliHz;
 }
 
+// resolve auto PowerPCFrequency to the effective per-stepping value
+static unsigned ResolvePPCFrequency(const Game &game)
+{
+  unsigned mhz = s_runtime_config["PowerPCFrequency"].ValueAsDefault<unsigned>(0);
+  if (!mhz)
+  {
+    if (game.stepping == Game::Stepping::MODEL3_1_0)
+      mhz = 66;
+    else if (game.stepping == Game::Stepping::MODEL3_1_5)
+      mhz = 100;
+    else  // 2.x
+      mhz = 166;
+  }
+  return mhz;
+}
+
+// apply settings recorded in a replay header for the whole session;
+// explicit command-line settings outrank the replay and warn on divergence
+static bool s_cliPPCFrequency = false;
+static bool s_cliRefreshRate = false;
+
+static void ApplyReplaySettings(const Game &game, const Dojo::Replay::ReplayHeader &header)
+{
+  // old headers carry no settings: live config rules
+  if (!header.ppc_frequency_mhz && !header.refresh_rate_millihz)
+    return;
+
+  unsigned applied_mhz = header.ppc_frequency_mhz;
+  float applied_hz = header.refresh_rate_millihz / 1000.0f;
+
+  // nonsense stored values: fall back to live settings, keep playing
+  if (!applied_mhz || applied_mhz > 1000 || !(applied_hz > 0.0f) || applied_hz > 1000.0f)
+  {
+    std::string msg = "replay settings invalid (ppc: " + std::to_string(header.ppc_frequency_mhz) +
+      " MHz, refresh: " + std::to_string(header.refresh_rate_millihz) + " mHz), using local settings";
+    ErrorLog("%s\n", msg.c_str());
+    ShowNotice(msg);
+    return;
+  }
+
+  // explicit command-line settings outrank the replay; warn when they diverge
+  bool keepPpc = s_cliPPCFrequency;
+  bool keepRefresh = s_cliRefreshRate;
+  if (keepPpc && ResolvePPCFrequency(game) != header.ppc_frequency_mhz)
+  {
+    std::string msg = "command-line PowerPCFrequency (" + std::to_string(ResolvePPCFrequency(game)) +
+      " MHz) overrides replay recording (" + std::to_string(header.ppc_frequency_mhz) + " MHz)";
+    ErrorLog("%s\n", msg.c_str());
+    ShowNotice(msg);
+  }
+  if (keepRefresh && GetDesiredRefreshRateMilliHz() != header.refresh_rate_millihz)
+  {
+    std::string msg = "command-line refresh rate (" + std::to_string(GetDesiredRefreshRateMilliHz() / 1000.0f) +
+      " Hz) overrides replay recording (" + std::to_string(header.refresh_rate_millihz / 1000.0f) + " Hz)";
+    ErrorLog("%s\n", msg.c_str());
+    ShowNotice(msg);
+  }
+
+  // apply recorded settings for anything not set on the command line
+  std::string applied;
+  if (!keepPpc && header.ppc_frequency_mhz != ResolvePPCFrequency(game))
+  {
+    s_runtime_config.Set("PowerPCFrequency", header.ppc_frequency_mhz);
+    applied = "ppc: " + std::to_string(applied_mhz) + " MHz";
+  }
+  if (!keepRefresh && header.refresh_rate_millihz != GetDesiredRefreshRateMilliHz())
+  {
+    s_runtime_config.Set("RefreshRate", applied_hz);
+    applied += applied.empty() ? "" : ", ";
+    applied += "refresh: " + std::to_string(applied_hz) + " Hz";
+  }
+  if (!applied.empty())
+  {
+    std::string msg = "applying replay settings (" + applied + ")";
+    std::cout << msg << std::endl;
+    ShowNotice(msg);
+  }
+}
+
 static void SuperSleepUntil(const uint64_t target)
 {
   uint64_t time = SDL_GetPerformanceCounter();
@@ -979,6 +1058,15 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
   hosting = s_runtime_config.Get("ActAsServer").ValueAs<bool>();
   netplay = s_runtime_config.Get("Netplay").ValueAs<bool>();
   Dojo::debug = s_runtime_config.Get("DojoDebug").ValueAs<bool>();
+
+  // playback (ReplayFile set): adopt the settings recorded in the replay header
+  // before emulation init; recording sessions create their file later, so no guard needed
+  if (Dojo::Replay::file_path.length() > 0)
+  {
+    Dojo::Replay::ReplayHeader header = Dojo::Replay::ReadReplayHeader(Dojo::Replay::file_path);
+    if (header.valid)
+      ApplyReplaySettings(game, header);
+  }
 
   // Initialize and load ROMs
   if (Result::OKAY != Emu->Init(game, *rom_set))
@@ -1110,7 +1198,8 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
   }
 #endif
 
-  Dojo::ppc_frequency = s_runtime_config["PowerPCFrequency"].ValueAsDefault<unsigned>(0);
+  Dojo::ppc_frequency = ResolvePPCFrequency(game);
+  Dojo::refresh_rate_millihz = (uint32_t)GetDesiredRefreshRateMilliHz();
 
   Dojo::Init(ReplayGameName(Emu->GetGame().name), recordSession, trainSession, receiving, hosting, netplay, initialState);
 
@@ -2376,6 +2465,8 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
         if (it != valued_options.end())
         {
           const std::string &config_key = it->second;
+          if (config_key == "PowerPCFrequency")
+            s_cliPPCFrequency = true;
           cmd_line.config.Set(config_key, value);
           continue;
         }
@@ -2519,7 +2610,10 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
           }
       }
       else if (arg == "-true-hz")
+      {
+        s_cliRefreshRate = true;
         cmd_line.config.Set("RefreshRate", 57.524f);
+      }
       else if (arg == "-print-gl-info")
         cmd_line.print_gl_info = true;
       else if (arg == "-config-inputs")

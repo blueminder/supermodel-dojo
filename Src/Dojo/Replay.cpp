@@ -61,13 +61,17 @@ void Dojo::Replay::AppendHeaderToFile(const std::string& game_name)
   spectate_start.AppendHeader(1, SPECTATE_START);
 
   // version
-  spectate_start.AppendInt(1);
+  spectate_start.AppendInt(5);
   spectate_start.AppendString(game_name);
   spectate_start.AppendString("Player1");
   spectate_start.AppendString("Player2");
 
   spectate_start.AppendString("Quark");
   spectate_start.AppendString("MatchCode");
+
+  // settings used by this session; playback applies them to emulation
+  spectate_start.AppendInt(Dojo::ppc_frequency);
+  spectate_start.AppendInt(Dojo::refresh_rate_millihz);
 
   std::vector<uint8_t> message = spectate_start.Msg();
 
@@ -255,12 +259,20 @@ Dojo::Replay::ReplayHeader Dojo::Replay::ReadReplayHeader(const std::string& pat
   };
 
   const uint32_t version = readInt();
-  if (version < 1 || version > 4)
+  if (version < 1 || version > 5)
     return meta;
 
   meta.game_name = readString();
   meta.player1 = readString();
   meta.player2 = readString();
+
+  if (version >= 5)
+  {
+    readString(); // quark
+    readString(); // matchcode
+    meta.ppc_frequency_mhz = readInt();
+    meta.refresh_rate_millihz = readInt();
+  }
 
   if (offset <= (int)body_size)
     meta.valid = true;
