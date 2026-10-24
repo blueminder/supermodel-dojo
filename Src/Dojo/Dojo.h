@@ -52,6 +52,8 @@ namespace Dojo {
 
     inline std::string game_name;
     inline uint32_t ppc_frequency = 0;
+    // effective session refresh rate in milliHz; stored in replay headers
+    inline uint32_t refresh_rate_millihz = 0;
     inline std::atomic<bool> mismatch = false;
     // set at replay load, consumed by the main loop before frame 0
     inline bool replay_rejected = false;

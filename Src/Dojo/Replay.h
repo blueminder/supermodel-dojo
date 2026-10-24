@@ -14,6 +14,9 @@ namespace Dojo::Replay {
     std::string player1;
     std::string player2;
     uint32_t frame_count = 0;
+    // version 5+ header
+    uint32_t ppc_frequency_mhz = 0;
+    uint32_t refresh_rate_millihz = 0;
   };
 
   std::string currentISO8601TimeUTC();
