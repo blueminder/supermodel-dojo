@@ -101,6 +101,9 @@ CXXFLAGS_GENERATE_DEPENDENCIES = $(filter-out -c,$(CXXFLAGS))
 ###############################################################################
 
 SRC_FILES = \
+	Libraries/blake3/blake3.c \
+	Libraries/blake3/blake3_dispatch.c \
+	Libraries/blake3/blake3_portable.c \
 	Src/CPU/PowerPC/PPCDisasm.cpp \
 	Src/BlockFile.cpp \
 	Src/Pkgs/unzip.cpp \
@@ -416,6 +419,13 @@ $(OBJ_DIR)/%.o:	%.cpp | $(OBJ_DIR)
 
 # Suppress all warnings for third-party packages that we cannot modify
 $(OBJ_DIR)/glew.o: CFLAGS += -w
+
+# portable BLAKE3 only: disable SIMD code paths that need extra sources
+# (BLAKE3_USE_NEON=0: NEON impl lives in unvendored blake3_neon.c on arm64)
+BLAKE3_CFLAGS = -DBLAKE3_NO_SSE2 -DBLAKE3_NO_SSE41 -DBLAKE3_NO_AVX2 -DBLAKE3_NO_AVX512 -DBLAKE3_USE_NEON=0
+$(OBJ_DIR)/blake3.o: CFLAGS += $(BLAKE3_CFLAGS)
+$(OBJ_DIR)/blake3_dispatch.o: CFLAGS += $(BLAKE3_CFLAGS)
+$(OBJ_DIR)/blake3_portable.o: CFLAGS += $(BLAKE3_CFLAGS)
 
 $(OBJ_DIR)/%.o:	%.c | $(OBJ_DIR)
 	$(info Generating dependencies: $< -> $(OBJ_DIR)/$(*F).d)

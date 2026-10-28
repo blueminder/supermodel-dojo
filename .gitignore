@@ -350,6 +350,8 @@ Libraries/*
 !Libraries/Get_SDL.cmd
 !Libraries/Get_SDL_Net.cmd
 !Libraries/Get_ZLib.cmd
+!Libraries/blake3/
+!Libraries/blake3/*
 
 #ignore generated files and directories
 Src/BuildID.h

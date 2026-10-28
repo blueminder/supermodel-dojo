@@ -1,3 +1,9 @@
+#pragma once
+
+#include <cstdint>
+#include <string>
+#include <vector>
+
 #define GAME_START 1
 #define GAME_BUFFER 2
 #define SPECTATE_START 3

@@ -1,9 +1,45 @@
+#include "Replay.h"
 #include "Dojo.h"
 #include "OSD/FileSystemPath.h"
+
+extern "C"
+{
+#include "../../Libraries/blake3/blake3.h"
+}
 
 // replay recording state, internal to this file
 static uint32_t replay_frame_count;
 static Dojo::Message::Writer replay_msg;
+
+std::string Dojo::Replay::Blake3FileHex(const std::string& path)
+{
+  std::ifstream fin(path, std::ios::in | std::ios::binary);
+  if (!fin.is_open())
+    return "";
+
+  blake3_hasher hasher;
+  blake3_hasher_init(&hasher);
+
+  char buf[65536];
+  while (fin)
+  {
+    fin.read(buf, sizeof buf);
+    blake3_hasher_update(&hasher, buf, (size_t)fin.gcount());
+  }
+
+  uint8_t digest[BLAKE3_OUT_LEN];
+  blake3_hasher_finalize(&hasher, digest, BLAKE3_OUT_LEN);
+
+  static const char hex[] = "0123456789abcdef";
+  std::string hex_digest;
+  hex_digest.reserve(BLAKE3_OUT_LEN * 2);
+  for (uint8_t byte : digest)
+  {
+    hex_digest += hex[byte >> 4];
+    hex_digest += hex[byte & 0xf];
+  }
+  return hex_digest;
+}
 
 std::string Dojo::Replay::currentISO8601TimeUTC()
 {
@@ -61,7 +97,7 @@ void Dojo::Replay::AppendHeaderToFile(const std::string& game_name)
   spectate_start.AppendHeader(1, SPECTATE_START);
 
   // version
-  spectate_start.AppendInt(5);
+  spectate_start.AppendInt(6);
   spectate_start.AppendString(game_name);
   spectate_start.AppendString("Player1");
   spectate_start.AppendString("Player2");
@@ -72,6 +108,9 @@ void Dojo::Replay::AppendHeaderToFile(const std::string& game_name)
   // settings used by this session; playback applies them to emulation
   spectate_start.AppendInt(Dojo::ppc_frequency);
   spectate_start.AppendInt(Dojo::refresh_rate_millihz);
+
+  // version 6+: BLAKE3 of the ROM zip; informational, mismatches are warned on playback
+  spectate_start.AppendString(Blake3FileHex(Dojo::Replay::rom_path));
 
   std::vector<uint8_t> message = spectate_start.Msg();
 
@@ -259,7 +298,7 @@ Dojo::Replay::ReplayHeader Dojo::Replay::ReadReplayHeader(const std::string& pat
   };
 
   const uint32_t version = readInt();
-  if (version < 1 || version > 5)
+  if (version < 1 || version > 6)
     return meta;
 
   meta.game_name = readString();
@@ -273,6 +312,9 @@ Dojo::Replay::ReplayHeader Dojo::Replay::ReadReplayHeader(const std::string& pat
     meta.ppc_frequency_mhz = readInt();
     meta.refresh_rate_millihz = readInt();
   }
+
+  if (version >= 6)
+    meta.rom_hash = readString();
 
   if (offset <= (int)body_size)
     meta.valid = true;
