@@ -95,6 +95,31 @@ static std::set<std::string> ScanRomZips(const std::string& dir)
     return found;
 }
 
+static std::set<std::string> ScanRomZipBaseNames(const std::string& dir)
+{
+    std::set<std::string> found;
+    std::error_code ec;
+
+    for (std::filesystem::directory_iterator it(dir, ec), end; !ec && it != end; it.increment(ec)) {
+        std::error_code ec2;
+        if (!it->is_regular_file(ec2)) {
+            continue;
+        }
+        if (ToLowerStr(it->path().extension().string()) != ".zip") {
+            continue;
+        }
+        std::string stem = ToLowerStr(it->path().stem().string());
+        const size_t dot = stem.find_last_of('.');
+        if (dot != std::string::npos && dot > 0 &&
+            stem.find_first_not_of("0123456789", dot + 1) == std::string::npos) {
+            stem = stem.substr(0, dot);
+        }
+        found.insert(stem);
+    }
+
+    return found;
+}
+
 static void WriteGameNode(Util::Config::Node& baseNode, const Util::Config::Node& diffNode, Util::Config::Node& writeNode, const std::string& group)
 {
     for (const auto& n : baseNode) {
@@ -200,7 +225,7 @@ static void UpdateTempValues(Util::Config::Node& config, const std::string& grou
                         it->GetValue()->SetValueRange(vRange);      // setting a new key could erase value range so make sure to re-add it
                     }
                 }
-            }  
+            }
         }
     }
 }
@@ -377,7 +402,7 @@ static void CreateControls(Util::Config::Node& config, const std::string& group)
 
                             ImGui::SliderScalar(key.c_str(), type, valuePtr, &min_, &max_, format);
                         };
-                        
+
                         auto ShowSettingHelp = [&](const std::string& key)
                         {
                             auto it = s_settingsDesc.find(key);
@@ -468,7 +493,7 @@ static void SetDefaultKeyVal(std::shared_ptr<CInput> input)
         input->ResetToDefaultMapping();
 }
 
-static std::vector<std::string> SplitByComma(const std::string& input) 
+static std::vector<std::string> SplitByComma(const std::string& input)
 {
     std::vector<std::string> result;
     size_t start = 0;
@@ -731,11 +756,10 @@ static std::shared_ptr<CInputs> GetInputSystem(Util::Config::Node& config, SDL_W
     else if (selectedInputSystem == "rawinput")     { inputSystem = std::shared_ptr<CInputSystem>(new CDirectInputSystem(config, window, true, false)); }
 #endif // SUPERMODEL_WIN32
 
-    // initialise 
     if (inputSystem) {
         auto inputs = std::shared_ptr<CInputs>(new CInputs(inputSystem));
         inputs->Initialize();
-        inputs->LoadFromConfig(config); 
+        inputs->LoadFromConfig(config);
 
         int x, y, w, h;
         SDL_GetWindowPosition(window, &x, &y);
@@ -1203,7 +1227,7 @@ static std::string FormatReplayDuration(uint32_t frameCount, float fps)
     return buf;
 }
 
-static void DrawReplaysTable(const ImGuiTextFilter& filter, const Util::Config::Node& config, const std::map<std::string, Game>& games, const std::set<std::string>& ownedZips, int& selectedGameIndex, ReplaySelection& selectedReplay, ReplaySelection& replayLaunch, bool& exit)
+static void DrawReplaysTable(const ImGuiTextFilter& filter, const Util::Config::Node& config, const std::map<std::string, Game>& games, const std::set<std::string>& romZipBases, int& selectedGameIndex, ReplaySelection& selectedReplay, ReplaySelection& replayLaunch, bool& exit)
 {
     const std::vector<ReplayEntry> replays = ScanReplays();
 
@@ -1274,7 +1298,7 @@ static void DrawReplaysTable(const ImGuiTextFilter& filter, const Util::Config::
                 continue;
             }
 
-            const bool loadable = games.count(r.gameName) > 0 && ownedZips.count(ToLowerStr(r.gameName)) > 0;
+            const bool loadable = games.count(r.gameName) > 0 && romZipBases.count(ToLowerStr(r.gameName)) > 0;
 
             ImGui::TableNextRow();
 
@@ -1332,7 +1356,7 @@ static void DrawReplaysTable(const ImGuiTextFilter& filter, const Util::Config::
     }
 }
 
-static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<std::string, Game>& games, const std::set<std::string>& ownedZips, int& selectedGameIndex, bool& exit, bool& launchTraining, bool& saveSettings, ReplaySelection& selectedReplay, ReplaySelection& replayLaunch, SDL_Window* window, std::shared_ptr<CInputs>& inputs, KeyBindState& kb, CalibrationState& cal, bool closeRequested, bool& exitPromptOpen, bool& saveNow)
+static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<std::string, Game>& games, const std::set<std::string>& ownedZips, const std::set<std::string>& romZipBases, int& selectedGameIndex, bool& exit, bool& launchTraining, bool& saveSettings, ReplaySelection& selectedReplay, ReplaySelection& replayLaunch, SDL_Window* window, std::shared_ptr<CInputs>& inputs, KeyBindState& kb, CalibrationState& cal, bool closeRequested, bool& exitPromptOpen, bool& saveNow)
 {
     ImVec4 clear_color = ImVec4(0.0f, 0.5f, 192/255.f, 1.00f);
 
@@ -1460,7 +1484,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
         {
             gamesTabActive = false;
             ImGui::BeginChild("ReplaysRegion", ScaledSize(0.0f, 200.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
-            DrawReplaysTable(filter, config, games, ownedZips, selectedGameIndex, selectedReplay, replayLaunch, exit);
+            DrawReplaysTable(filter, config, games, romZipBases, selectedGameIndex, selectedReplay, replayLaunch, exit);
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
@@ -1632,7 +1656,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
             }
 
             ImGui::EndChild();
-            
+
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Dojo Key bindings")) {
@@ -1662,7 +1686,7 @@ static void GUI(const ImGuiIO& io, Util::Config::Node& config, const std::map<st
 
     // Rendering
     ImGui::Render();
-    
+
     glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
     glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -1851,6 +1875,7 @@ std::vector<std::string> RunGUI(const std::string& configPath, const Util::Confi
     auto& games = loader.GetGames();
     std::string scannedRomDirectory = config["ROMDirectory"].ValueAs<std::string>();
     std::set<std::string> ownedZips = ScanRomZips(scannedRomDirectory);
+    std::set<std::string> romZipBases = ScanRomZipBaseNames(scannedRomDirectory);
     int selectedGame = -1;  // -1 means no selection
     ReplaySelection selectedReplay{};
     ReplaySelection replayLaunch{};
@@ -1895,10 +1920,11 @@ std::vector<std::string> RunGUI(const std::string& configPath, const Util::Confi
         if (romDirectory != scannedRomDirectory) {
             scannedRomDirectory = romDirectory;
             ownedZips = ScanRomZips(scannedRomDirectory);
+            romZipBases = ScanRomZipBaseNames(scannedRomDirectory);
             selectedGame = -1;
         }
 
-        GUI(io, config, games, ownedZips, selectedGame, exit, launchTraining, saveSettings, selectedReplay, replayLaunch, window, inputs, kb, cal, closeRequested, exitPromptOpen, saveNow);
+        GUI(io, config, games, ownedZips, romZipBases, selectedGame, exit, launchTraining, saveSettings, selectedReplay, replayLaunch, window, inputs, kb, cal, closeRequested, exitPromptOpen, saveNow);
 
         if (saveNow) {
             saveNow = false;
@@ -1916,7 +1942,10 @@ std::vector<std::string> RunGUI(const std::string& configPath, const Util::Confi
 
     if (!replayLaunch.path.empty()) {
         replayFile = replayLaunch.path;
-        path = (std::filesystem::path(config["ROMDirectory"].ValueAs<std::string>()) / (replayLaunch.gameName + ".zip")).string();
+        path = Dojo::Replay::ResolveReplayRom(replayLaunch.path, config["ROMDirectory"].ValueAs<std::string>());
+        if (path.empty()) {
+            path = (std::filesystem::path(config["ROMDirectory"].ValueAs<std::string>()) / (replayLaunch.gameName + ".zip")).string();
+        }
         romFiles.emplace_back(path);
     }
     else {
