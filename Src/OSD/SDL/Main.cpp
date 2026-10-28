@@ -1074,7 +1074,10 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
         if (current_hash.empty())
           ErrorLog("warning: replay ROM hash could not be computed for comparison\n");
         else if (current_hash != header.rom_hash)
+        {
           ErrorLog("warning: replay ROM hash mismatch (expected %s)\n", header.rom_hash.c_str());
+          ShowNotice("replay ROM hash mismatch\n(expected " + header.rom_hash + ") - playback may desync");
+        }
       }
     }
   }
@@ -2747,7 +2750,8 @@ int main(int argc, char **argv)
 #endif
   bool print_games = cmd_line.print_games;
   bool rom_specified = !cmd_line.rom_files.empty();
-  if (!rom_specified && !print_games && !cmd_line.config_inputs && !cmd_line.print_inputs)
+  bool replay_specified = !cmd_line.config["ReplayFile"].ValueAsDefault<std::string>("").empty();
+  if (!rom_specified && !print_games && !cmd_line.config_inputs && !cmd_line.print_inputs && !replay_specified)
   {
     ErrorLog("No ROM file specified.");
     return 0;
@@ -2765,6 +2769,20 @@ int main(int argc, char **argv)
     Util::Config::FromINIFile(&fileConfig, s_configFilePath);
     Util::Config::MergeINISections(&fileConfigWithDefaults, DefaultConfig(), fileConfig); // apply .ini file's global section over defaults
     Util::Config::MergeINISections(&config3, fileConfigWithDefaults, cmd_line.config);    // apply command line overrides
+    if (replay_specified && !rom_specified && !print_games &&
+        !cmd_line.config_inputs && !cmd_line.print_inputs)
+    {
+      const std::string replayPath = config3["ReplayFile"].ValueAs<std::string>();
+      const std::string romDir = config3["ROMDirectory"].ValueAs<std::string>();
+      const std::string zip = Dojo::Replay::ResolveReplayRom(replayPath, romDir);
+      if (zip.empty())
+      {
+        ErrorLog("Could not locate ROM matching replay '%s' in directory '%s'.", replayPath.c_str(), romDir.c_str());
+        return 1;
+      }
+      cmd_line.rom_files = { zip };
+      rom_specified = true;
+    }
     if (rom_specified || print_games)
     {
       std::string xml_file = config3["GameXMLFile"].ValueAs<std::string>();

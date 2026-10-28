@@ -35,6 +35,8 @@ namespace Dojo::Replay {
   uint32_t GetReplayFrameCount(const std::string& path);
   std::string GetStatePath();
 
+  std::string ResolveReplayRom(const std::string& replay_path, const std::string& rom_dir);
+
   std::string Blake3FileHex(const std::string& path);
 
   std::string Takeover(int player);

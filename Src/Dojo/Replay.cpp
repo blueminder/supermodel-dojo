@@ -1,6 +1,9 @@
 #include "Replay.h"
 #include "Dojo.h"
 #include "OSD/FileSystemPath.h"
+#include <algorithm>
+#include <cstdlib>
+#include <vector>
 
 extern "C"
 {
@@ -382,6 +385,56 @@ uint32_t Dojo::Replay::GetReplayFrameCount(const std::string& path)
   }
 
   return std::max(player_frames[0], player_frames[1]);
+}
+
+std::string Dojo::Replay::ResolveReplayRom(const std::string& replay_path, const std::string& rom_dir)
+{
+  ReplayHeader header = ReadReplayHeader(replay_path);
+  if (!header.valid || header.game_name.empty() || rom_dir.empty())
+    return "";
+
+  // candidates: (order, path); order 0 is the plain zip, N+1 the ".N" variants
+  std::vector<std::pair<unsigned, std::string>> candidates;
+  std::error_code ec;
+  for (std::filesystem::directory_iterator it(rom_dir, ec), end; !ec && it != end; it.increment(ec))
+  {
+    std::error_code ec2;
+    if (!it->is_regular_file(ec2) || ec2)
+      continue;
+    if (it->path().extension().string() != ".zip")
+      continue;
+    const std::string stem = it->path().stem().string();
+    if (stem == header.game_name)
+      candidates.emplace_back(0u, it->path().string());
+    else
+    {
+      // variant: exactly one all-digits suffix after the last dot
+      const size_t dot = stem.find_last_of('.');
+      if (dot == std::string::npos)
+        continue;
+      const std::string suffix = stem.substr(dot + 1);
+      if (suffix.find_first_not_of("0123456789") != std::string::npos ||
+          stem.substr(0, dot) != header.game_name)
+        continue;
+      candidates.emplace_back((unsigned)std::strtoul(suffix.c_str(), nullptr, 10) + 1,
+                               it->path().string());
+    }
+  }
+  if (candidates.empty())
+    return "";
+
+  std::sort(candidates.begin(), candidates.end());
+
+  // version 6+: prefer candidate matching recorded ROM hash
+  if (!header.rom_hash.empty())
+  {
+    for (const auto &candidate : candidates)
+    {
+      if (Blake3FileHex(candidate.second) == header.rom_hash)
+        return candidate.second;
+    }
+  }
+  return candidates.begin()->second;
 }
 
 std::string Dojo::Replay::Takeover(int player)
