@@ -187,6 +187,38 @@ void Dojo::Replay::FinalizeRecording()
   replay_msg = Message::Writer();
 }
 
+// header < 5 recordings start at the first recorded key
+void Dojo::Replay::NormalizeLegacyKeys()
+{
+  if (header_version >= 5)
+    return;
+
+  std::lock_guard<std::mutex> lock(inputs_mtx);
+
+  uint32_t base[2] = { 0, 0 };
+  for (int p = 0; p < 2; p++)
+  {
+    if (net_inputs[p].empty() || net_inputs[p].begin()->first == 0)
+      continue;
+
+    if (net_inputs[p].rbegin()->first - net_inputs[p].begin()->first + 1 != net_inputs[p].size())
+      return;
+
+    base[p] = net_inputs[p].begin()->first;
+  }
+
+  for (int p = 0; p < 2; p++)
+  {
+    if (base[p] == 0)
+      continue;
+
+    std::map<uint32_t, uint32_t> shifted;
+    for (const auto& [k, v] : net_inputs[p])
+      shifted.emplace(k - base[p], v);
+    net_inputs[p] = std::move(shifted);
+  }
+}
+
 void Dojo::Replay::ValidateFinalFrame()
 {
   final_frame = 0;

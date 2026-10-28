@@ -27,6 +27,7 @@ void InitOverlay(SDL_Window* window)
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO();
+  io.IniFilename = nullptr;
   static constexpr ImWchar ranges[] = { 0x0020, 0xFFFF, 0 };
   io.Fonts->AddFontFromMemoryCompressedTTF(roboto_medium_compressed_data, roboto_medium_compressed_size, 20.0f, nullptr, ranges);
   ImGui_ImplSDL2_InitForOpenGL(window, SDL_GL_GetCurrentContext());
