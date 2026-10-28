@@ -1065,7 +1065,18 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
   {
     Dojo::Replay::ReplayHeader header = Dojo::Replay::ReadReplayHeader(Dojo::Replay::file_path);
     if (header.valid)
+    {
       ApplyReplaySettings(game, header);
+      // version 6+ replays carry BLAKE3 hash of recording ROM
+      if (!header.rom_hash.empty())
+      {
+        std::string current_hash = Dojo::Replay::Blake3FileHex(Dojo::Replay::rom_path);
+        if (current_hash.empty())
+          ErrorLog("warning: replay ROM hash could not be computed for comparison\n");
+        else if (current_hash != header.rom_hash)
+          ErrorLog("warning: replay ROM hash mismatch (expected %s)\n", header.rom_hash.c_str());
+      }
+    }
   }
 
   // Initialize and load ROMs
@@ -2766,6 +2777,7 @@ int main(int argc, char **argv)
       }
       if (loader.Load(&game, &rom_set, *cmd_line.rom_files.begin()))
         return 1;
+      Dojo::Replay::rom_path = *cmd_line.rom_files.begin();
       std::string zipStem = std::filesystem::path(*cmd_line.rom_files.begin()).stem().string();
       s_replayGameName = loader.GetGames().count(zipStem) ? zipStem : game.name;
       Util::Config::MergeINISections(&config4, config3, fileConfig[game.name]);   // apply game-specific config

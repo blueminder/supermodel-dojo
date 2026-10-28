@@ -17,6 +17,8 @@ namespace Dojo::Replay {
     // version 5+ header
     uint32_t ppc_frequency_mhz = 0;
     uint32_t refresh_rate_millihz = 0;
+    // version 6+ header: BLAKE3 hex of the ROM zip, empty when absent
+    std::string rom_hash;
   };
 
   std::string currentISO8601TimeUTC();
@@ -33,12 +35,16 @@ namespace Dojo::Replay {
   uint32_t GetReplayFrameCount(const std::string& path);
   std::string GetStatePath();
 
+  std::string Blake3FileHex(const std::string& path);
+
   std::string Takeover(int player);
   inline bool p1_override = false;
   inline bool p2_override = false;
 
   inline std::string file_path;
   inline std::string clip_state;
+
+  inline std::string rom_path;
 
   // last recorded frame; playback stops after it executes
   inline uint32_t final_frame = 0;
