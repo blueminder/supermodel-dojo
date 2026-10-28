@@ -6,6 +6,7 @@ void Dojo::Init(const std::string& game_name, bool record_session, bool train_se
     Dojo::hosting = hosting;
     Dojo::game_name = game_name;
     replay_rejected = false;
+    Replay::header_version = 0;
 
     if (!Replay::file_path.empty())
     {
@@ -65,6 +66,7 @@ void Dojo::Init(const std::string& game_name, bool record_session, bool train_se
         Replay::LoadFile(Replay::file_path);
         if (!net_inputs[1].empty())
           net_replay = true;
+        Replay::NormalizeLegacyKeys();
         // recorded replays only: live spectate has no final frame
         if (!receiving)
           Replay::ValidateFinalFrame();

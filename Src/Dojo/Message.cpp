@@ -138,6 +138,7 @@ void Dojo::Message::ProcessBody(uint32_t cmd, uint32_t body_size, const char* bu
   if (cmd == SPECTATE_START)
   {
     uint32_t v = ReadInt((const char*)buffer, offset);
+    Dojo::Replay::header_version = v;
     std::string GameName = Message::ReadString((const char*)buffer, offset);
     std::string PlayerName = Message::ReadString((const char*)buffer, offset);
     std::string OpponentName = Message::ReadString((const char*)buffer, offset);
