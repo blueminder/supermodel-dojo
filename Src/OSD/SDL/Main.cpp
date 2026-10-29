@@ -153,6 +153,13 @@ static CRTcolor CRTcolors = CRTcolor::None; // default to no gamma/color adaptio
  */
 static CCrosshair* s_crosshair = nullptr;
 
+// Gun games are the only games that can show a crosshair, so only they need the crosshair assets
+static bool GameHasLightguns(const Game &game)
+{
+  return !!(game.inputs & (Game::INPUT_GUN1|Game::INPUT_GUN2|Game::INPUT_ANALOG_GUN1|Game::INPUT_ANALOG_GUN2))
+    || game.name == "lostwsga";
+}
+
 static Result SetGLGeometry(unsigned *xOffsetPtr, unsigned *yOffsetPtr, unsigned *xResPtr, unsigned *yResPtr, unsigned *totalXResPtr, unsigned *totalYResPtr, bool keepAspectRatio)
 {
   // What resolution did we actually get?
@@ -873,7 +880,7 @@ bool BeginFrameVideo()
 void EndFrameVideo()
 {
   // Show crosshairs for light gun games
-  if (videoInputs)
+  if (videoInputs && s_crosshair)
     s_crosshair->Update(currentInputs, videoInputs, xOffset, yOffset, xRes, yRes);
 
   // Training Mode notice overlay
@@ -1128,8 +1135,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
 
   // Hide mouse if fullscreen, enable crosshairs for gun games
   Inputs->GetInputSystem()->SetMouseVisibility(!s_runtime_config["FullScreen"].ValueAs<bool>());
-  gameHasLightguns = !!(game.inputs & (Game::INPUT_GUN1|Game::INPUT_GUN2));
-  gameHasLightguns |= game.name == "lostwsga";
+  gameHasLightguns = GameHasLightguns(game);
   currentInputs = game.inputs;
   if (gameHasLightguns)
     videoInputs = Inputs;
@@ -2843,13 +2849,16 @@ int main(int argc, char **argv)
     goto Exit;
   }
 
-  // Create Crosshair
-  s_crosshair = new CCrosshair(s_runtime_config);
-  if (s_crosshair->Init() != Result::OKAY)
+  // Create Crosshair only for gun games; other games never need the crosshair assets
+  if (GameHasLightguns(game))
   {
-      ErrorLog("Unable to load bitmap crosshair texture\n");
-      exitCode = 1;
-      goto Exit;
+      s_crosshair = new CCrosshair(s_runtime_config);
+      if (s_crosshair->Init() != Result::OKAY)
+      {
+          ErrorLog("Unable to load bitmap crosshair texture\n");
+          exitCode = 1;
+          goto Exit;
+      }
   }
 
   // Create emulator for the appropriate platform
