@@ -1,6 +1,6 @@
 /**
  ** Supermodel
- ** A Sega Model 3 Arcade Emulator.
+ ** A Sega Model Series Arcade Emulator.
  ** Copyright 2003-2026 The Supermodel Team
  **
  ** This file is part of Supermodel.
@@ -97,7 +97,11 @@
 #include "Model3/IEmulator.h"
 #include "Model3/Model3.h"
 #include "Pro1000/Pro1000.h"
+#include "Network/NetServer.h"
 #include "Graphics/Pro1000Render2D.h"
+#include "Model1/Model1.h"
+#include "Model2/Model2.h"
+#include "Graphics/Model1Render.h"
 #include "Graphics/IRender2D.h"
 #include "OSD/Audio.h"
 #include "OSD/ConsoleInput.h"
@@ -348,6 +352,12 @@ static Result CreateGLScreen(bool coreContext, const std::string &caption, bool 
 
   // Initialize GLEW, allowing us to use features beyond OpenGL 1.2
   err = glewInit();
+#ifdef GLEW_ERROR_NO_GLX_DISPLAY
+  // Wayland: SDL's context is EGL, so there's no GLX display. GLEW has loaded
+  // the GL functions by then and fails only on its GLX extensions, unused here.
+  if (GLEW_ERROR_NO_GLX_DISPLAY == err)
+    err = GLEW_OK;
+#endif
   if (GLEW_OK != err)
   {
     ErrorLog("OpenGL initialization failed: %s\n", glewGetErrorString(err));
@@ -725,8 +735,20 @@ static const int STATE_FILE_VERSION = 6;  // save state file version
 static const int NVRAM_FILE_VERSION = 0;  // NVRAM file version
 static unsigned s_saveSlot = 0;           // save state slot #
 
+static bool CheckSaveStatesSupported(IEmulator *Emu)
+{
+  if (Emu->SupportsSaveStates())
+    return true;
+  puts("Save states are not supported for this system.");
+  InfoLog("Save states are not supported for this system.");
+  return false;
+}
+
 static void SaveState(IEmulator *Model3, bool clip_save=false)
 {
+  if (!CheckSaveStatesSupported(Model3))
+    return;
+
   CBlockFile  SaveState;
 
   std::string file_path = Util::Format() << FileSystemPath::GetPath(FileSystemPath::Saves) << Model3->GetGame().name << ".st" << s_saveSlot;
@@ -751,13 +773,16 @@ static void SaveState(IEmulator *Model3, bool clip_save=false)
   InfoLog("Saved state to '%s'.", file_path.c_str());
 }
 
-static void LoadState(IEmulator *Model3, std::string file_path = std::string())
+static void LoadState(IEmulator *Emu, std::string file_path = std::string())
 {
+  if (!CheckSaveStatesSupported(Emu))
+    return;
+
   CBlockFile  SaveState;
 
   // Generate file path
   if (file_path.empty())
-    file_path = Util::Format() << FileSystemPath::GetPath(FileSystemPath::Saves) << Model3->GetGame().name << ".st" << s_saveSlot;
+    file_path = Util::Format() << FileSystemPath::GetPath(FileSystemPath::Saves) << Emu->GetGame().name << ".st" << s_saveSlot;
 
   // Open and check to make sure format is correct
   if (Result::OKAY != SaveState.Load(file_path))
@@ -781,17 +806,17 @@ static void LoadState(IEmulator *Model3, std::string file_path = std::string())
   }
 
   // Load
-  Model3->LoadState(&SaveState);
+  Emu->LoadState(&SaveState);
   SaveState.Close();
   printf("Loaded state from '%s'.\n", file_path.c_str());
   InfoLog("Loaded state from '%s'.", file_path.c_str());
 }
 
-static void SaveNVRAM(IEmulator *Model3)
+static void SaveNVRAM(IEmulator *Emu)
 {
   CBlockFile  NVRAM;
 
-  std::string file_path = Util::Format() << FileSystemPath::GetPath(FileSystemPath::NVRAM) << Model3->GetGame().name << ".nv";
+  std::string file_path = Util::Format() << FileSystemPath::GetPath(FileSystemPath::NVRAM) << Emu->GetGame().name << ".nv";
   if (Result::OKAY != NVRAM.Create(file_path, "Supermodel NVRAM State", "Supermodel Version " SUPERMODEL_VERSION))
   {
     ErrorLog("Unable to save NVRAM to '%s'. Make sure directory exists!", file_path.c_str());
@@ -801,20 +826,20 @@ static void SaveNVRAM(IEmulator *Model3)
   // Write file format version and ROM set ID to header block
   int32_t fileVersion = NVRAM_FILE_VERSION;
   NVRAM.Write(&fileVersion, sizeof(fileVersion));
-  NVRAM.Write(Model3->GetGame().name);
+  NVRAM.Write(Emu->GetGame().name);
 
   // Save NVRAM
-  Model3->SaveNVRAM(&NVRAM);
+  Emu->SaveNVRAM(&NVRAM);
   NVRAM.Close();
   InfoLog("Saved NVRAM to '%s'.", file_path.c_str());
 }
 
-static void LoadNVRAM(IEmulator *Model3)
+static void LoadNVRAM(IEmulator *Emu)
 {
   CBlockFile  NVRAM;
 
   // Generate file path
-  std::string file_path = Util::Format() << FileSystemPath::GetPath(FileSystemPath::NVRAM) << Model3->GetGame().name << ".nv";
+  std::string file_path = Util::Format() << FileSystemPath::GetPath(FileSystemPath::NVRAM) << Emu->GetGame().name << ".nv";
 
   // Open and check to make sure format is correct
   if (Result::OKAY != NVRAM.Load(file_path))
@@ -840,7 +865,7 @@ static void LoadNVRAM(IEmulator *Model3)
   if (!(Dojo::netplay || Dojo::record || Dojo::training || Dojo::playback || Dojo::Replay::file_path.size() > 0))
   {
     // Load
-    Model3->LoadNVRAM(&NVRAM);
+    Emu->LoadNVRAM(&NVRAM);
     NVRAM.Close();
     InfoLog("Loaded NVRAM from '%s'.", file_path.c_str());
   }
@@ -1027,6 +1052,8 @@ static IRender2D *CreateRender2D(IEmulator *Emu)
 {
   if (dynamic_cast<CPro1000 *>(Emu))
     return new CPro1000Render2D();
+  if (dynamic_cast<CModel1 *>(Emu) || dynamic_cast<CModel2 *>(Emu))
+    return new CModel1Render();
   return new CRender2D(s_runtime_config);
 }
 
@@ -1118,6 +1145,10 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
     SDL_SetWindowBordered(s_window, SDL_FALSE);
   }
 
+  // The window can be resized and maximized; the renderers follow its size
+  // (see the main loop)
+  SDL_SetWindowResizable(s_window, SDL_TRUE);
+
   SetFullScreenRefreshRate();
 
   bool stretch = s_runtime_config["Stretch"].ValueAs<bool>();
@@ -1141,13 +1172,6 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
     videoInputs = Inputs;
   else
     videoInputs = nullptr;
-
-  // Attach the inputs to the emulator
-  Emu->AttachInputs(Inputs);
-
-  // Attach the outputs to the emulator
-  if (Outputs != nullptr)
-    Emu->AttachOutputs(Outputs);
 
   // Frame timing
   s_perfCounterFrequency = SDL_GetPerformanceFrequency();
@@ -1320,6 +1344,51 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
     else
       Emu->RunFrame();
 
+    // Window resized or maximized: when its new size has stayed the same for
+    // a few frames (not every step of a drag), the renderers are created
+    // again for it, as when toggling full screen
+    if (!s_runtime_config["FullScreen"].ValueAs<bool>())
+    {
+      static int s_resizeW = 0, s_resizeH = 0, s_resizeFrames = 0;
+      int w = 0, h = 0;
+      SDL_GetWindowSize(s_window, &w, &h);
+      if (w <= 0 || h <= 0 || (unsigned(w) == totalXRes && unsigned(h) == totalYRes))
+        s_resizeFrames = 0;
+      else if (w != s_resizeW || h != s_resizeH)
+      {
+        s_resizeW = w;
+        s_resizeH = h;
+        s_resizeFrames = 0;
+      }
+      else if (++s_resizeFrames >= 3)
+      {
+        s_resizeFrames = 0;
+        if (!paused)
+          Emu->PauseThreads();
+
+        delete Render2D;
+        Render2D = nullptr;
+
+        totalXRes = xRes = unsigned(w);
+        totalYRes = yRes = unsigned(h);
+        if (Result::OKAY != SetGLGeometry(&xOffset, &yOffset, &xRes, &yRes, &totalXRes, &totalYRes, !s_runtime_config["Stretch"].ValueAs<bool>()))
+          goto QuitError;
+
+        superAA->Init(totalXRes, totalYRes);
+        Render2D = CreateRender2D(Emu);
+        if (Result::OKAY != Render2D->Init(xOffset * aaValue, yOffset * aaValue, xRes * aaValue, yRes * aaValue, totalXRes * aaValue, totalYRes * aaValue, superAA->GetTargetID(), upscaleMode))
+          goto QuitError;
+        if (Result::OKAY != Render3D->Init(xOffset * aaValue, yOffset * aaValue, xRes * aaValue, yRes * aaValue, totalXRes * aaValue, totalYRes * aaValue, superAA->GetTargetID()))
+          goto QuitError;
+        Emu->AttachRenderers(Render2D, Render3D, superAA);
+
+        if (!paused)
+          Emu->ResumeThreads();
+        else
+          Emu->RenderFrame();   // paused: show the frame at the new size
+      }
+    }
+
 #ifdef SUPERMODEL_DEBUGGER
     bool processUI = true;
     if (Debugger != NULL)
@@ -1371,7 +1440,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
         SetAudioEnabled(true);
       }
 
-      puts("Model 3 reset.");
+      puts("Emulator reset.");
     }
     else if (Inputs->uiPause->Pressed())
     {
@@ -1900,8 +1969,21 @@ Util::Config::Node DefaultConfig()
   // CModel3
   config.Set("PowerPCFrequency", 0u, "Core", 0u, 200u);
   config["PowerPCFrequency"].GetValue()->GetValueRange()->SetSliderFormat("%u MHz", "Auto"); // 0 = chosen by default game stepping
+  config["PowerPCFrequency"].GetValue()->GetValueRange()->SetNote("Model 3 only");
   config.Set("MultiThreaded", true,"Core");
   config.Set("GPUMultiThreaded", true, "Core");
+  config.Set("IdleSkip", true, "Core");
+  // CModel1, CModel2: the video board's geometrizer simulated (high level,
+  // fast), else its DSP programs run (low level, more accurate). Model 2:
+  // only 2B has the low level one (2A/2C are always simulated)
+  config.Set("HighLevelGeometrizer", true, "Core");
+  config["HighLevelGeometrizer"].GetValue()->GetValueRange()->SetNote("Model 1/2 only");
+  // CModel1, CModel2: how translucent polygons (Model 1 moire, Model 2
+  // checkerboard) are drawn: every other pixel (1x1), every other pixel of
+  // the native grid (scaled with the resolution), or blended 50%
+  config.Set("Transparency", 0, "Video", 0, 0, { 0,1,2 });
+  SetLabels("Transparency", { "Original", "Moire", "Blend" });
+  config["Transparency"].GetValue()->GetValueRange()->SetNote("Model 1/2 only");
   config.Set<std::string>("ROMDirectory", FileSystemPath::GetPath(FileSystemPath::ROMs), "Core", "", ""); // where the GUI looks for <romset>.zip
   // 2D and 3D graphics engines
 #ifndef SUPERMODEL_OSX
@@ -1917,8 +1999,6 @@ Util::Config::Node DefaultConfig()
   config.Set("BalanceFrontRear", 0.0f, "Sound", -100.f, 100.f);
   config.Set("NbSoundChannels", 4, "Sound", 0, 0, { 1,2,4 });
   SetLabels("NbSoundChannels", { "Mono", "Stereo", "Quad (4 channels)" });
-  config.Set("SoundFreq", 57.6f, "Sound", 0.0f, 0.0f, { 57.524160f, 57.6f, 60.f });
-  SetLabels("SoundFreq", { "57.524 Hz (original hardware)", "57.6 Hz", "60 Hz" });
   // CDSB
 
   config.Set("EmulateDSB", true, "Sound");
@@ -1987,10 +2067,11 @@ Util::Config::Node DefaultConfig()
   config.Set("SDLVibrateMax", 100, "ForceFeedback", 0, 100);
   config.Set("SDLConstForceThreshold", 30, "ForceFeedback", 0, 100);
 #endif
-  // NetBoard
+  // Network. PortIn is the port of the network server (net board and PRO-1000
+  // SCSI TCP bridge). PortOut and AddressOut give the next net board machine.
   config.Set("Network", false, "Network");
   config.Set("SimulateNet", true, "Network");
-  config.Set("PortIn", unsigned(1970), "Network");
+  config.Set("PortIn", unsigned(NetProtocol::DEFAULT_PORT), "Network");
   config.Set("PortOut", unsigned(1971), "Network");
   config.Set<std::string>("AddressOut", "127.0.0.1", "Network", "", "");
 
@@ -2248,7 +2329,7 @@ Util::Config::Node DefaultConfig()
 
 static void Title(void)
 {
-  puts("Supermodel: A Sega Model 3 Arcade Emulator (Version " SUPERMODEL_VERSION ")");
+  printf("Supermodel: A Sega Model Series Arcade Emulator (Version " SUPERMODEL_VERSION ")\n");
   puts("Copyright 2003-2026 by The Supermodel Team");
 }
 
@@ -2260,6 +2341,7 @@ static void Help(void)
   puts("");
   puts("General Options:");
   puts("  -?, -h, -help, --help   Print this help text");
+  puts("  -version, --version     Print the version and quit");
   puts("  -print-games            List supported games and quit");
   printf("  -game-xml-file=<file>   ROM set definition file [Default: %s]\n", s_gameXMLFilePath.c_str());
   printf("  -log-output=<outputs>   Log output destination(s) [Default: %s]\n", s_logFilePath.c_str());
@@ -2270,6 +2352,12 @@ static void Help(void)
   puts("  -no-threads             Disable multi-threading entirely");
   puts("  -gpu-multi-threaded     Run graphics rendering in separate thread [Default]");
   puts("  -no-gpu-thread          Run graphics rendering in main thread");
+  puts("  -idle-skip              Skip PowerPC idle loops [Default]");
+  puts("  -no-idle-skip           Execute PowerPC idle loops in full");
+  puts("  -high-level-geometrizer  Model 1/2 only: simulate the geometrizer (fast)");
+  puts("                          [Default]");
+  puts("  -no-high-level-geometrizer  Model 1/2 only: run the geometrizer DSP programs");
+  puts("                          (more accurate, slower; Model 2: 2B games only)");
   puts("  -load-state=<file>      Load save state after starting");
   puts("");
   puts("Video Options:");
@@ -2285,6 +2373,9 @@ static void Help(void)
   puts("  -stretch                Fit viewport to resolution, ignoring aspect ratio");
   puts("  -upscalemode=<n>        2D layer upscaling filter mode (range 0-3)");
   puts("  -crtcolors=<n>          CRT color emulation (range 0-5)");
+  puts("  -transparency=<n>       Model 1/2 translucent polygons: 0=original (1x1 pixel");
+  puts("                          checkerboard) [Default], 1=moire (native pixel");
+  puts("                          checkerboard, scaled), 2=blend");
   puts("  -no-throttle            Disable frame rate lock");
   puts("  -vsync                  Lock to vertical refresh rate [Default]");
   puts("  -no-vsync               Do not lock to vertical refresh rate");
@@ -2321,14 +2412,16 @@ static void Help(void)
   puts("  -flip-stereo            Swap left and right audio channels");
   puts("  -no-sound               Disable sound board emulation (sound effects)");
   puts("  -no-dsb                 Disable Digital Sound Board (MPEG music)");
-  puts("  -new-scsp               New SCSP engine based on MAME [Default]");
-  puts("  -legacy-scsp            Legacy SCSP engine by ElSemi");
   puts("");
   puts("Net Options:");
   puts("  -no-net                 Disable net board [Default]");
   puts("  -net                    Enable net board");
   puts("  -simulate-netboard      Simulate the net board [Default]");
   puts("  -emulate-netboard       Emulate the net board (requires -no-threads)");
+  printf("  -port=<n>, -port-in=<n> TCP port of this machine (net board and PRO-1000)\n"
+         "                          [Default: %u]\n", defaultConfig["PortIn"].ValueAs<unsigned>());
+  printf("  -port-out=<n>           TCP port of the next machine [Default: %u]\n", defaultConfig["PortOut"].ValueAs<unsigned>());
+  printf("  -address-out=<addr>     Address of the next machine [Default: %s]\n", defaultConfig["AddressOut"].ValueAs<std::string>().c_str());
   puts("");
   puts("Input Options:");
   puts("  -force-feedback         Enable force feedback (DirectInput, XInput)");
@@ -2397,9 +2490,12 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
     { "-music-volume",          "MusicVolume"             },
     { "-balance",               "Balance"                 },
     { "-channels", 	            "NbSoundChannels"         },
-    { "-soundfreq",             "SoundFreq"               },
     { "-input-system",          "InputSystem"             },
     { "-outputs",               "Outputs"                 },
+    { "-port",                  "PortIn"                  },
+    { "-port-in",               "PortIn"                  },
+    { "-port-out",              "PortOut"                 },
+    { "-address-out",           "AddressOut"              },
     { "-log-output",            "LogOutput"               },
     { "-log-level",             "LogLevel"                },
     { "-replay-file",           "ReplayFile"              },
@@ -2414,6 +2510,10 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
     { "-no-threads",          { "MultiThreaded",    false } },
     { "-gpu-multi-threaded",  { "GPUMultiThreaded", true } },
     { "-no-gpu-thread",       { "GPUMultiThreaded", false } },
+    { "-idle-skip",           { "IdleSkip",         true } },
+    { "-no-idle-skip",        { "IdleSkip",         false } },
+    { "-high-level-geometrizer",    { "HighLevelGeometrizer", true } },
+    { "-no-high-level-geometrizer", { "HighLevelGeometrizer", false } },
     { "-window",              { "FullScreen",       false } },
     { "-fullscreen",          { "FullScreen",       true } },
     { "-borderless",          { "BorderlessWindow", true } },
@@ -2445,8 +2545,6 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
     { "-no-sound",            { "EmulateSound",     false } },
     { "-dsb",                 { "EmulateDSB",       true } },
     { "-no-dsb",              { "EmulateDSB",       false } },
-    { "-legacy-scsp",         { "LegacySoundDSP",   true } },
-    { "-new-scsp",            { "LegacySoundDSP",   false } },
     { "-no-white-flash",      { "NoWhiteFlash",     true } },
     { "-white-flash",         { "NoWhiteFlash",     false } },
     { "-net",                 { "Network",          true } },
@@ -2606,6 +2704,29 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
               }
           }
       }
+      else if (arg == "-transparency" || arg.find("-transparency=") == 0) {
+
+          std::vector<std::string> parts = Util::Format(arg).Split('=');
+
+          if (parts.size() != 2)
+          {
+              ErrorLog("'-transparency' requires an integer argument (e.g., '-transparency=2').");
+              cmd_line.error = true;
+          }
+          else {
+
+              try {
+                  int val = std::stoi(parts[1]);
+                  val = std::clamp(val, 0, 2);
+
+                  cmd_line.config.Set("Transparency", val);
+              }
+              catch (...) {
+                  ErrorLog("'-transparency' requires an integer argument (e.g., '-transparency=2').");
+                  cmd_line.error = true;
+              }
+          }
+      }
       else if (arg == "-upscalemode" || arg.find("-upscalemode=") == 0) {
 
           std::vector<std::string> parts = Util::Format(arg).Split('=');
@@ -2678,6 +2799,17 @@ static ParsedCommandLine ParseCommandLine(int argc, char **argv)
  */
 int main(int argc, char **argv)
 {
+  // Handled before anything else so that only the version is printed and nothing
+  // is written to disk. The packaging scripts rely on this output.
+  for (int i = 1; i < argc; i++)
+  {
+    if (!strcmp(argv[i], "-version") || !strcmp(argv[i], "--version"))
+    {
+      printf("Supermodel " SUPERMODEL_VERSION "\n");
+      return 0;
+    }
+  }
+
   Title();
   WriteDefaultConfigurationFileIfNotPresent();
 
@@ -2828,6 +2960,7 @@ int main(int argc, char **argv)
   // Begin initializing various subsystems...
   int exitCode = 0;
   IEmulator *Emu = nullptr;
+  std::shared_ptr<CNetServer> netServer;
   std::shared_ptr<CInputSystem> InputSystem;
   CInputs *Inputs = nullptr;
   COutputs *Outputs = nullptr;
@@ -2859,31 +2992,6 @@ int main(int argc, char **argv)
           exitCode = 1;
           goto Exit;
       }
-  }
-
-  // Create emulator for the appropriate platform
-#ifdef DEBUG
-  if (!s_gfxStatePath.empty())
-    Emu = new CModel3GraphicsState(s_runtime_config, s_gfxStatePath);
-  else
-#endif
-  if (game.platform == Game::PLATFORM_PRO1000)
-    Emu = new CPro1000(s_runtime_config);
-  else
-    Emu = new CModel3(s_runtime_config);
-
-  // Console input is created only when something reads it: the emulated
-  // machine's serial console (Pro-1000) and/or the debugger
-  {
-    bool needConsoleInput = game.platform == Game::PLATFORM_PRO1000;
-#ifdef SUPERMODEL_DEBUGGER
-    needConsoleInput |= !cmd_line.disable_debugger;
-#endif // SUPERMODEL_DEBUGGER
-    if (needConsoleInput)
-    {
-      consoleInput = std::make_unique<CConsoleInput>();
-      Emu->AttachConsoleInput(consoleInput->CreateInput());
-    }
   }
 
   // Create input system
@@ -2967,6 +3075,40 @@ int main(int argc, char **argv)
     goto Exit;
   }
 
+  // Network server: for the net board, and for the programs that connect to
+  // the PRO-1000. If it cannot listen, emulation continues.
+  if (game.platform == Game::PLATFORM_PRO1000 || (game.netboard_present && s_runtime_config["Network"].ValueAs<bool>()))
+  {
+    netServer = std::make_shared<CNetServer>(s_runtime_config["PortIn"].ValueAs<unsigned>(), "Supermodel " SUPERMODEL_VERSION " (" + game.name + ")");
+    netServer->Start();
+  }
+
+  // Console input is created only when something reads it: the emulated
+  // machine's serial console (PRO-1000) and/or the debugger
+  {
+    bool needConsoleInput = game.platform == Game::PLATFORM_PRO1000;
+#ifdef SUPERMODEL_DEBUGGER
+    needConsoleInput |= !cmd_line.disable_debugger;
+#endif // SUPERMODEL_DEBUGGER
+    if (needConsoleInput)
+      consoleInput = std::make_unique<CConsoleInput>();
+  }
+
+  // Create emulator for the appropriate platform
+#ifdef DEBUG
+  if (!s_gfxStatePath.empty())
+    Emu = new CModel3GraphicsState(s_runtime_config, s_gfxStatePath);
+  else
+#endif
+  if (game.platform == Game::PLATFORM_PRO1000)
+    Emu = new CPro1000(s_runtime_config, consoleInput ? consoleInput->CreateInput() : nullptr, netServer);
+  else if (game.platform == Game::PLATFORM_MODEL1)
+    Emu = new CModel1(s_runtime_config, Inputs, Outputs, netServer);
+  else if (game.platform == Game::PLATFORM_MODEL2)
+    Emu = new CModel2(s_runtime_config, Inputs, Outputs, netServer);
+  else
+    Emu = new CModel3(s_runtime_config, Inputs, Outputs, netServer);
+
 #ifdef SUPERMODEL_DEBUGGER
   // Create Supermodel debugger unless debugging is disabled
   if (!cmd_line.disable_debugger)
@@ -2987,6 +3129,7 @@ int main(int argc, char **argv)
   delete Emu;
 
 Exit:
+  netServer.reset();
   delete Inputs;
   delete Outputs;
   delete s_crosshair;

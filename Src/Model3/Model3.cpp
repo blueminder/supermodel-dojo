@@ -214,19 +214,23 @@
 
 #include "Model3.h"
 
+#include <chrono>
+#include <system_error>
+
 #include <new>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include "Supermodel.h"
-#include "DriveBoard/BillBoard.h"
+#include "BillBoard.h"
 #include "DriveBoard/JoystickBoard.h"
 #include "DriveBoard/SkiBoard.h"
 #include "DriveBoard/WheelBoard.h"
 #include "Game.h"
 #include "ROMSet.h"
-#include "Network/NetBoard.h"
-#include "Network/SimNetBoard.h"
+#include "Model3/NetBoard.h"
+#include "Model3/SimNetBoard.h"
+#include "SDLIncludes.h"
 #include "OSD/Audio.h"
 #include "OSD/Video.h"
 #include "Util/Format.h"
@@ -450,6 +454,15 @@ UINT8 CModel3::ReadInputs(unsigned reg)
     {
       data &= ~(Inputs->analogTriggerLeft[0]->value<<0);
       data &= ~(Inputs->analogTriggerRight[0]->value<<1);
+      if (m_game.name == "lostwsga" || m_game.name == "lostwsgp")
+      {
+        const int border = 255 / 100;
+        const bool nearEdge = Inputs->analogGunX[0]->value <= border || Inputs->analogGunX[0]->value >= 255 - border ||
+          Inputs->analogGunY[0]->value <= border || Inputs->analogGunY[0]->value >= 255 - border;
+        if (nearEdge && !m_lostWorldReloaded[0])
+          data &= ~2;
+        m_lostWorldReloaded[0] = nearEdge;
+      }
     }
 
     if ((m_game.inputs & Game::INPUT_MAGTRUCK))
@@ -481,11 +494,8 @@ UINT8 CModel3::ReadInputs(unsigned reg)
 
     data = 0xFF;
 
-    if (DriveBoard->IsAttached() && DriveBoard->GetType() != Game::DRIVE_BOARD_BILLBOARD)
-    {
-      // If driveboard is set as billboard, don't read BillBoard reg (no inputs)
+    if (DriveBoard->IsAttached())
       data = DriveBoard->Read();
-    }
 
     if ((m_game.inputs & Game::INPUT_JOYSTICK2))
     {
@@ -547,6 +557,15 @@ UINT8 CModel3::ReadInputs(unsigned reg)
     {
       data &= ~(Inputs->analogTriggerLeft[1]->value<<0);
       data &= ~(Inputs->analogTriggerRight[1]->value<<1);
+      if (m_game.name == "lostwsga" || m_game.name == "lostwsgp")
+      {
+        const int border = 255 / 100;
+        const bool nearEdge = Inputs->analogGunX[1]->value <= border || Inputs->analogGunX[1]->value >= 255 - border ||
+          Inputs->analogGunY[1]->value <= border || Inputs->analogGunY[1]->value >= 255 - border;
+        if (nearEdge && !m_lostWorldReloaded[1])
+          data &= ~2;
+        m_lostWorldReloaded[1] = nearEdge;
+      }
     }
 
     if ((m_game.inputs & Game::INPUT_MAGTRUCK))
@@ -607,7 +626,7 @@ UINT8 CModel3::ReadInputs(unsigned reg)
   	  // probably to allow users to define inverted controls for this game only,
   	  // which means the input system must support loading per-game config (not
   	  // all analog_gun games require axis inversion to be playable).
-	  if (m_game.name == "lostwsga" || m_game.name == "lostwsgo")
+      if (m_game.name == "lostwsga" || m_game.name == "lostwsgp")
 	  { // to do, not a string compare
         adc[0] =       (UINT8)Inputs->analogGunX[0]->value; // order is different for some reason in lost world
         adc[1] = 255 - (UINT8)Inputs->analogGunY[0]->value; // why are values inverted? is this the wrong place to fix this
@@ -659,9 +678,11 @@ void CModel3::WriteInputs(unsigned reg, UINT8 data)
     inputBank = data;
     break;
 
-  case 0x10:  // Drive board
+  case 0x10:  // Drive board or billboard
     if (DriveBoard->IsAttached())
       DriveBoard->Write(data);
+    if (BillBoard->IsAttached())
+      BillBoard->Write(data);
     if (NULL != Outputs) // TODO - check gameInputs
       Outputs->SetValue(OutputRawDrive, data);
     OutputRegister[0] = data;
@@ -720,6 +741,16 @@ void CModel3::WriteInputs(unsigned reg, UINT8 data)
           break;
         case 8: // Off-screen indicator (bit 0 = player 1, bit 1 = player 2, set indicates off screen)
           serialFIFO2 = (Inputs->trigger[1]->offscreenValue<<1)|Inputs->trigger[0]->offscreenValue;
+          if (m_game.name == "lostwsga" || m_game.name == "lostwsgp")
+          {
+            const int border = 255 / 100;
+            const auto nearEdge = [border](const auto &x, const auto &y)
+            {
+              return x <= border || x >= 255 - border || y <= border || y >= 255 - border;
+            };
+            serialFIFO2 |= nearEdge(Inputs->analogGunX[0]->value, Inputs->analogGunY[0]->value) ? 1 : 0;
+            serialFIFO2 |= nearEdge(Inputs->analogGunX[1]->value, Inputs->analogGunY[1]->value) ? 2 : 0;
+          }
           break;
         default:
           DebugLog("Unknown gun register: %X\n", gunReg);
@@ -946,6 +977,10 @@ UINT8 CModel3::Read8(UINT32 addr)
   if (addr<0x00800000)
     return ram[addr^3];
 
+  // Reads over the bus wait for posted tile generator writes (tile generator reads are timed by TileGen itself)
+  if ((addr - 0xF1000000) >= 0x00200000)
+    ppc_add_cycles(TileGen.BusReadCycles(ppc_total_cycles()));
+
   // Other
   switch ((addr >> 24))
   {
@@ -1008,6 +1043,7 @@ UINT8 CModel3::Read8(UINT32 addr)
     if (addr < 0xF1120000)
     {
       // Tile generator accesses its RAM as little endian, no adjustment needed here
+      ppc_add_cycles(TileGen.BusAccessCycles(ppc_total_cycles(), false, addr < 0xF1100000));
       return TileGen.ReadRAM8(addr & 0x1FFFFF);
     }
     break;
@@ -1068,6 +1104,10 @@ UINT16 CModel3::Read16(UINT32 addr)
   // RAM (most frequently accessed)
   if (addr<0x00800000)
     return *(UINT16 *) &ram[addr^2];
+
+  // Reads over the bus wait for posted tile generator writes (tile generator reads are timed by TileGen itself)
+  if ((addr - 0xF1000000) >= 0x00200000)
+    ppc_add_cycles(TileGen.BusReadCycles(ppc_total_cycles()));
 
   // Other
   switch ((addr>>24))
@@ -1135,6 +1175,7 @@ UINT16 CModel3::Read16(UINT32 addr)
     if (addr < 0xF1120000)
     {
       // Tile generator accesses its RAM as little endian, no adjustment needed here
+      ppc_add_cycles(TileGen.BusAccessCycles(ppc_total_cycles(), false, addr < 0xF1100000));
       data = TileGen.ReadRAM16(addr&0x1FFFFF);
       return FLIPENDIAN16(data);
     }
@@ -1181,6 +1222,10 @@ UINT32 CModel3::Read32(UINT32 addr)
   // RAM (most frequently accessed)
   if (addr < 0x00800000)
     return *(UINT32 *) &ram[addr];
+
+  // Reads over the bus wait for posted tile generator writes (tile generator reads are timed by TileGen itself)
+  if ((addr - 0xF1000000) >= 0x00200000)
+    ppc_add_cycles(TileGen.BusReadCycles(ppc_total_cycles()));
 
   // Other
   switch ((addr>>24))
@@ -1289,6 +1334,7 @@ UINT32 CModel3::Read32(UINT32 addr)
     // Tile generator accesses its RAM as little endian, must flip for big endian PowerPC
     if (addr < 0xF1120000)
     {
+      ppc_add_cycles(TileGen.BusAccessCycles(ppc_total_cycles(), false, addr < 0xF1100000));
       data = TileGen.ReadRAM32(addr&0x1FFFFF);
       return FLIPENDIAN32(data);
     }
@@ -1402,16 +1448,29 @@ void CModel3::Write8(UINT32 addr, UINT8 data)
     // Sound Board
     case 0x08:
       //printf("PPC: %08X=%02X * (PC=%08X, LR=%08X)\n", addr, data, ppc_get_pc(), ppc_get_lr());
-      if ((addr & 0xF) == 0)      // MIDI data port
+      if ((addr & 0xF) == 0)      // MIDI data port: the USART's transmit buffer
       {
+        // The byte goes to the sound board at once, as before the USART was
+        // emulated: The Lost World sends its 3 byte commands with the sound IRQ
+        // masked, about 100 cycles apart, without waiting for TxRDY, so through
+        // the USART (a byte takes 320 us at 31.25 kbaud) all but the first of
+        // each were lost and it had no sound (ECA lost the odd byte too). The
+        // USART only times the IRQ.
         SoundBoard.WriteMIDIPort(data);
+
+        // TxRDY comes back when the byte moves to the transmit register, a
+        // USART clock or so later (MAME's i8251, ported, does it at once): the
+        // games' handlers poll until IRQ 0x40 is clear after writing a byte
+        // (Scud Race at 1E18, Ski Champ at 99A84), so it stays clear for that
+        m_holdSoundIRQ = true;
+        m_soundWriteCycle = ppc_total_cycles();
+        m_uart.WriteData(data);   // only for TxRDY's timing: its output is discarded (OnTransmit)
         IRQ.Deassert(0x40);
       }
-      else if ((addr & 0xF) == 4) // MIDI control port
+      else if ((addr & 0xF) == 4) // MIDI control port: the USART's mode/command register
       {
         midiCtrlPort = data;
-        if ((data & 0x20) == 0)
-          IRQ.Deassert(0x40);
+        m_uart.WriteControl(data);
       }
       break;
 
@@ -1446,6 +1505,7 @@ void CModel3::Write8(UINT32 addr, UINT8 data)
     if (addr < 0xF1120000)
     {
       // Tile generator accesses its RAM as little endian, no adjustment needed here
+      ppc_add_cycles(TileGen.BusAccessCycles(ppc_total_cycles(), true, addr < 0xF1100000));
       TileGen.WriteRAM8(addr&0x1FFFFF, data);
       break;
     }
@@ -1561,6 +1621,7 @@ void CModel3::Write16(UINT32 addr, UINT16 data)
     if (addr < 0xF1120000)
     {
       // Tile generator accesses its RAM as little endian, no adjustment needed here
+      ppc_add_cycles(TileGen.BusAccessCycles(ppc_total_cycles(), true, addr < 0xF1100000));
       TileGen.WriteRAM16(addr&0x1FFFFF, FLIPENDIAN16(data));
     }
     goto Unknown16;
@@ -1753,6 +1814,7 @@ void CModel3::Write32(UINT32 addr, UINT32 data)
     {
       // Tile generator accesses its RAM as little endian, must flip for big endian PowerPC
       data = FLIPENDIAN32(data);
+      ppc_add_cycles(TileGen.BusAccessCycles(ppc_total_cycles(), true, addr < 0xF1100000));
       TileGen.WriteRAM32(addr&0x1FFFFF,data);
       break;
     }
@@ -1843,6 +1905,11 @@ void CModel3::Write64(UINT32 addr, UINT64 data)
  Emulation and Interface Functions
 ******************************************************************************/
 
+bool CModel3::SupportsSaveStates(void) const
+{
+  return true;
+}
+
 void CModel3::SaveState(CBlockFile *SaveState)
 {
   // Write Model 3 state
@@ -1871,8 +1938,12 @@ void CModel3::SaveState(CBlockFile *SaveState)
   GPU.SaveState(SaveState);
   SoundBoard.SaveState(SaveState);  // also saves DSB state
   DriveBoard->SaveState(SaveState);
+  BillBoard->SaveState(SaveState);
   m_cryptoDevice.SaveState(SaveState);
   m_jtag.SaveState(SaveState);
+  m_uart.SaveState(SaveState, "Model 3 UART");
+  SaveState->NewBlock("Model 3 UART clock", __FILE__);
+  SaveState->Write(m_uartClockFrac);
 }
 
 void CModel3::LoadState(CBlockFile *SaveState)
@@ -1910,8 +1981,33 @@ void CModel3::LoadState(CBlockFile *SaveState)
   ppc_load_state(SaveState);
   SoundBoard.LoadState(SaveState);
   DriveBoard->LoadState(SaveState);
+  BillBoard->LoadState(SaveState);
   m_cryptoDevice.LoadState(SaveState);
   m_jtag.LoadState(SaveState);
+
+  // The MIDI port USART; states saved before it was emulated: reset, set up
+  // as the games do (x16, 8 bits, no parity, 1 stop: 4E), with their command
+  if (Result::OKAY == SaveState->FindBlock("Model 3 UART"))
+  {
+    m_uart.LoadState(SaveState, "Model 3 UART");
+    if (Result::OKAY == SaveState->FindBlock("Model 3 UART clock"))
+      SaveState->Read(m_uartClockFrac);
+  }
+  else
+  {
+    m_uart.Reset();
+    m_uart.WriteCTS(0);
+    m_uart.WriteControl(0x4E);
+    m_uart.WriteControl(midiCtrlPort);
+    m_uartClockFrac = 0;
+  }
+
+  // The sound IRQ starts held clear (see Write8): a state saved just after a
+  // byte was written, its handler polling for the IRQ to clear, carries on
+  // (the hold isn't saved); otherwise the IRQ just comes a moment later
+  m_holdSoundIRQ = true;
+  m_soundWriteCycle = ppc_total_cycles();
+  UpdateSoundIRQ();
 }
 
 void CModel3::SaveNVRAM(CBlockFile *NVRAM)
@@ -1944,22 +2040,32 @@ void CModel3::ClearNVRAM(void)
   EEPROM.Clear();
 }
 
+// Milliseconds on a clock that only ever goes forward. For measuring intervals.
+static UINT32 GetTicks(void)
+{
+  return UINT32(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count());
+}
+
 void CModel3::RunFrame(void)
 {
-  UINT32 start = CThread::GetTicks();
+  UINT32 start = GetTicks();
 
   // See if currently running multi-threaded
   if (m_multiThreaded)
   {
     // If so, check all threads are up and running
     if (!StartThreads())
-      goto ThreadError;
+      return;
 
-    // Wake threads for PPC main board (if multi-threading GPU), sound board (if sync'd) and drive board (if attached) so they can process a frame
-    if ((m_gpuMultiThreaded       && !ppcBrdThreadSync->Post()) ||
-        (syncSndBrdThread         && !sndBrdThreadSync->Post()) ||
-        (DriveBoard->IsAttached()  && !drvBrdThreadSync->Post()))
-      goto ThreadError;
+    // Wake threads for PPC main board (if multi-threading GPU), sound board (if sync'd), drive board and billboard (if attached) so they can process a frame
+    if (m_gpuMultiThreaded)
+      ppcBrdThreadSync.Post();
+    if (syncSndBrdThread)
+      sndBrdThreadSync.Post();
+    if (DriveBoard->IsAttached())
+      drvBrdThreadSync.Post();
+    if (BillBoard->IsAttached())
+      bilBrdThreadSync.Post();
 
     // If not multi-threading GPU, then run PPC main board for a frame and sync GPUs now in this thread
     if (!m_gpuMultiThreaded)
@@ -1971,25 +2077,21 @@ void CModel3::RunFrame(void)
     // Render frame
     RenderFrame();
 
-    // Enter notify wait critical section
-    if (!notifyLock->Lock())
-      goto ThreadError;
-
-    // Wait for PPC main board, sound board and drive board threads to finish their work (if they are running and haven't finished already)
-    while ((m_gpuMultiThreaded      && !ppcBrdThreadDone) ||
-           (syncSndBrdThread        && !sndBrdThreadDone) ||
-           (DriveBoard->IsAttached() && !drvBrdThreadDone))
+    // Wait for PPC main board, sound board, drive board and billboard threads to finish their work (if they are running and haven't finished already)
     {
-      if (!notifySync->Wait(notifyLock))
-        goto ThreadError;
+      std::unique_lock<std::mutex> lock(notifyLock);
+      while ((m_gpuMultiThreaded      && !ppcBrdThreadDone) ||
+             (syncSndBrdThread        && !sndBrdThreadDone) ||
+             (DriveBoard->IsAttached() && !drvBrdThreadDone) ||
+             (BillBoard->IsAttached()  && !bilBrdThreadDone))
+      {
+        notifySync.wait(lock);
+      }
+      ppcBrdThreadDone = false;
+      sndBrdThreadDone = false;
+      drvBrdThreadDone = false;
+      bilBrdThreadDone = false;
     }
-    ppcBrdThreadDone = false;
-    sndBrdThreadDone = false;
-    drvBrdThreadDone = false;
-
-    // Leave notify wait critical section
-    if (!notifyLock->Unlock())
-      goto ThreadError;
 
     // If multi-threading GPU, then sync GPUs last while PPC main board thread is waiting
     if (m_gpuMultiThreaded)
@@ -2007,18 +2109,15 @@ void CModel3::RunFrame(void)
     RunSoundBoardFrame();
     if (DriveBoard->IsAttached())
       RunDriveBoardFrame();
+    if (BillBoard->IsAttached())
+      RunBillBoardFrame();
     if (NetBoard->IsRunning())
       RunNetBoardFrame();
   }
 
-  timings.frameTicks = CThread::GetTicks() - start;
+  timings.frameTicks = GetTicks() - start;
   // Frame counter
   timings.frameId++;
-  return;
-
-ThreadError:
-  ErrorLog("Threading error in CModel3::RunFrame: %s\nSwitching back to single-threaded mode.\n", CThread::GetLastError());
-  m_multiThreaded = false;
 }
 
 static unsigned GetCPUClockFrequencyInHz(const Game &game, Util::Config::Node &config)
@@ -2042,9 +2141,48 @@ static unsigned GetCPUClockFrequencyInHz(const Game &game, Util::Config::Node &c
   return mhz * 1000000;
 }
 
+void CModel3::RunPPC(unsigned cycles)
+{
+  ppc_execute(cycles);
+
+  // The MIDI port USART's clock: 16 x 31.25 kbaud (the games set the 8251's x16
+  // mode, 4E), as MAME's Model 2 (the same uPD71051 to the SCSP)
+  static constexpr UINT64 UART_CLOCK = 500000;
+
+  m_uartClockFrac += UINT64(cycles) * UART_CLOCK;
+
+  const unsigned clocks = unsigned(m_uartClockFrac / m_ppcHz);
+
+  m_uartClockFrac %= m_ppcHz;
+
+  if (clocks) {
+    m_uart.Clock(clocks);
+  }
+
+  // PowerPC cycles the sound IRQ stays clear after a byte is written (see Write8)
+  static constexpr UINT64 SOUND_IRQ_HOLD_CYCLES = 1000;
+
+  if (m_holdSoundIRQ && ppc_total_cycles() - m_soundWriteCycle >= SOUND_IRQ_HOLD_CYCLES) {
+    m_holdSoundIRQ = false;
+    UpdateSoundIRQ();
+  }
+}
+
+// The sound interrupt is the USART's TxRDY (transmitter enabled, its buffer
+// empty: ready for the next byte) or RxRDY
+void CModel3::UpdateSoundIRQ()
+{
+  if ((m_uart.TxRdy() || m_uart.RxRdy()) && !m_holdSoundIRQ) {
+    IRQ.Assert(0x40);
+  }
+  else {
+    IRQ.Deassert(0x40);
+  }
+}
+
 void CModel3::RunMainBoardFrame(void)
 {
-	UINT32 start = CThread::GetTicks();
+	UINT32 start = GetTicks();
 
 	/* 
    * Compute display timings. Refresh rate is 57.524160 Hz and we assume frame timing is the same as System 24:
@@ -2058,6 +2196,12 @@ void CModel3::RunMainBoardFrame(void)
 	 */ 
 	unsigned ppcCycles		= GetCPUClockFrequencyInHz(m_game, m_config);
 	unsigned frameCycles	= (unsigned)((float)ppcCycles / 57.524160f);
+
+    m_ppcHz = ppcCycles;
+
+	// Tile and palette RAM bus timing: nothing is fetched during vertical blanking
+	TileGen.SetCPUClock(ppcCycles);
+	TileGen.BeginBusBlanking();
 	unsigned lineCycles     = frameCycles / 424;
     unsigned vBlankCycles   = lineCycles * 40;
 
@@ -2079,46 +2223,19 @@ void CModel3::RunMainBoardFrame(void)
 		GPU.BeginVBlank();
         
 		// keep running cycles until IRQ2 is acknowledged
-		// Ski Champ can hang if we check the MIDI control port too early
-		// and miss MIDI interrupts pending before the next IRQ2
 		while (IRQ.ReadIRQEnable() & 0x2 && IRQ.ReadIRQState() & 0x2 && vBlankCycles > 1000)
 		{
-			ppc_execute(1000);
+			RunPPC(1000);
             vBlankCycles -= 1000;
 		}
 
-		/*
-		* Sound:
-		*
-		* Bit 0x20 of the MIDI control port appears to enable periodic interrupts,
-		* which are used to send MIDI commands. Often games will write 0x27, send
-		* a series of commands, and write 0x06 to stop. Other games, like Star
-		* Wars Trilogy and Sega Rally 2, will enable interrupts at the beginning
-		* by writing 0x37 and will disable/enable interrupts to control command
-		* output.
-		*/
-		//printf("\t-- BEGIN (Ctrl=%02X, IRQEn=%02X, IRQPend=%02X) --\n", midiCtrlPort, IRQ.ReadIRQEnable()&0x40, IRQ.ReadIRQState());
-		int irqCount = 0;
-		while ((midiCtrlPort & 0x20))
-			//while (midiCtrlPort == 0x27)  // 27 triggers IRQ sequence, 06 stops it
+		// The rest of vblank, a line at a time (the USART is clocked with the PowerPC)
+		while (vBlankCycles)
 		{
-			// Don't waste time firing MIDI interrupts if game has disabled them
-			if ((IRQ.ReadIRQEnable() & 0x40) == 0)
-				break;
-
-			// Process MIDI interrupt
-			IRQ.Assert(0x40);
-			ppc_execute(1000); // give PowerPC time to acknowledge IR
-            vBlankCycles -= 1000;
-
-			++irqCount;
-			if (irqCount > 128)
-			{
-				break;
-			}
+			const unsigned cycles = std::min(vBlankCycles, lineCycles);
+			RunPPC(cycles);
+			vBlankCycles -= cycles;
 		}
-
-        ppc_execute(vBlankCycles);
 
 		IRQ.Assert(0x0D);
 
@@ -2141,25 +2258,26 @@ void CModel3::RunMainBoardFrame(void)
         }
 
         TileGen.DrawLine(i);
-        ppc_execute(lineCycles);
+        TileGen.BeginBusLine(ppc_total_cycles());
+        RunPPC(lineCycles);
     }
 
-	timings.ppcTicks = CThread::GetTicks() - start;
+	timings.ppcTicks = GetTicks() - start;
 }
 
 void CModel3::SyncGPUs(void)
 {
-  UINT32 start = CThread::GetTicks();
+  UINT32 start = GetTicks();
 
   timings.syncSize = GPU.SyncSnapshots() + TileGen.SyncSnapshots();
   gpusReady = true;
 
-  timings.syncTicks = CThread::GetTicks() - start;
+  timings.syncTicks = GetTicks() - start;
 }
 
 void CModel3::RenderFrame(void)
 {
-  UINT32 start = CThread::GetTicks();
+  UINT32 start = GetTicks();
 
   // Call OSD video callbacks
   if (BeginFrameVideo() && gpusReady)
@@ -2178,22 +2296,29 @@ void CModel3::RenderFrame(void)
 
   EndFrameVideo();
 
-  timings.renderTicks = CThread::GetTicks() - start;
+  timings.renderTicks = GetTicks() - start;
 }
 
 bool CModel3::RunSoundBoardFrame(void)
 {
-  UINT32 start = CThread::GetTicks();
+  UINT32 start = GetTicks();
   bool bufferFull = SoundBoard.RunFrame();
-  timings.sndTicks = CThread::GetTicks() - start;
+  timings.sndTicks = GetTicks() - start;
   return bufferFull;
 }
 
 void CModel3::RunDriveBoardFrame(void)
 {
-  UINT32 start = CThread::GetTicks();
+  UINT32 start = GetTicks();
   DriveBoard->RunFrame();
-  timings.drvTicks = CThread::GetTicks() - start;
+  timings.drvTicks = GetTicks() - start;
+}
+
+void CModel3::RunBillBoardFrame(void)
+{
+  UINT32 start = GetTicks();
+  BillBoard->RunFrame();
+  timings.billTicks = GetTicks() - start;
 }
 
 void CModel3::RunNetBoardFrame(void)
@@ -2206,61 +2331,36 @@ bool CModel3::StartThreads(void)
   if (startedThreads)
     return true;
 
-  // Create synchronization objects
-  if (m_gpuMultiThreaded)
-  {
-    ppcBrdThreadSync = CThread::CreateSemaphore(0);
-    if (ppcBrdThreadSync == NULL)
-      goto ThreadError;
-  }
-  sndBrdThreadSync = CThread::CreateSemaphore(0);
-  if (sndBrdThreadSync == NULL)
-    goto ThreadError;
-  sndBrdNotifyLock = CThread::CreateMutex();
-  if (sndBrdNotifyLock == NULL)
-    goto ThreadError;
-  sndBrdNotifySync = CThread::CreateCondVar();
-  if (sndBrdNotifySync == NULL)
-    goto ThreadError;
-  if (DriveBoard->IsAttached())
-  {
-    drvBrdThreadSync = CThread::CreateSemaphore(0);
-    if (drvBrdThreadSync == NULL)
-      goto ThreadError;
-  }
-  notifyLock = CThread::CreateMutex();
-  if (notifyLock == NULL)
-    goto ThreadError;
-  notifySync = CThread::CreateCondVar();
-  if (notifySync == NULL)
-    goto ThreadError;
-
   // Reset thread flags
   pauseThreads = false;
   stopThreads = false;
 
-  // Create PPC main board thread, if multi-threading GPU
-  if (m_gpuMultiThreaded)
+  try
   {
-    ppcBrdThread = CThread::CreateThread("MainBoard", StartMainBoardThread, this);
-    if (ppcBrdThread == NULL)
-      goto ThreadError;
+    // Create PPC main board thread, if multi-threading GPU
+    if (m_gpuMultiThreaded)
+      ppcBrdThread = Thread::Start("MainBoard", [this] { RunMainBoardThread(); });
+
+    // Create sound board thread (sync'd or unsync'd)
+    if (syncSndBrdThread)
+      sndBrdThread = Thread::Start("SoundBoardSync", [this] { RunSoundBoardThreadSyncd(); });
+    else
+      sndBrdThread = Thread::Start("SoundBoardNoSync", [this] { RunSoundBoardThread(); });
+
+    // Create drive board thread, if drive board is attached
+    if (DriveBoard->IsAttached())
+      drvBrdThread = Thread::Start("DriveBoard", [this] { RunDriveBoardThread(); });
+
+    // Create billboard thread, if billboard is attached
+    if (BillBoard->IsAttached())
+      bilBrdThread = Thread::Start("BillBoard", [this] { RunBillBoardThread(); });
   }
-
-  // Create sound board thread (sync'd or unsync'd)
-  if (syncSndBrdThread)
-    sndBrdThread = CThread::CreateThread("SoundBoardSync", StartSoundBoardThreadSyncd, this);
-  else
-    sndBrdThread = CThread::CreateThread("SoundBoardNoSync", StartSoundBoardThread, this);
-  if (sndBrdThread == NULL)
-    goto ThreadError;
-
-  // Create drive board thread, if drive board is attached
-  if (DriveBoard->IsAttached())
+  catch (const std::system_error &e)
   {
-    drvBrdThread = CThread::CreateThread("DriveBoard", StartDriveBoardThread, this);
-    if (drvBrdThread == NULL)
-      goto ThreadError;
+    ErrorLog("Unable to create threads: %s\nSwitching back to single-threaded mode.\n", e.what());
+    JoinThreads();
+    m_multiThreaded = false;
+    return false;
   }
 
   // Set audio callback if sound board thread is unsync'd
@@ -2271,12 +2371,6 @@ bool CModel3::StartThreads(void)
 
   startedThreads = true;
   return true;
-
-ThreadError:
-  ErrorLog("Unable to create threads and/or synchronization objects: %s\nSwitching back to single-threaded mode.\n", CThread::GetLastError());
-  DeleteThreadObjects();
-  m_multiThreaded = false;
-  return false;
 }
 
 bool CModel3::PauseThreads(void)
@@ -2284,27 +2378,12 @@ bool CModel3::PauseThreads(void)
   if (!startedThreads)
     return true;
 
-  // Enter notify critical section
-  if (!notifyLock->Lock())
-    goto ThreadError;
-
   // Let threads know that they should pause and wait for all of them to do so
+  std::unique_lock<std::mutex> lock(notifyLock);
   pauseThreads = true;
-  while (ppcBrdThreadRunning || sndBrdThreadRunning || drvBrdThreadRunning)
-  {
-    if (!notifySync->Wait(notifyLock))
-      goto ThreadError;
-  }
-
-  // Leave notify critical section
-  if (!notifyLock->Unlock())
-    goto ThreadError;
+  while (ppcBrdThreadRunning || sndBrdThreadRunning || drvBrdThreadRunning || bilBrdThreadRunning)
+    notifySync.wait(lock);
   return true;
-
-ThreadError:
-  ErrorLog("Threading error in CModel3::PauseThreads: %s\nSwitching back to single-threaded mode.\n", CThread::GetLastError());
-  m_multiThreaded = false;
-  return false;
 }
 
 bool CModel3::ResumeThreads(void)
@@ -2312,22 +2391,31 @@ bool CModel3::ResumeThreads(void)
   if (!startedThreads)
     return true;
 
-  // Enter notify critical section
-  if (!notifyLock->Lock())
-    goto ThreadError;
-
   // Let all threads know that they can continue running
+  std::lock_guard<std::mutex> lock(notifyLock);
   pauseThreads = false;
-
-  // Leave notify critical section
-  if (!notifyLock->Unlock())
-    goto ThreadError;
   return true;
+}
 
-ThreadError:
-  ErrorLog("Threading error in CModel3::ResumeThreads: %s\nSwitching back to single-threaded mode.\n", CThread::GetLastError());
-  m_multiThreaded = false;
-  return false;
+void CModel3::StopThreads(void)
+{
+  if (!startedThreads)
+    return;
+
+  // If sound board thread is unsync'd then remove audio callback
+  if (!syncSndBrdThread)
+    SetAudioCallback(NULL, NULL);
+
+  // Let threads know that they should pause and wait for all of them to do so
+  {
+    std::unique_lock<std::mutex> lock(notifyLock);
+    pauseThreads = true;
+    while (ppcBrdThreadRunning || sndBrdThreadRunning || drvBrdThreadRunning || bilBrdThreadRunning)
+      notifySync.wait(lock);
+  }
+
+  JoinThreads();
+  startedThreads = false;
 }
 
 // Controlled transition for mid-session clip recording:
@@ -2341,139 +2429,50 @@ void CModel3::SetSingleThreadedMode(void)
   }
 }
 
-bool CModel3::StopThreads(void)
+void CModel3::JoinThreads(void)
 {
-  if (!startedThreads)
-    return true;
-
-  // If sound board thread is unsync'd then remove audio callback
-  if (!syncSndBrdThread)
-    SetAudioCallback(NULL, NULL);
-
-  // Enter notify critical section
-  if (!notifyLock->Lock())
-    goto ThreadError;
-
-  // Let threads know that they should pause and wait for all of them to do so
-  pauseThreads = true;
-  while (ppcBrdThreadRunning || sndBrdThreadRunning || drvBrdThreadRunning)
+  // Let threads know that they should exit
   {
-    if (!notifySync->Wait(notifyLock))
-      goto ThreadError;
+    std::lock_guard<std::mutex> lock(notifyLock);
+    stopThreads = true;
   }
-
-  // Now let threads know that they should exit
-  stopThreads = true;
-
-  // Leave notify critical section
-  if (!notifyLock->Unlock())
-    goto ThreadError;
 
   // Resume each thread in turn and wait for them to exit
-  if (ppcBrdThread != NULL)
+  if (ppcBrdThread.joinable())
   {
-    if (ppcBrdThreadSync->Post())
-      ppcBrdThread->Wait();
+    ppcBrdThreadSync.Post();
+    ppcBrdThread.join();
   }
-  if (sndBrdThread != NULL)
+  if (sndBrdThread.joinable())
   {
     if (syncSndBrdThread)
-    {
-      if (sndBrdThreadSync->Post())
-        sndBrdThread->Wait();
-    }
+      sndBrdThreadSync.Post();
     else
-    {
-      if (WakeSoundBoardThread())
-        sndBrdThread->Wait();
-    }
+      WakeSoundBoardThread();
+    sndBrdThread.join();
   }
-  if (drvBrdThread != NULL)
+  if (drvBrdThread.joinable())
   {
-    if (drvBrdThreadSync->Post())
-      drvBrdThread->Wait();
+    drvBrdThreadSync.Post();
+    drvBrdThread.join();
   }
-
-  // Delete all thread and synchronization objects
-  DeleteThreadObjects();
-  startedThreads = false;
-  return true;
-
-ThreadError:
-  ErrorLog("Threading error in CModel3::StopThreads: %s\nSwitching back to single-threaded mode.\n", CThread::GetLastError());
-  m_multiThreaded = false;
-  return false;
-}
-
-void CModel3::DeleteThreadObjects(void)
-{
-  // Delete PPC main board, sound board and drive board threads
-  if (ppcBrdThread != NULL)
+  if (bilBrdThread.joinable())
   {
-    delete ppcBrdThread;
-    ppcBrdThread = NULL;
-  }
-  if (sndBrdThread != NULL)
-  {
-    delete sndBrdThread;
-    sndBrdThread = NULL;
-  }
-  if (drvBrdThread != NULL)
-  {
-    delete drvBrdThread;
-    drvBrdThread = NULL;
-  }
-
-
-  // Delete synchronization objects
-  if (ppcBrdThreadSync != NULL)
-  {
-    delete ppcBrdThreadSync;
-    ppcBrdThreadSync = NULL;
-  }
-  if (sndBrdThreadSync != NULL)
-  {
-    delete sndBrdThreadSync;
-    sndBrdThreadSync = NULL;
-  }
-  if (drvBrdThreadSync != NULL)
-  {
-    delete drvBrdThreadSync;
-    drvBrdThreadSync = NULL;
-  }
-
-
-  if (sndBrdNotifyLock != NULL)
-  {
-    delete sndBrdNotifyLock;
-    sndBrdNotifyLock = NULL;
-  }
-  if (sndBrdNotifySync != NULL)
-  {
-    delete sndBrdNotifySync;
-    sndBrdNotifySync = NULL;
-  }
-  if (notifyLock != NULL)
-  {
-    delete notifyLock;
-    notifyLock = NULL;
-  }
-  if (notifySync != NULL)
-  {
-    delete notifySync;
-    notifySync = NULL;
+    bilBrdThreadSync.Post();
+    bilBrdThread.join();
   }
 }
 
 void CModel3::DumpTimings(void)
 {
-  printf("PPC:%3ums%c render:%3ums%c sync:%4uK%c%3ums%c snd:%3ums%c drv:%3ums%c frame:%3ums%c\n",
+  printf("PPC:%3ums%c render:%3ums%c sync:%4uK%c%3ums%c snd:%3ums%c drv:%3ums%c bill:%3ums%c frame:%3ums%c\n",
     timings.ppcTicks, (timings.ppcTicks > timings.renderTicks ? '!' : ','),
     timings.renderTicks, (timings.renderTicks > timings.ppcTicks ? '!' : ','),
     timings.syncSize / 1024, (timings.syncSize / 1024 > 128 ? '!' : ','),
     timings.syncTicks, (timings.syncTicks > 1 ? '!' : ','),
     timings.sndTicks, (timings.sndTicks > 10 ? '!' : ','),
     timings.drvTicks, (timings.drvTicks > 10 ? '!' : ','),
+    timings.billTicks, (timings.billTicks > 10 ? '!' : ','),
     timings.frameTicks, (timings.frameTicks > 16 ? '!' : ' '));
 }
 
@@ -2482,35 +2481,7 @@ FrameTimings CModel3::GetTimings(void)
   return timings;
 }
 
-int CModel3::StartMainBoardThread(void *data)
-{
-  // Call method on CModel3 to run PPC main board thread
-  CModel3 *model3 = (CModel3*)data;
-  return model3->RunMainBoardThread();
-}
-
-int CModel3::StartSoundBoardThread(void *data)
-{
-  // Call method on CModel3 to run sound board thread (unsync'd)
-  CModel3 *model3 = (CModel3*)data;
-  return model3->RunSoundBoardThread();
-}
-
-int CModel3::StartSoundBoardThreadSyncd(void *data)
-{
-  // Call method on CModel3 to run sound board thread (sync'd)
-  CModel3 *model3 = (CModel3*)data;
-  return model3->RunSoundBoardThreadSyncd();
-}
-
-int CModel3::StartDriveBoardThread(void *data)
-{
-  // Call method on CModel3 to run drive board thread
-  CModel3 *model3 = (CModel3*)data;
-  return model3->RunDriveBoardThread();
-}
-
-int CModel3::RunMainBoardThread(void)
+void CModel3::RunMainBoardThread(void)
 {
   for (;;)
   {
@@ -2518,15 +2489,11 @@ int CModel3::RunMainBoardThread(void)
     bool exit = false;
     while (wait && !exit)
     {
-      // Wait on PPC main board thread semaphore
-      if (!ppcBrdThreadSync->Wait())
-        goto ThreadError;
-
-      // Enter notify critical section
-      if (!notifyLock->Lock())
-        goto ThreadError;
+      // Wait on this thread's semaphore
+      ppcBrdThreadSync.Wait();
 
       // Check threads are not being stopped or paused
+      std::lock_guard<std::mutex> lock(notifyLock);
       if (stopThreads)
         exit = true;
       else if (!pauseThreads)
@@ -2534,36 +2501,19 @@ int CModel3::RunMainBoardThread(void)
         wait = false;
         ppcBrdThreadRunning = true;
       }
-
-      // Leave notify critical section
-      if (!notifyLock->Unlock())
-        goto ThreadError;
     }
     if (exit)
-      return 0;
+      return;
 
     // Process a single frame for PPC main board
     RunMainBoardFrame();
 
-    // Enter notify critical section
-    if (!notifyLock->Lock())
-      goto ThreadError;
-
     // Let other threads know processing has finished
+    std::lock_guard<std::mutex> lock(notifyLock);
     ppcBrdThreadRunning = false;
     ppcBrdThreadDone = true;
-    if (!notifySync->SignalAll())
-      goto ThreadError;
-
-    // Leave notify critical section
-    if (!notifyLock->Unlock())
-      goto ThreadError;
+    notifySync.notify_all();
   }
-
-ThreadError:
-  ErrorLog("Threading error in RunMainBoardThread: %s\nSwitching back to single-threaded mode.\n", CThread::GetLastError());
-  m_multiThreaded = false;
-  return 1;
 }
 
 void CModel3::AudioCallback(void *data)
@@ -2573,45 +2523,28 @@ void CModel3::AudioCallback(void *data)
   model3->WakeSoundBoardThread();
 }
 
-bool CModel3::WakeSoundBoardThread(void)
+void CModel3::WakeSoundBoardThread(void)
 {
-  // Enter sound board notify critical section
-  bool wake;
-  if (!sndBrdNotifyLock->Lock())
-    goto ThreadError;
-
-  // Enter main notify critical section
-  if (!notifyLock->Lock())
-    goto ThreadError;
+  // Holding the sound board notify lock throughout, as the sound board thread does
+  std::lock_guard<std::mutex> sndBrdLock(sndBrdNotifyLock);
 
   // See if sound board thread is currently running
-  wake = !sndBrdThreadRunning;
-
-  // Leave main notify critical section
-  if (!notifyLock->Unlock())
-    goto ThreadError;
+  bool wake;
+  {
+    std::lock_guard<std::mutex> lock(notifyLock);
+    wake = !sndBrdThreadRunning;
+  }
 
   // Only send wake notification to sound board thread if it was not running
   if (wake)
   {
     // Signal to sound board thread that it should start processing again
     sndBrdWakeNotify = true;
-    if (!sndBrdNotifySync->Signal())
-      goto ThreadError;
+    sndBrdNotifySync.notify_one();
   }
-
-  // Leave sound board notify critical section
-  if (!sndBrdNotifyLock->Unlock())
-    goto ThreadError;
-  return wake;
-
-ThreadError:
-  ErrorLog("Threading error in WakeSoundBoardThread: %s\nSwitching back to single-threaded mode.\n", CThread::GetLastError());
-  m_multiThreaded = false;
-  return false;
 }
 
-int CModel3::RunSoundBoardThread(void)
+void CModel3::RunSoundBoardThread(void)
 {
   for (;;)
   {
@@ -2619,23 +2552,14 @@ int CModel3::RunSoundBoardThread(void)
     bool exit = false;
     while (wait && !exit)
     {
-      // Enter sound board notify critical section
-      if (!sndBrdNotifyLock->Lock())
-        goto ThreadError;
-
       // Wait for notification from audio callback
+      std::unique_lock<std::mutex> sndBrdLock(sndBrdNotifyLock);
       while (!sndBrdWakeNotify)
-      {
-        if (!sndBrdNotifySync->Wait(sndBrdNotifyLock))
-          goto ThreadError;
-      }
+        sndBrdNotifySync.wait(sndBrdLock);
       sndBrdWakeNotify = false;
 
-      // Enter main notify critical section
-      if (!notifyLock->Lock())
-        goto ThreadError;
-
       // Check threads are not being stopped or paused
+      std::lock_guard<std::mutex> lock(notifyLock);
       if (stopThreads)
         exit = true;
       else if (!pauseThreads)
@@ -2643,59 +2567,33 @@ int CModel3::RunSoundBoardThread(void)
         wait = false;
         sndBrdThreadRunning = true;
       }
-
-      // Leave main notify critical section
-      if (!notifyLock->Unlock())
-        goto ThreadError;
-
-      // Leave sound board notify critical section
-      if (!sndBrdNotifyLock->Unlock())
-        goto ThreadError;
     }
     if (exit)
-      return 0;
+      return;
 
     // Keep processing frames until pausing or audio buffer is full
     while (true)
     {
-      // Enter main notify critical section
       bool paused;
-      if (!notifyLock->Lock())
-        goto ThreadError;
-
-      paused = pauseThreads;
-
-      // Leave main notify critical section
-      if (!notifyLock->Unlock())
-        goto ThreadError;
+      {
+        std::lock_guard<std::mutex> lock(notifyLock);
+        paused = pauseThreads;
+      }
 
       if (paused || RunSoundBoardFrame())
         break;
       //printf("Rerunning sound board\n");
     }
 
-    // Enter main notify critical section
-    if (!notifyLock->Lock())
-      goto ThreadError;
-
     // Let other threads know processing has finished
+    std::lock_guard<std::mutex> lock(notifyLock);
     sndBrdThreadRunning = false;
     sndBrdThreadDone = true;
-    if (!notifySync->SignalAll())
-      goto ThreadError;
-
-    // Leave main notify critical section
-    if (!notifyLock->Unlock())
-      goto ThreadError;
+    notifySync.notify_all();
   }
-
-ThreadError:
-  ErrorLog("Threading error in RunSoundBoardThread: %s\nSwitching back to single-threaded mode.\n", CThread::GetLastError());
-  m_multiThreaded = false;
-  return 1;
 }
 
-int CModel3::RunSoundBoardThreadSyncd(void)
+void CModel3::RunSoundBoardThreadSyncd(void)
 {
   for (;;)
   {
@@ -2703,15 +2601,11 @@ int CModel3::RunSoundBoardThreadSyncd(void)
     bool exit = false;
     while (wait && !exit)
     {
-      // Wait on sound board thread semaphore
-      if (!sndBrdThreadSync->Wait())
-        goto ThreadError;
-
-      // Enter notify critical section
-      if (!notifyLock->Lock())
-        goto ThreadError;
+      // Wait on this thread's semaphore
+      sndBrdThreadSync.Wait();
 
       // Check threads are not being stopped or paused
+      std::lock_guard<std::mutex> lock(notifyLock);
       if (stopThreads)
         exit = true;
       else if (!pauseThreads)
@@ -2719,39 +2613,22 @@ int CModel3::RunSoundBoardThreadSyncd(void)
         wait = false;
         sndBrdThreadRunning = true;
       }
-
-      // Leave notify critical section
-      if (!notifyLock->Unlock())
-        goto ThreadError;
     }
     if (exit)
-      return 0;
+      return;
 
     // Process a single frame for sound board
     RunSoundBoardFrame();
 
-    // Enter notify critical section
-    if (!notifyLock->Lock())
-      goto ThreadError;
-
     // Let other threads know processing has finished
+    std::lock_guard<std::mutex> lock(notifyLock);
     sndBrdThreadRunning = false;
     sndBrdThreadDone = true;
-    if (!notifySync->SignalAll())
-      goto ThreadError;
-
-    // Leave notify critical section
-    if (!notifyLock->Unlock())
-      goto ThreadError;
+    notifySync.notify_all();
   }
-
-ThreadError:
-  ErrorLog("Threading error in RunSoundBoardThreadSyncd: %s\nSwitching back to single-threaded mode.\n", CThread::GetLastError());
-  m_multiThreaded = false;
-  return 1;
 }
 
-int CModel3::RunDriveBoardThread(void)
+void CModel3::RunDriveBoardThread(void)
 {
   for (;;)
   {
@@ -2759,15 +2636,11 @@ int CModel3::RunDriveBoardThread(void)
     bool exit = false;
     while (wait && !exit)
     {
-      // Wait on drive board thread semaphore
-      if (!drvBrdThreadSync->Wait())
-        goto ThreadError;
-
-      // Enter notify critical section
-      if (!notifyLock->Lock())
-        goto ThreadError;
+      // Wait on this thread's semaphore
+      drvBrdThreadSync.Wait();
 
       // Check threads are not being stopped or paused
+      std::lock_guard<std::mutex> lock(notifyLock);
       if (stopThreads)
         exit = true;
       else if (!pauseThreads)
@@ -2775,36 +2648,54 @@ int CModel3::RunDriveBoardThread(void)
         wait = false;
         drvBrdThreadRunning = true;
       }
-
-      // Leave notify critical section
-      if (!notifyLock->Unlock())
-        goto ThreadError;
     }
     if (exit)
-      return 0;
+      return;
 
     // Process a single frame for drive board
     RunDriveBoardFrame();
 
-    // Enter notify critical section
-    if (!notifyLock->Lock())
-      goto ThreadError;
-
     // Let other threads know processing has finished
+    std::lock_guard<std::mutex> lock(notifyLock);
     drvBrdThreadRunning = false;
     drvBrdThreadDone = true;
-    if (!notifySync->SignalAll())
-      goto ThreadError;
-
-    // Leave notify critical section
-    if (!notifyLock->Unlock())
-      goto ThreadError;
+    notifySync.notify_all();
   }
+}
 
-ThreadError:
-  ErrorLog("Threading error in RunDriveBoardThread: %s\nSwitching back to single-threaded mode.\n", CThread::GetLastError());
-  m_multiThreaded = false;
-  return 1;
+void CModel3::RunBillBoardThread(void)
+{
+  for (;;)
+  {
+    bool wait = true;
+    bool exit = false;
+    while (wait && !exit)
+    {
+      // Wait on this thread's semaphore
+      bilBrdThreadSync.Wait();
+
+      // Check threads are not being stopped or paused
+      std::lock_guard<std::mutex> lock(notifyLock);
+      if (stopThreads)
+        exit = true;
+      else if (!pauseThreads)
+      {
+        wait = false;
+        bilBrdThreadRunning = true;
+      }
+    }
+    if (exit)
+      return;
+
+    // Process a single frame for billboard
+    RunBillBoardFrame();
+
+    // Let other threads know processing has finished
+    std::lock_guard<std::mutex> lock(notifyLock);
+    bilBrdThreadRunning = false;
+    bilBrdThreadDone = true;
+    notifySync.notify_all();
+  }
 }
 
 void CModel3::Reset(void)
@@ -2831,6 +2722,11 @@ void CModel3::Reset(void)
   // Reset all devices
   ppc_reset();
   IRQ.Reset();
+  m_uart.Reset();
+  m_uart.WriteCTS(0);   // CTS active: the transmitter runs when enabled
+  m_uartClockFrac = 0;
+  m_holdSoundIRQ = false;
+  m_soundWriteCycle = 0;
   PCIBridge.Reset();
   PCIBus.Reset();
   SCSI.Reset();
@@ -2843,6 +2739,8 @@ void CModel3::Reset(void)
 
   if (DriveBoard->IsAttached())
     DriveBoard->Reset();
+  if (BillBoard->IsAttached())
+    BillBoard->Reset();
 
   m_cryptoDevice.Reset();
 
@@ -2854,6 +2752,7 @@ void CModel3::Reset(void)
   timings.renderTicks = 0;
   timings.sndTicks = 0;
   timings.drvTicks = 0;
+  timings.billTicks = 0;
   timings.netTicks = 0;
   NetBoard->Reset();
   timings.frameTicks = 0;
@@ -2878,28 +2777,6 @@ void CModel3::AttachRenderers(IRender2D *Render2DPtr, IRender3D *Render3DPtr, Su
   Render3DPtr->SetStepping(m_stepping);
   GPU.AttachRenderer(Render3DPtr);
   m_superAA = superAA;
-}
-
-void CModel3::AttachInputs(CInputs *InputsPtr)
-{
-  Inputs = InputsPtr;
-
-  if (DriveBoard->IsAttached())
-    DriveBoard->AttachInputs(Inputs, m_game.inputs);
-
-  DebugLog("Model 3 attached inputs\n");
-}
-
-void CModel3::AttachOutputs(COutputs *OutputsPtr)
-{
-  Outputs = OutputsPtr;
-  Outputs->SetGame(m_game);
-  Outputs->Attached();
-
-  if (DriveBoard->IsAttached())
-    DriveBoard->AttachOutputs(Outputs);
-
-  DebugLog("Model 3 attached outputs\n");
 }
 
 constexpr static int RAM_SIZE			= 0x800000;		//8MB
@@ -2978,6 +2855,9 @@ Result CModel3::Init(const Game &game, const ROMSet &rom_set)
     return Result::FAIL;
   if (Result::OKAY != GPU.Init(vrom,this,&IRQ,CIRQ::NMI,Real3DConfig::Model3(game.stepping))) // same for Real3D DMA interrupt
     return Result::FAIL;
+  m_uart.OnTransmit = [](uint8_t) {};   // the bytes go to the sound board when written (Write8)
+  m_uart.OnTxRdy = [this](bool) { UpdateSoundIRQ(); };
+  m_uart.OnRxRdy = [this](bool) { UpdateSoundIRQ(); };
   if (Result::OKAY != SoundBoard.Init(soundROM,sampleROM))
     return Result::FAIL;
 
@@ -2987,9 +2867,9 @@ Result CModel3::Init(const Game &game, const ROMSet &rom_set)
   PCIBus.AttachDevice(16,this);
 
   if (m_config["SimulateNet"].ValueAs<bool>())
-      NetBoard = new CSimNetBoard(m_config);
+      NetBoard = new CSimNetBoard(m_config, m_server);
   else
-      NetBoard = new CNetBoard(m_config);
+      NetBoard = new CNetBoard(m_config, m_server);
 
   DebugLog("Initialized Model 3 (allocated %1.1f MB)\n", memSizeMB);
 
@@ -3069,6 +2949,7 @@ Result CModel3::Init(const Game &game, const ROMSet &rom_set)
   // Initialize CPU
   ppc_init(&ppc_config);
   ppc_attach_bus(this);
+  ppc_set_idle_skip(m_config["IdleSkip"].ValueAs<bool>() ? 0x800000 : 0);  // main RAM: nothing else writes it while the PowerPC runs
   PPCFetchRegions[0].start = 0;
   PPCFetchRegions[0].end = 0x007FFFFF;
   PPCFetchRegions[0].ptr = (UINT32 *) ram;
@@ -3095,7 +2976,6 @@ Result CModel3::Init(const Game &game, const ROMSet &rom_set)
     }
     else if (game.mpeg_board == Game::MPEG_BOARD_DSB2)
     {
-      Util::FlipEndian16(dsbROM, 128*1024); // 68K program needs to be byte swapped
       DSB = new(std::nothrow) CDSB2(m_config);
       if (NULL == DSB)
         return ErrorLog("Insufficient memory for Digital Sound Board object.");
@@ -3120,12 +3000,6 @@ Result CModel3::Init(const Game &game, const ROMSet &rom_set)
     if (DriveBoard->Init(driveROM) != Result::OKAY)
       return Result::FAIL;
   }
-  else if (game.driveboard_type == Game::DRIVE_BOARD_BILLBOARD && rom_set.get_rom("driveboard_program").size)
-  {
-    DriveBoard = new CBillBoard(m_config);
-    if (DriveBoard->Init(driveROM) != Result::OKAY)
-      return Result::FAIL;
-  }
   else if (game.driveboard_type == Game::DRIVE_BOARD_SKI)
   {
     DriveBoard = new CSkiBoard(m_config);
@@ -3140,6 +3014,13 @@ Result CModel3::Init(const Game &game, const ROMSet &rom_set)
       return Result::FAIL;
   }
 
+  // Billboard (if present). Its program ROM is loaded into the drive board ROM region. All it does is drive
+  // the outputs, so it is only emulated when there are outputs to send them to.
+  BillBoard = new CBillBoard();
+  bool hasBillBoard = game.driveboard_type == Game::DRIVE_BOARD_BILLBOARD && rom_set.get_rom("driveboard_program").size;
+  if (BillBoard->Init(hasBillBoard && Outputs ? driveROM : nullptr) != Result::OKAY)
+    return Result::FAIL;
+
   // Security board encryption device
   m_cryptoDevice.Init(game.encryption_key, std::bind(&CModel3::ReadSecurityRAM, this, std::placeholders::_1));
 
@@ -3149,12 +3030,11 @@ Result CModel3::Init(const Game &game, const ROMSet &rom_set)
   if (DSB)
     extra_hw.insert(Util::Format() << "Digital Sound Board (Type " << (game.mpeg_board == Game::MPEG_BOARD_DSB1 ? 1 : 2) << ")");
   if (DriveBoard->IsAttached())
-  {
-    if (DriveBoard->GetType() == Game::DRIVE_BOARD_BILLBOARD)
-      extra_hw.insert("Billboard");
-    else
-      extra_hw.insert("Drive Board");
-  }
+    extra_hw.insert("Drive Board");
+  if (BillBoard->IsAttached())
+    extra_hw.insert("Billboard");
+  else if (hasBillBoard)
+    extra_hw.insert("Billboard (not emulated, outputs are off)");
   if (game.encryption_key)
     extra_hw.insert("Security Board");
   if (game.netboard_present)
@@ -3167,11 +3047,28 @@ Result CModel3::Init(const Game &game, const ROMSet &rom_set)
   std::cout << "    Developer:      " << game.manufacturer << std::endl;
   std::cout << "    Year:           " << game.year << std::endl;
   std::cout << "    Hardware:       " << Game::SteppingName(game.stepping) << std::endl;
-  if (!extra_hw.empty())
-    std::cout << "    Extra Hardware: " << Util::Format(", ").Join(extra_hw) << std::endl;
+  if (extra_hw.empty())
+    extra_hw.insert("None");
+  std::cout << "    Extra Hardware: " << Util::Format(", ").Join(extra_hw) << std::endl;
   std::cout << std::endl;
 
   m_game = game;
+
+  // Inputs and outputs need the game
+  if (Outputs)
+  {
+    Outputs->SetGame(m_game);
+    Outputs->Attached();
+  }
+  if (DriveBoard->IsAttached())
+  {
+    DriveBoard->AttachInputs(Inputs, m_game.inputs);
+    if (Outputs)
+      DriveBoard->AttachOutputs(Outputs);
+  }
+  if (BillBoard->IsAttached() && Outputs)
+    BillBoard->AttachOutputs(Outputs);
+
   NetBoard->GetGame(m_game);
   if (Result::OKAY != NetBoard->Init(netRAM, netBuffer))
   {
@@ -3193,28 +3090,34 @@ CDriveBoard *CModel3::GetDriveBoard(void)
   return DriveBoard;
 }
 
+CBillBoard *CModel3::GetBillBoard(void)
+{
+  return BillBoard;
+}
+
 INetBoard *CModel3::GetNetBoard(void)
 {
   return NetBoard;
 }
 
-CModel3::CModel3(Util::Config::Node &config)
+CModel3::CModel3(Util::Config::Node &config, CInputs *inputs, COutputs *outputs, std::shared_ptr<CNetServer> server)
   : m_config(config),
     m_multiThreaded(config["MultiThreaded"].ValueAs<bool>()),
     m_gpuMultiThreaded(config["GPUMultiThreaded"].ValueAs<bool>()),
+    Inputs(inputs),
+    Outputs(outputs),
     sndBrdWakeNotify(false),
     TileGen(config),
     GPU(config),
     SoundBoard(config),
     m_jtag(GPU),
-    m_superAA(nullptr)
+    m_superAA(nullptr),
+    m_server(std::move(server))
 {
   // Initialize pointers so dtor can know whether to free them
   memoryPool = NULL;
 
   // Various uninitialized pointers
-  Inputs = NULL;
-  Outputs = NULL;
   ram = NULL;
   crom = NULL;
   vrom = NULL;
@@ -3230,6 +3133,7 @@ CModel3::CModel3(Util::Config::Node &config)
 
   DSB = NULL;
   DriveBoard = NULL;
+  BillBoard = NULL;
 
   NetBoard = NULL;
   m_runNetBoard = false;
@@ -3239,9 +3143,6 @@ CModel3::CModel3(Util::Config::Node &config)
   startedThreads = false;
   pauseThreads = false;
   stopThreads = false;
-  ppcBrdThread = NULL;
-  sndBrdThread = NULL;
-  drvBrdThread = NULL;
 
   ppcBrdThreadRunning = false;
   ppcBrdThreadDone = false;
@@ -3249,14 +3150,11 @@ CModel3::CModel3(Util::Config::Node &config)
   sndBrdThreadDone = false;
   drvBrdThreadRunning = false;
   drvBrdThreadDone = false;
+  bilBrdThreadRunning = false;
+  bilBrdThreadDone = false;
+  sndBrdWakeNotify = false;
 
   syncSndBrdThread = false;
-  ppcBrdThreadSync = NULL;
-  sndBrdThreadSync = NULL;
-  drvBrdThreadSync = NULL;
-
-  notifyLock = NULL;
-  notifySync = NULL;
 
   m_stepping = Game::Stepping::UNKNOWN;
   inputBank = 0;
@@ -3271,8 +3169,6 @@ CModel3::CModel3(Util::Config::Node &config)
   cromBankReg = 0;
   memset(PPCFetchRegions, 0, sizeof(PPCFetchRegions));
   gpusReady = false;
-  sndBrdNotifyLock = nullptr;
-  sndBrdNotifySync = nullptr;
   memset(&timings, 0, sizeof(FrameTimings));
 
   DebugLog("Built Model 3\n");
@@ -3329,6 +3225,12 @@ CModel3::~CModel3(void)
   {
       delete DriveBoard;
       DriveBoard = NULL;
+  }
+
+  if (BillBoard != NULL)
+  {
+      delete BillBoard;
+      BillBoard = NULL;
   }
 
   if (NetBoard != NULL)

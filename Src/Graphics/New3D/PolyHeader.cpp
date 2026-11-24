@@ -1,3 +1,23 @@
+/**
+ ** Supermodel
+ ** A Sega Model Series Arcade Emulator.
+ **
+ ** This file is part of Supermodel.
+ **
+ ** Supermodel is free software: you can redistribute it and/or modify it under
+ ** the terms of the GNU General Public License as published by the Free
+ ** Software Foundation, either version 3 of the License, or (at your option)
+ ** any later version.
+ **
+ ** Supermodel is distributed in the hope that it will be useful, but WITHOUT
+ ** ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ ** FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ ** more details.
+ **
+ ** You should have received a copy of the GNU General Public License along
+ ** with Supermodel.  If not, see <http://www.gnu.org/licenses/>.
+ **/
+
 #include "Supermodel.h"
 #include "PolyHeader.h"
 
@@ -427,6 +447,7 @@ UINT64 PolyHeader::Hash()
 	hash |= (UINT64)(header[0] >> 26) << 35;									// bits 35-40 specular coefficient (opacity)
 	hash |= (UINT64)(header[6] & 0x3FFFF) << 41;								// bits 41-58 Translucency pattern select / disable lighting / Polygon light modifier / Texture enable / Texture format / Shininess / High priority / Layered polygon / Translucency mode
 	hash |= (UINT64)NoLosReturn() << 59;										// bits 59 no line of sight return
+	hash |= (UINT64)EdgeOnTranslucency() << 60;									// bits 60 edge on translucency
 
 	return hash;
 }

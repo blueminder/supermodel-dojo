@@ -40,13 +40,11 @@ UINT16 SCSP_r16(UINT32 addr);
 UINT32 SCSP_r32(UINT32 addr);
 
 void SCSP_SetCB(int (*Run68k)(int cycles),void (*Int68k)(int irq));
-void SCSP_Update();
+void SCSP_Update(int numSamples);	// generates numSamples samples (at most the buffer length) and runs the 68K alongside
 void SCSP_MidiIn(UINT8);
 void SCSP_MidiOutW(UINT8);
-UINT8 SCSP_MidiOutFill();
-UINT8 SCSP_MidiInFill();
-void SCSP_CpuRunScanline();
 UINT8 SCSP_MidiOutR();
+void SCSP_SetMidiOutCallback(void (*callback)(void *context, UINT8 data), void *context);	// receives the MIDI output (else it is discarded)
 
 /*
  * SCSP_Init(n):
@@ -64,8 +62,6 @@ UINT8 SCSP_MidiOutR();
 Result SCSP_Init(const Util::Config::Node &config, int n);
 
 void SCSP_SetRAM(int n,UINT8 *r);
-void SCSP_RTECheck();
-int SCSP_IRQCB(int);
 
 void SCSP_Master_w8(UINT32 addr,UINT8 val);
 void SCSP_Master_w16(UINT32 addr,UINT16 val);

@@ -79,7 +79,7 @@ void Dojo::Message::Writer::AppendHeader(uint32_t _sequence, uint32_t _command)
 
 uint32_t Dojo::Message::Writer::UpdateSize()
 {
-  size = (uint32_t)(message.size() - HEADER_LEN);
+  size = (uint32_t)(message.size() - DOJO_HEADER_LEN);
   message[0] = (uint8_t)(size & 0xFF);
   message[1] = (uint8_t)((size >> 8) & 0xFF);
   message[2] = (uint8_t)((size >> 16) & 0xFF);

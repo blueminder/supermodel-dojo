@@ -1,6 +1,6 @@
 ##
 ## Supermodel
-## A Sega Model 3 Arcade Emulator.
+## A Sega Model Series Arcade Emulator.
 ## Copyright 2003-2026 The Supermodel Team
 ##
 ## This file is part of Supermodel.
@@ -106,6 +106,7 @@ SRC_FILES = \
 	Libraries/blake3/blake3_portable.c \
 	Src/CPU/PowerPC/PPCDisasm.cpp \
 	Src/BlockFile.cpp \
+	Src/Version.cpp \
 	Src/Pkgs/unzip.cpp \
 	Src/Pkgs/ioapi.cpp \
 	Src/Model3/93C46.cpp \
@@ -131,6 +132,34 @@ SRC_FILES = \
 	Src/Graphics/SuperAA.cpp \
 	Src/Model3/TileGen.cpp \
 	Src/Model3/Model3.cpp \
+	Src/Model1/Model1.cpp \
+	Src/Model1/Model1Comm.cpp \
+	Src/Model1/Model1Geometry.cpp \
+	Src/Model1/Model1Geometrizer.cpp \
+	Src/Model1/Model1Tilemap.cpp \
+	Src/Model1/Model1SoundBoard.cpp \
+	Src/Model1/I8251.cpp \
+	Src/Model1/YM3438.cpp \
+	Src/CPU/V60/V60.cpp \
+	Src/CPU/V60/V60Disasm.cpp \
+	Src/CPU/MB86233/MB86233.cpp \
+	Src/CPU/MB86233/MB86233Disasm.cpp \
+	Src/Sound/MultiPCM.cpp \
+	Src/Graphics/Model1Render.cpp \
+	Src/Pkgs/ymfm/ymfm_opn.cpp \
+	Src/Pkgs/ymfm/ymfm_adpcm.cpp \
+	Src/Pkgs/ymfm/ymfm_ssg.cpp \
+	Src/Model2/Model2.cpp \
+	Src/CPU/I960/I960.cpp \
+	Src/CPU/I960/I960Disasm.cpp \
+	Src/CPU/SHARC/SHARC.cpp \
+	Src/CPU/SHARC/SHARCDisasm.cpp \
+	Src/CPU/MB86235/MB86235.cpp \
+	Src/CPU/MB86235/MB86235Disasm.cpp \
+	Src/Model2/Model2Comm.cpp \
+	Src/Model2/Model2DriveBoard.cpp \
+	Src/Model2/Model2Video.cpp \
+	Src/Model2/Sega315_5838.cpp \
 	Src/Pro1000/Pro1000.cpp \
 	Src/Pro1000/UART.cpp \
 	Src/Pro1000/8259.cpp \
@@ -141,7 +170,6 @@ SRC_FILES = \
 	Src/CPU/PowerPC/ppc.cpp \
 	Src/OSD/SDL/Main.cpp \
 	Src/OSD/SDL/Audio.cpp \
-	Src/OSD/SDL/Thread.cpp \
 	Src/OSD/SDL/Gui.cpp \
 	Src/Model3/SoundBoard.cpp \
 	Src/Sound/SCSP.cpp \
@@ -158,11 +186,11 @@ SRC_FILES = \
 	Src/Model3/53C810.cpp \
 	Src/Model3/PCI.cpp \
 	Src/Model3/RTC72421.cpp \
+	Src/Model3/BillBoard.cpp \
 	Src/Model3/DriveBoard/DriveBoard.cpp \
 	Src/Model3/DriveBoard/WheelBoard.cpp \
 	Src/Model3/DriveBoard/JoystickBoard.cpp \
 	Src/Model3/DriveBoard/SkiBoard.cpp \
-	Src/Model3/DriveBoard/BillBoard.cpp \
 	Src/Model3/DriveBoard/Z80CTC.cpp \
 	Src/Model3/MPC10x.cpp \
 	Src/Inputs/Input.cpp \
@@ -178,6 +206,7 @@ SRC_FILES = \
 	Src/Sound/MPEG/MpegAudio.cpp \
 	Src/Model3/Crypto.cpp \
 	Src/OSD/Logger.cpp \
+	Src/OSD/Thread.cpp \
 	Src/OSD/ConsoleInput.cpp \
 	Src/Util/Format.cpp \
 	Src/Util/NewConfig.cpp \
@@ -193,10 +222,11 @@ SRC_FILES = \
 	Src/Pkgs/imgui/imgui_widgets.cpp \
 	Src/ROMSet.cpp \
 	Src/OSD/SDL/NetOutputs.cpp \
-	Src/Network/TCPReceive.cpp \
-	Src/Network/TCPSend.cpp \
-	Src/Network/NetBoard.cpp \
-	Src/Network/SimNetBoard.cpp \
+	Src/Network/NetServer.cpp \
+	Src/Network/TCPConnection.cpp \
+	Src/Model3/NetBoard.cpp \
+	Src/Model3/NetBoardLink.cpp \
+	Src/Model3/SimNetBoard.cpp \
 	Src/Dojo/Dojo.cpp \
 	Src/Dojo/Frame.cpp \
 	Src/Dojo/Message.cpp \
@@ -265,22 +295,20 @@ INCLUDE_DIRS = $(sort $(foreach file,$(SRC_FILES),$(dir	$(file))))
 all:	$(BIN_DIR)/$(POWERPC_DISASSEMBLER_BINARY) $(BIN_DIR)/$(SCRIPTS_DISASSEMBLER_BINARY) $(BIN_DIR)/$(SUPERMODEL_BINARY) $(PLATFORM_TARGETS)
 
 #
-# Supermodel3.com release targets: used only to create official builds stamped
-# with the Git version number. Double-colon rules should force ordered
-# execution. The automated build script relies on these -- don't modify their
-# output!
+# Release target: used only to create official builds stamped with the Git
+# revision. Double-colon rules should force ordered execution.
 #
 .PHONY: clean
-.PHONY: set_version
+.PHONY: set_git_revision
 .PHONY: print_message
 .PHONY: version
-release:: set_version
+release:: set_git_revision
 release:: print_message
 release:: clean
 release:: all
 
 #
-# Github release flow (not yet used).
+# Github release flow.
 #
 # PLATFORM_PKG_FILES are additional platform-specific files. The package puts
 # them next to the Supermodel binary. The platform Makefile must set it before
@@ -300,6 +328,8 @@ pkg/zip: pkg/stage
 	$(info Creating package       : $(PKG_STAGE_PATH).zip)
 	$(SILENT)cd pkg && zip -r $(notdir $(PKG_PATH)) $(notdir $(PKG_STAGE_PATH))
 
+pkg/stage:: set_git_revision
+
 pkg/stage:: all
 
 pkg/stage:: pkg/path
@@ -317,29 +347,42 @@ pkg/stage:: pkg/path
 	$(info Generating             : $(PKG_STAGE_PATH)/CHANGES.txt)
 	$(SILENT)./Scripts/changelog.sh $(PKG_STAGE_PATH)/CHANGES.txt
 
-pkg/path: set_version
+pkg/path: all
+	$(eval VERSION := $(READ_VERSION))
+	$(if $(VERSION),,$(error Unable to get the version from $(BIN_DIR)/$(SUPERMODEL_BINARY)))
 	$(eval PKG_STAGE_PATH = pkg/supermodel-$(VERSION))
 	$(eval PKG_PATH = pkg/supermodel-$(VERSION).$(PKG_TYPE))
 	@echo $(PKG_PATH)
 
 #
-# Sets a VERSION variable based on the git sha.
+# Sets a GIT_REVISION variable based on the git sha and passes it to the build,
+# where SupermodelVersion() prepends the version number. Version.cpp is the only
+# file that uses it.
 #
-set_version:
-	$(eval VERSION = $(strip $(subst ',,0.3a-$(shell git show -s --format=%cd --date=format:%Y%m%d HEAD)-git-$(shell git rev-parse --short HEAD))))
-	$(eval SUPERMODEL_BUILD_FLAGS += -DSUPERMODEL_VERSION=\"$(VERSION)\")
+set_git_revision:
+	$(eval GIT_REVISION = $(strip $(subst ',,$(shell git show -s --format=%cd --date=format:%Y%m%d HEAD)-git-$(shell git rev-parse --short HEAD))))
+	$(eval SUPERMODEL_BUILD_FLAGS += -DSUPERMODEL_GIT_REVISION=\"$(GIT_REVISION)\")
 
 #
-# Prints a message containing the version number to stdout for informational
+# Prints a message containing the Git revision to stdout for informational
 # purposes only.
 #
-print_message: set_version
-	$(info Building Supermodel Version $(VERSION))
+print_message: set_git_revision
+	$(info Building Supermodel Git Revision $(GIT_REVISION))
 
 #
-# Print *only* the version directly.
+# The version as reported by the built binary, without the program name. The
+# path is quoted because the Windows Command Prompt would otherwise treat the
+# slash as the start of a command line switch.
 #
-version: set_version
+READ_VERSION = $(lastword $(shell "$(BIN_DIR)/$(SUPERMODEL_BINARY)" -version))
+
+#
+# Print *only* the version directly. Requires Supermodel to have been built.
+#
+version:
+	$(eval VERSION := $(READ_VERSION))
+	$(if $(VERSION),,$(error Unable to get the version from $(BIN_DIR)/$(SUPERMODEL_BINARY)))
 	@echo $(VERSION)
 
 #
@@ -417,6 +460,11 @@ $(OBJ_DIR)/%.o:	%.cpp | $(OBJ_DIR)
 	$(info Compiling              : $< -> $@)
 	$(SILENT)$(CXX) $(CXXFLAGS) $< -o $@
 
+# Always recompile so that __DATE__ in Version.cpp is the date of the build
+.PHONY: FORCE
+FORCE:
+$(OBJ_DIR)/Version.o: FORCE
+
 # Suppress all warnings for third-party packages that we cannot modify
 $(OBJ_DIR)/glew.o: CFLAGS += -w
 
@@ -453,7 +501,9 @@ $(MUSASHI_OUTFILE): Src/CPU/68K/Musashi/m68kmake.c Src/CPU/68K/Musashi/m68k_in.c
 	$(info Linking                : $(MUSASHI_OUTFILE))
 	$(SILENT)$(LD) $(MUSASHI_LDFLAGS)
 
-$(OBJ_DIR)/m68kops.h $(OBJ_DIR)/m68kops.c $(OBJ_DIR)/m68kopac.c $(OBJ_DIR)/m68kopdm.c $(OBJ_DIR)/m68kopnz.c:	$(MUSASHI_OUTFILE) Src/CPU/68K/Musashi/m68k_in.c Src/CPU/68K/Musashi/m68k.h Src/CPU/68K/Musashi/m68kconf.h | $(OBJ_DIR)
+# A pattern rule, unlike several explicit targets, tells make that one run of the generator makes all of these
+# files. Otherwise a parallel build runs it once per file and the runs overwrite files that are being compiled.
+%/m68kops.h %/m68kops.c %/m68kopac.c %/m68kopdm.c %/m68kopnz.c:	$(MUSASHI_OUTFILE) Src/CPU/68K/Musashi/m68k_in.c Src/CPU/68K/Musashi/m68k.h Src/CPU/68K/Musashi/m68kconf.h | $(OBJ_DIR)
 	$(info Generating 68K emulator: $@)
 	@$(MUSASHI_OUTFILE) $(OBJ_DIR) Src/CPU/68K/Musashi/m68k_in.c
 

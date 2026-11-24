@@ -47,14 +47,11 @@
 #endif // DEBUGGER_HASBLOCKFILE
 
 #ifdef DEBUGGER_HASLOGGER
-#ifndef SUPERMODEL_VERSION
-#define SUPERMODEL_VERSION ""
-#endif // SUPERMODEL_VERSEION
 #include "OSD/Logger.h"
 #endif // DEBUGGER_HASLOGGER
 
 #ifdef DEBUGGER_HASTHREAD
-#include "OSD/Thread.h"
+#include <mutex>
 #endif // DEBUGGER_HASTHREAD
 
 #ifndef stricmp
@@ -119,7 +116,7 @@ namespace Debugger
 		bool m_breakUser;
 
 #ifdef DEBUGGER_HASTHREAD
-		CMutex *m_mutex;
+		std::recursive_mutex m_mutex;
 		CCPUDebug *m_primaryCPU;
 #endif
 

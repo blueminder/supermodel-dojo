@@ -1,3 +1,23 @@
+/**
+ ** Supermodel
+ ** A Sega Model Series Arcade Emulator.
+ **
+ ** This file is part of Supermodel.
+ **
+ ** Supermodel is free software: you can redistribute it and/or modify it under
+ ** the terms of the GNU General Public License as published by the Free
+ ** Software Foundation, either version 3 of the License, or (at your option)
+ ** any later version.
+ **
+ ** Supermodel is distributed in the hope that it will be useful, but WITHOUT
+ ** ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ ** FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ ** more details.
+ **
+ ** You should have received a copy of the GNU General Public License along
+ ** with Supermodel.  If not, see <http://www.gnu.org/licenses/>.
+ **/
+
 #ifndef INCLUDED_GAMELOADER_H
 #define INCLUDED_GAMELOADER_H
 
@@ -33,6 +53,7 @@ private:
     uint32_t chunk_size = 0;
     std::string byte_layout;
     bool required = false;
+    bool merge = true;    // in a child set: merged with the parent's region (else replaces it; with no files, removes it)
     std::vector<File::ptr_t> files;
     static ptr_t Create(const GameLoader &loader, const Util::Config::Node &region_node);
     bool AttribsMatch(const ptr_t &other) const;
@@ -41,6 +62,7 @@ private:
 
   // Game information from XML
   std::map<std::string, Game> m_game_info_by_game;
+  std::map<std::string, size_t> m_game_order;   // position in the XML file (the first listed is preferred)
 
   // ROM patches by game and by region. Cannot place into Region because child
   // sets do not inherit parent patches, which may complicate merging.

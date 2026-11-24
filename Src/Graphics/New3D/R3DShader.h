@@ -1,3 +1,23 @@
+/**
+ ** Supermodel
+ ** A Sega Model Series Arcade Emulator.
+ **
+ ** This file is part of Supermodel.
+ **
+ ** Supermodel is free software: you can redistribute it and/or modify it under
+ ** the terms of the GNU General Public License as published by the Free
+ ** Software Foundation, either version 3 of the License, or (at your option)
+ ** any later version.
+ **
+ ** Supermodel is distributed in the hope that it will be useful, but WITHOUT
+ ** ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ ** FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ ** more details.
+ **
+ ** You should have received a copy of the GNU General Public License along
+ ** with Supermodel.  If not, see <http://www.gnu.org/licenses/>.
+ **/
+
 #ifndef _R3DSHADER_H_
 #define _R3DSHADER_H_
 
@@ -22,8 +42,6 @@ public:
 	void	Start				();
 	void	SetShader			(bool enable = true);
 	GLint	GetVertexAttribPos	(const std::string& attrib);
-	void	DiscardAlpha		(bool discard);				// use to remove alpha from texture alpha only polys for 1st pass
-	void	SetLayer			(Layer layer);
 
 private:
 
@@ -46,6 +64,7 @@ private:
 	GLint m_locTexturePage;
 	GLint m_locTextureAlpha;
 	GLint m_locAlphaTest;
+	GLint m_locTransEdge = -1;
 	GLint m_locMicroTexMinLOD;
 	GLint m_locMicroTexID;
 	GLint m_locBaseTexInfo;
@@ -53,7 +72,6 @@ private:
 	GLint m_locTextureInverted;
 	GLint m_locTexWrapMode;
 	GLint m_locTranslatorMap;
-	GLint m_locColourLayer;
 	GLint m_locLayerDepthBias;
 
 	// cached mesh values
@@ -61,6 +79,7 @@ private:
 	bool	m_textured2;
 	bool	m_textureAlpha;		// use alpha in texture
 	bool	m_alphaTest;		// discard fragment based on alpha (ogl does this with fixed function)
+	bool	m_transEdge = false;	// edge on translucency
 	float	m_fogIntensity;
 	bool	m_lightEnabled;
 	float	m_shininess;
@@ -74,6 +93,7 @@ private:
 
 	bool	m_layered;
 	bool	m_noLosReturn;
+	bool	m_transLayer = false;
 	float	m_microTexMinLOD;
 	int		m_microTexID;
 	int		m_baseTexInfo[4];
@@ -125,7 +145,7 @@ private:
 
 	// global uniforms
 	GLint m_locStep15Luminous;
-	GLint m_locDiscardAlpha;
+	GLint m_locTransLayer = -1;
 
 	// vertex attribute position cache
 	std::map<std::string, GLint> m_vertexLocCache;

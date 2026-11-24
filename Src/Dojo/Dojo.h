@@ -26,8 +26,8 @@
 
 #include "OSD/Logger.h"
 
-#define FRAME_SIZE 15
-#define HEADER_LEN 12
+#define DOJO_FRAME_SIZE 15
+#define DOJO_HEADER_LEN 12
 
 namespace Dojo {
     void Init(const std::string& game_name, bool record_session, bool train_session, bool receiving, bool hosting, bool netplay, const std::string& state_path);

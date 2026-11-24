@@ -1,3 +1,23 @@
+/**
+ ** Supermodel
+ ** A Sega Model Series Arcade Emulator.
+ **
+ ** This file is part of Supermodel.
+ **
+ ** Supermodel is free software: you can redistribute it and/or modify it under
+ ** the terms of the GNU General Public License as published by the Free
+ ** Software Foundation, either version 3 of the License, or (at your option)
+ ** any later version.
+ **
+ ** Supermodel is distributed in the hope that it will be useful, but WITHOUT
+ ** ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ ** FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ ** more details.
+ **
+ ** You should have received a copy of the GNU General Public License along
+ ** with Supermodel.  If not, see <http://www.gnu.org/licenses/>.
+ **/
+
 #ifndef _MODEL_H_
 #define _MODEL_H_
 
@@ -89,39 +109,8 @@ struct FVertex				// full vertex including face attributes
 	}
 };
 
-enum class Layer { colour, trans1, trans2, trans12 /*both 1&2*/, all, none };
-
 struct Mesh
 {
-	//helper funcs
-	bool Render(Layer layer, float nodeAlpha)
-	{
-		bool nAlpha = nodeAlpha < 1.0f;
-
-		switch (layer)
-		{
-		case Layer::colour:
-			if (polyAlpha || nAlpha) {
-				return false;
-			}
-			break;
-		case Layer::trans1:
-			if ((!textureAlpha && !polyAlpha && !nAlpha) || transLSelect) {
-				return false;
-			}
-			break;
-		case Layer::trans2:
-			if ((!textureAlpha && !polyAlpha && !nAlpha) || !transLSelect) {
-				return false;
-			}
-			break;
-		default:					// not using these types
-			return false;
-		}
-
-		return true;
-	}
-
 	enum TexWrapMode : int { repeat = 0, repeatClamp, mirror, mirrorClamp };
 
 	// texture
@@ -146,6 +135,7 @@ struct Mesh
 	bool polyAlpha		= false;		// specified in the rgba colour
 	bool textureAlpha	= false;		// use alpha in texture
 	bool alphaTest		= false;		// discard fragment based on alpha (ogl does this with fixed function)
+	bool transEdge		= false;		// edge on translucency: a contour texture's edge is translucent, not cut
 	bool layered		= false;		// stencil poly
 	bool highPriority	= false;		// rendered over the top
 	bool transLSelect	= false;		// actually the transparency layer, false = layer 0, true = layer 1

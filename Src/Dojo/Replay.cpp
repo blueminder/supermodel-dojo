@@ -117,7 +117,7 @@ void Dojo::Replay::AppendHeaderToFile(const std::string& game_name)
 
   std::vector<uint8_t> message = spectate_start.Msg();
 
-  fout.write((const char*)spectate_start.Msg().data(), (std::streamsize)(spectate_start.GetSize() + (uint32_t)HEADER_LEN));
+  fout.write((const char*)spectate_start.Msg().data(), (std::streamsize)(spectate_start.GetSize() + (uint32_t)DOJO_HEADER_LEN));
   fout.close();
 }
 
@@ -133,13 +133,13 @@ void Dojo::Replay::AppendPlayerInfoToFile()
 
   std::vector<uint8_t> message = player_info.Msg();
 
-  fout.write((const char*)player_info.Msg().data(), (std::streamsize)(player_info.GetSize() + (uint32_t)HEADER_LEN));
+  fout.write((const char*)player_info.Msg().data(), (std::streamsize)(player_info.GetSize() + (uint32_t)DOJO_HEADER_LEN));
   fout.close();
 }
 
 void Dojo::Replay::AppendFrameToFile(const std::string& frame)
 {
-  if (frame.size() == FRAME_SIZE)
+  if (frame.size() == DOJO_FRAME_SIZE)
   {
     // append frame data to replay file
     std::ofstream fout(Dojo::Replay::file_path,
@@ -149,10 +149,10 @@ void Dojo::Replay::AppendFrameToFile(const std::string& frame)
     {
       replay_msg = Message::Writer();
       replay_msg.AppendHeader(0, GAME_BUFFER);
-      replay_msg.AppendInt(FRAME_SIZE);
+      replay_msg.AppendInt(DOJO_FRAME_SIZE);
     }
 
-    replay_msg.AppendContinuousData(frame.data(), FRAME_SIZE);
+    replay_msg.AppendContinuousData(frame.data(), DOJO_FRAME_SIZE);
     replay_frame_count++;
 
     if (replay_frame_count % FRAME_BATCH == 0)
@@ -162,7 +162,7 @@ void Dojo::Replay::AppendFrameToFile(const std::string& frame)
 
       replay_msg = Message::Writer();
       replay_msg.AppendHeader(0, GAME_BUFFER);
-      replay_msg.AppendInt(FRAME_SIZE);
+      replay_msg.AppendInt(DOJO_FRAME_SIZE);
     }
 
     fout.close();
@@ -253,11 +253,11 @@ void Dojo::Replay::LoadFile(const std::string& path)
   if (path.empty())
     return;
 
-  // add string in increments of FRAME_SIZE to net_inputs
+  // add string in increments of DOJO_FRAME_SIZE to net_inputs
   std::ifstream fin(path,
     std::ios::in | std::ios::binary);
 
-  char header_buf[HEADER_LEN] = { 0 };
+  char header_buf[DOJO_HEADER_LEN] = { 0 };
   std::vector<uint8_t> body_buf;
   int offset = 0;
 
@@ -265,8 +265,8 @@ void Dojo::Replay::LoadFile(const std::string& path)
   while (fin)
   {
     // read header
-    memset((void*)header_buf, 0, HEADER_LEN);
-    fin.read(header_buf, HEADER_LEN);
+    memset((void*)header_buf, 0, DOJO_HEADER_LEN);
+    fin.read(header_buf, DOJO_HEADER_LEN);
 
     uint32_t body_size = Message::GetSize((uint8_t*)header_buf);
     uint32_t seq = Message::GetSeq((uint8_t*)header_buf);
@@ -293,9 +293,9 @@ Dojo::Replay::ReplayHeader Dojo::Replay::ReadReplayHeader(const std::string& pat
   if (!fin.is_open())
     return meta;
 
-  char header_buf[HEADER_LEN] = { 0 };
-  fin.read(header_buf, HEADER_LEN);
-  if (fin.gcount() < (std::streamsize)HEADER_LEN)
+  char header_buf[DOJO_HEADER_LEN] = { 0 };
+  fin.read(header_buf, DOJO_HEADER_LEN);
+  if (fin.gcount() < (std::streamsize)DOJO_HEADER_LEN)
     return meta;
 
   const uint32_t body_size = Message::GetSize((uint8_t*)header_buf);
@@ -369,20 +369,20 @@ uint32_t Dojo::Replay::GetReplayFrameCount(const std::string& path)
   fin.seekg(0, std::ios_base::end);
   const std::streamoff file_size = fin.tellg();
   fin.seekg(0, std::ios_base::beg);
-  if (!fin.good() || file_size < HEADER_LEN)
+  if (!fin.good() || file_size < DOJO_HEADER_LEN)
     return 0;
 
   uint32_t player_frames[2] = { 0, 0 };
-  char header_buf[HEADER_LEN] = { 0 };
+  char header_buf[DOJO_HEADER_LEN] = { 0 };
   std::vector<char> body;
   std::streamoff pos = 0;
 
-  while (pos + (std::streamoff)HEADER_LEN <= file_size)
+  while (pos + (std::streamoff)DOJO_HEADER_LEN <= file_size)
   {
-    fin.read(header_buf, HEADER_LEN);
-    if (fin.gcount() != (std::streamsize)HEADER_LEN)
+    fin.read(header_buf, DOJO_HEADER_LEN);
+    if (fin.gcount() != (std::streamsize)DOJO_HEADER_LEN)
       break;
-    pos += HEADER_LEN;
+    pos += DOJO_HEADER_LEN;
 
     const uint32_t body_size = Message::GetSize((uint8_t*)header_buf);
     const uint32_t cmd = Message::GetCmd((uint8_t*)header_buf);
@@ -398,10 +398,10 @@ uint32_t Dojo::Replay::GetReplayFrameCount(const std::string& path)
       if (fin.gcount() != (std::streamsize)body_size)
         break;
 
-      const uint32_t num_frames = (body_size - 4) / FRAME_SIZE;
+      const uint32_t num_frames = (body_size - 4) / DOJO_FRAME_SIZE;
       for (uint32_t i = 0; i < num_frames; i++)
       {
-        const uint32_t player = (uint32_t)(uint8_t)body[4 + i * FRAME_SIZE];
+        const uint32_t player = (uint32_t)(uint8_t)body[4 + i * DOJO_FRAME_SIZE];
         if (player < 2)
           player_frames[player]++;
       }

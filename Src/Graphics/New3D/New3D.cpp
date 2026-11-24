@@ -361,7 +361,7 @@ void CNew3D::DrawAmbientFog()
 	}
 }
 
-bool CNew3D::RenderScene(int priority, bool renderOverlay, Layer layer)
+bool CNew3D::RenderScene(int priority, bool renderOverlay)
 {
 	glActiveTexture(GL_TEXTURE0);
 	m_textureBank[0].Bind();
@@ -401,7 +401,6 @@ bool CNew3D::RenderScene(int priority, bool renderOverlay, Layer layer)
 					}
 
 					if (mesh.layered != (layeredPass == 1)) continue;
-					if (!mesh.Render(layer, m.alpha))		continue;
 					if (mesh.highPriority != renderOverlay) continue;
 
 					if (!matrixLoaded) {
@@ -521,11 +520,17 @@ void CNew3D::RenderFrame(void)
 		}
 	}
 
-	m_r3dFrameBuffers.SetFBO(Layer::colour);		// colour will draw to all 3 buffers. For regular opaque pixels the transparent layers will be essentially masked
+	// Our frame: cleared (with the translucent marker), then the fog layers if any, which only write the colour
+	m_r3dFrameBuffers.Bind(true);
 	glClear(GL_COLOR_BUFFER_BIT);
+	m_r3dFrameBuffers.Bind(false);
 
 	DrawAmbientFog();
 	DrawScrollFog();								// fog layer if applicable must be drawn here
+
+	// As the Real3D: every polygon in one pass, in the game's order. Translucent pixels are drawn on their layer's
+	// half of a checkerboard (see WriteOutputs() in R3DShaderCommon.h) and blended with their neighbours by Draw()
+	m_r3dFrameBuffers.Bind(true);
 
 	for (int pri = 0; pri <= 3; pri++) {
 
@@ -537,40 +542,22 @@ void CNew3D::RenderFrame(void)
 
 			SetRenderStates();
 
-			m_r3dFrameBuffers.SetFBO(Layer::colour);
-
 			glClearDepth(0.0);
 			glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-			m_r3dShader.DiscardAlpha(true);
-			m_r3dShader.SetLayer(Layer::colour);
-			bool hasOverlay = RenderScene(pri, renderOverlay, Layer::colour);
-
-			glDepthFunc(GL_GREATER);
-
-			m_r3dShader.DiscardAlpha(false);
-
-			m_r3dFrameBuffers.StoreDepth();
-			m_r3dShader.SetLayer(Layer::trans1);
-			m_r3dFrameBuffers.SetFBO(Layer::trans1);
-			RenderScene(pri, renderOverlay, Layer::trans1);
-
-			m_r3dFrameBuffers.RestoreDepth();
-			m_r3dShader.SetLayer(Layer::trans2);
-			m_r3dFrameBuffers.SetFBO(Layer::trans2);
-			RenderScene(pri, renderOverlay, Layer::trans2);
+			bool hasOverlay = RenderScene(pri, renderOverlay);
 
 			if (!renderOverlay) {
 				ProcessLos(pri);
 			}
-						
+
 			DisableRenderStates();
 
-			if (!hasOverlay) break;								// no high priority polys						
+			if (!hasOverlay) break;								// no high priority polys
 		}
 	}
 
-	m_r3dFrameBuffers.SetFBO(Layer::none);
+	m_r3dFrameBuffers.Unbind();
 
 	if (m_aaTarget) {
 		glBindFramebuffer(GL_FRAMEBUFFER, m_aaTarget);			// if we have an AA target draw to it instead of the default back buffer
@@ -1299,6 +1286,14 @@ void CNew3D::RenderViewport(UINT32 addr)
 		// Set up coordinate system and base matrix
 		InitMatrixStack(matrixBase, vpnode[0x15] & 0xFFF, m_modelMat);
 
+		// a work around for vf3, when booting it tries to render before the memory is setup correctly and it's matrices are garbage
+		// this causes long start up times. The real h/w probably bails out after a fixed number of polys or some other mechanism
+		if (std::fpclassify(m_modelMat.currentMatrix[0]) == FP_SUBNORMAL && 
+			std::fpclassify(m_modelMat.currentMatrix[1]) == FP_SUBNORMAL && 
+			std::fpclassify(m_modelMat.currentMatrix[2]) == FP_SUBNORMAL) {
+			vpDisabled = true;
+		}
+
 		// Descend down the node link
 		if (!vpDisabled) {
 			UINT32 child = vpnode[0x02];
@@ -1392,6 +1387,7 @@ void CNew3D::SetMeshValues(SortingMesh *currentMesh, PolyHeader &ph)
 	//copy attributes
 	currentMesh->textured		= ph.TexEnabled();
 	currentMesh->alphaTest		= ph.AlphaTest();
+	currentMesh->transEdge		= ph.EdgeOnTranslucency();
 	currentMesh->textureAlpha	= ph.TextureAlpha();
 	currentMesh->polyAlpha		= ph.PolyAlpha();
 	currentMesh->lighting		= ph.LightEnabled();
@@ -1429,7 +1425,7 @@ void CNew3D::SetMeshValues(SortingMesh *currentMesh, PolyHeader &ph)
 
 			if (ph.AlphaTest()) {
 				smoothU = false;	// smooth wrap makes no sense for alpha tested polys with pixel dilate
-				smoothV = false;
+				smoothV = false;	// this is a hack, it's not arcade accurate, see scud attract. Safe to remove if you want
 			}
 
 			if (ph.TexUMirror()) {

@@ -120,8 +120,8 @@ void Dojo::AdvanceFrame()
 
 void Dojo::AddNetFrame(const char* received_data)
 {
-  char data[FRAME_SIZE];
-  memcpy((void*)data, received_data, FRAME_SIZE);
+  char data[DOJO_FRAME_SIZE];
+  memcpy((void*)data, received_data, DOJO_FRAME_SIZE);
 
   uint32_t effective_frame_num = Dojo::Frame::GetEffectiveFrameNumber((uint8_t*)data);
   //if (effective_frame_num == 0)
@@ -129,7 +129,7 @@ void Dojo::AddNetFrame(const char* received_data)
 
   uint32_t frame_player = (uint8_t)data[0];
 
-  std::string data_to_queue(data, data + FRAME_SIZE);
+  std::string data_to_queue(data, data + DOJO_FRAME_SIZE);
 
   std::lock_guard<std::mutex> lock(inputs_mtx);
 

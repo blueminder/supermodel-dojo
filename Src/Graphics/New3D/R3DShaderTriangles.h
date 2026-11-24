@@ -1,3 +1,23 @@
+/**
+ ** Supermodel
+ ** A Sega Model Series Arcade Emulator.
+ **
+ ** This file is part of Supermodel.
+ **
+ ** Supermodel is free software: you can redistribute it and/or modify it under
+ ** the terms of the GNU General Public License as published by the Free
+ ** Software Foundation, either version 3 of the License, or (at your option)
+ ** any later version.
+ **
+ ** Supermodel is distributed in the hope that it will be useful, but WITHOUT
+ ** ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ ** FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ ** more details.
+ **
+ ** You should have received a copy of the GNU General Public License along
+ ** with Supermodel.  If not, see <http://www.gnu.org/licenses/>.
+ **/
+
 #ifndef _R3DSHADERTRIANGLES_H_
 #define _R3DSHADERTRIANGLES_H_
 
@@ -82,7 +102,8 @@ uniform int		baseTexType;
 uniform bool	textureInverted;
 uniform bool	textureAlpha;
 uniform bool	alphaTest;
-uniform bool	discardAlpha;
+uniform bool	transLayer;			// the mesh's transparency layer (transLSelect)
+uniform bool	transEdge;			// edge on translucency: a contour texture's edge is translucent (WriteOutputs())
 uniform ivec2	textureWrapMode;
 uniform int		texturePage;
 
@@ -108,7 +129,6 @@ uniform bool	fixedShading;
 uniform bool	smoothShading;
 uniform float	layerDepthBias;		// PRO-1000: >1.0 pulls layered polys towards the viewer (reverse z)
 uniform bool	step15Luminous;
-uniform int		colourLayer;
 
 // matrices (shared with vertex shader)
 uniform mat4	projMat;
@@ -123,16 +143,15 @@ in float	fsDiscardPoly;
 in float	fsLODBase;
 
 //outputs
-layout(location = 0) out vec4 out0;		// opaque
-layout(location = 1) out vec4 out1;		// trans layer 1
-layout(location = 2) out vec4 out2;		// trans layer 2
+layout(location = 0) out vec4 out0;		// the colour
+layout(location = 1) out vec4 out1;		// r = 1: a translucent pixel (see WriteOutputs())
 
 // forward declarations (see common file)
 
 float CalcFog();
 void Step15Luminous(inout vec4 colour);
 vec4 GetTextureValue();
-void WriteOutputs(vec4 colour, int layer);
+void WriteOutputs(vec4 colour);
 float Sqr(float a);
 float SqrLength(vec2 a);
 void ComputeSpotlight(vec4 spotEllipse, vec2 spotRange, float viewZ, out float lobeEffect, out float lobeFogEffect);
@@ -253,7 +272,7 @@ void main()
 	finalData.rgb = mix(finalData.rgb, fogData.rgb + lSpotFogColor, fogData.a);
 
 	// Write outputs to colour buffers
-	WriteOutputs(finalData,colourLayer);
+	WriteOutputs(finalData);
 }
 )glsl";
 

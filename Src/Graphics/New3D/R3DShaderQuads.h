@@ -1,3 +1,23 @@
+/**
+ ** Supermodel
+ ** A Sega Model Series Arcade Emulator.
+ **
+ ** This file is part of Supermodel.
+ **
+ ** Supermodel is free software: you can redistribute it and/or modify it under
+ ** the terms of the GNU General Public License as published by the Free
+ ** Software Foundation, either version 3 of the License, or (at your option)
+ ** any later version.
+ **
+ ** Supermodel is distributed in the hope that it will be useful, but WITHOUT
+ ** ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ ** FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ ** more details.
+ **
+ ** You should have received a copy of the GNU General Public License along
+ ** with Supermodel.  If not, see <http://www.gnu.org/licenses/>.
+ **/
+
 #ifndef _R3DSHADERQUADS_H_
 #define _R3DSHADERQUADS_H_
 
@@ -91,17 +111,23 @@ in VS_OUT
 out GS_OUT
 {
 	noperspective vec2 v[4];
-	noperspective float area[4];
-	flat float oneOverW[4];
+	noperspective vec4 area;		// vec4s rather than float[4], each array element takes a whole input slot
+	flat vec4 oneOverW;
 
 	//our regular attributes
 	flat vec3	viewVertex[4];
 	flat vec3	viewNormal[4];		// per vertex normal vector
 	flat vec2	texCoord[4];
 	flat vec4	color;
-	flat float	fixedShade[4];
+	flat vec4	fixedShade;
 	flat float	LODBase;
 	vec4 barycentricCoords;			// w = 1: triangle (see main)
+
+	// the emitted vertex's own attributes, interpolated by the gpu across each triangle (triangles + edge fallback)
+	vec3	triViewVertex;
+	vec3	triViewNormal;
+	vec2	triTexCoord;
+	float	triFixedShade;
 } gs_out;
 
 //a*b - c*d, computed in a stable fashion (Kahan)
@@ -128,6 +154,15 @@ vec2 SetVertexAttribs(int i)
 	return gl_in[i].gl_Position.xy * oneOverW;
 }
 
+// writes vertex i's attributes for the gpu to interpolate across the emitted triangle
+void SetTriAttribs(int i)
+{
+	gs_out.triViewVertex	= gs_in[i].viewVertex;
+	gs_out.triViewNormal	= gs_in[i].viewNormal;
+	gs_out.triTexCoord		= gs_in[i].texCoord;
+	gs_out.triFixedShade	= gs_in[i].fixedShade;
+}
+
 void main(void)
 {
 	if(gs_in[0].discardPoly > 0.0) {
@@ -145,11 +180,16 @@ void main(void)
 	gs_out.LODBase = gs_in[0].LODBase;
 
 	if (triangle) {
+		vec2 tv[4];
 		for (int i=0; i<4; i++) {
-			SetVertexAttribs(i);
+			tv[i] = SetVertexAttribs(i);
 		}
 		for (int i=0; i<3; i++) {
+			for (int j=0; j<4; j++) {
+				gs_out.v[j] = tv[j] - tv[i];		// the corners relative to the fragment: its edges (EdgeInfo())
+			}
 			gs_out.barycentricCoords = vec4(i==0, i==1, i==2, 1.0);
+			SetTriAttribs(i);
 			gl_Position = gl_in[i].gl_Position;
 			EmitVertex();
 		}
@@ -205,6 +245,7 @@ void main(void)
 		);
 
 		gs_out.barycentricCoords = vec4(bary[ii], 0.0);
+		SetTriAttribs(ii);
 
 		gl_Position = gl_in[ii].gl_Position;
 
@@ -230,7 +271,8 @@ uniform int		baseTexType;
 uniform bool	textureInverted;
 uniform bool	textureAlpha;
 uniform bool	alphaTest;
-uniform bool	discardAlpha;
+uniform bool	transLayer;			// the mesh's transparency layer (transLSelect)
+uniform bool	transEdge;			// edge on translucency: a contour texture's edge is translucent (WriteOutputs())
 uniform ivec2	textureWrapMode;
 uniform int		texturePage;
 
@@ -256,7 +298,6 @@ uniform bool	fixedShading;
 uniform bool	smoothShading;
 uniform float	layerDepthBias;		// PRO-1000: >1.0 pulls layered polys towards the viewer (reverse z)
 uniform bool	step15Luminous;
-uniform int		colourLayer;
 
 // matrices (shared with vertex shader)
 uniform mat4	projMat;
@@ -266,17 +307,23 @@ uniform mat4	projMat;
 in GS_OUT
 {
 	noperspective vec2 v[4];
-	noperspective float area[4];
-	flat float oneOverW[4];
+	noperspective vec4 area;		// vec4s rather than float[4], each array element takes a whole input slot
+	flat vec4 oneOverW;
 
 	//our regular attributes
 	flat vec3	viewVertex[4];
 	flat vec3	viewNormal[4];		// per vertex normal vector
 	flat vec2	texCoord[4];
 	flat vec4	color;
-	flat float	fixedShade[4];
+	flat vec4	fixedShade;
 	flat float	LODBase;
 	vec4 barycentricCoords;
+
+	// the emitted vertex's own attributes, interpolated by the gpu across each triangle (triangles + edge fallback)
+	vec3	triViewVertex;
+	vec3	triViewNormal;
+	vec2	triTexCoord;
+	float	triFixedShade;
 } fs_in;
 
 //our calculated vertex attributes from the above
@@ -288,19 +335,47 @@ float	fsFixedShade;
 float	fsLODBase;
 
 //outputs
-layout(location = 0) out vec4 out0;		// opaque
-layout(location = 1) out vec4 out1;		// trans layer 1
-layout(location = 2) out vec4 out2;		// trans layer 2
+layout(location = 0) out vec4 out0;		// the colour
+layout(location = 1) out vec4 out1;		// r = 1: a translucent pixel (see WriteOutputs())
 
 // forward declarations (see common file)
 
 float CalcFog();
 void Step15Luminous(inout vec4 colour);
 vec4 GetTextureValue();
-void WriteOutputs(vec4 colour, int layer);
+void WriteOutputs(vec4 colour);
 float Sqr(float a);
 float SqrLength(vec2 a);
 void ComputeSpotlight(vec4 spotEllipse, vec2 spotRange, float viewZ, out float lobeEffect, out float lobeFogEffect);
+
+// The polygon's nearest edge, as the Real3D's anti-aliasing writes it: its
+// offset from the pixel centre along x (a steep edge) or y (a shallow one), in
+// pixels, if under one pixel. Returns (axis, offset): axis 0.5 = x, 1 = y, 0 = no
+// edge near; offset mapped from -1..1 to 0..1. fs_in.v[] are the corners
+// relative to this pixel (normalised device coordinates); ndcPerPixel converts.
+vec2 EdgeInfo(vec2 ndcPerPixel)
+{
+	float best = 1.0;
+	float axis = 0.0;
+	for (int j=0; j<4; j++) {
+		vec2 a = fs_in.v[j] / ndcPerPixel;
+		vec2 b = fs_in.v[(j+1)%4] / ndcPerPixel;
+		vec2 e = b - a;
+		float len = length(e);
+		if (len < 1e-4) {
+			continue;					// a triangle's repeated corner
+		}
+		vec2 n = vec2(-e.y, e.x) / len;
+		float s = dot(n, a);			// signed distance from the pixel centre to the edge's line
+		bool alongX = abs(n.x) >= abs(n.y);
+		float off = alongX ? s / n.x : s / n.y;
+		if (abs(off) < abs(best)) {
+			best = off;
+			axis = alongX ? 0.5 : 1.0;
+		}
+	}
+	return vec2(axis, clamp(best * 0.5 + 0.5, 0.0, 1.0));
+}
 
 void QuadraticInterpolation()
 {
@@ -317,27 +392,22 @@ void QuadraticInterpolation()
 	bool extreme_edge		= (fs_in.barycentricCoords.w > 0.5 || fs_in.barycentricCoords.x <= hpFMin || fs_in.barycentricCoords.z <= hpFMin); // w: triangle
 
 	// As the coordinates get closer to the poly edge the interpolated areas can approach zero which can blow up the maths leading to bad interpolation.
-	// In this case we fall back to 3 point triangle interpolation (really 2 because 1 coord will be zero).
+	// On the edge the quad interpolation is linear along that edge, which is what the gpu's triangle interpolation gives there too,
+	// so in that case (and for triangles) we use the attributes the gpu interpolated, exactly as the triangle shader does.
 	// This code will only get triggered in rarer corner cases
 
-	float u[4];
 	if(extreme_edge)
 	{
-		for (int i=0; i<4; i++) {
-			int b = (i == 3) ? 1  // 2nd triangle
-			                 : i; // 1st triangle
-			float baryCoord	= abs(fs_in.barycentricCoords[b]);
-			u[i] = baryCoord / fs_in.oneOverW[i];
-			if((i == 1 && !(fs_in.barycentricCoords.y>0.0)) // ignore u[1] if 2nd triangle
-			 ||(i == 3 &&  (fs_in.barycentricCoords.y>0.0)) // ignore u[3] if 1st triangle
-			 ||(baryCoord <= hpFMin))
-			{
-				u[i] = 0.0;
-			}
-		}
+		fsViewVertex		= fs_in.triViewVertex;
+		fsViewNormal		= fs_in.triViewNormal;
+		fsTexCoord			= fs_in.triTexCoord;
+		fsFixedShade		= fs_in.triFixedShade;
+		interp_oneOverW		= gl_FragCoord.w;
+		uSum				= 1.0;
 	}
 	else
 	{
+		float u[4];
 		for (int i=0; i<4; i++)
 			u[i] = length(fs_in.v[i]) * sign(fs_in.oneOverW[i]); // is w[i] negative?
 
@@ -364,26 +434,14 @@ void QuadraticInterpolation()
 			interp_oneOverW	= fma(fs_in.oneOverW[i], u[i], interp_oneOverW);
 			uSum           += u[i];
 		}
-	}
 
-	// shared computations
-	for (int i=0; i<4; i++) {
-		fsViewVertex	= fma(fs_in.viewVertex[i], vec3(u[i]), fsViewVertex);
-		fsViewNormal	= fma(fs_in.viewNormal[i], vec3(u[i]), fsViewNormal);
-		fsTexCoord		= fma(fs_in.texCoord[i], vec2(u[i]), fsTexCoord);
-		fsFixedShade	= fma(fs_in.fixedShade[i], u[i], fsFixedShade);
-	}
+		for (int i=0; i<4; i++) {
+			fsViewVertex	= fma(fs_in.viewVertex[i], vec3(u[i]), fsViewVertex);
+			fsViewNormal	= fma(fs_in.viewNormal[i], vec3(u[i]), fsViewNormal);
+			fsTexCoord		= fma(fs_in.texCoord[i], vec2(u[i]), fsTexCoord);
+			fsFixedShade	= fma(fs_in.fixedShade[i], u[i], fsFixedShade);
+		}
 
-	// finalize the 2 cases
-	if(extreme_edge)
-	{
-		float w = (projMat * vec4(fsViewVertex,1.0)).w;
-
-		interp_oneOverW = 1.0 / w;
-		uSum = 1.0;
-	}
-	else
-	{
 		float inv = 1.0/interp_oneOverW;
 		fsViewVertex *= inv;
 		fsViewNormal *= inv;
@@ -421,6 +479,9 @@ void main()
 	vec4 colData;
 	vec4 finalData;
 	vec4 fogData;
+
+	// pixels per unit of fs_in.v (derivatives: before anything can discard)
+	vec2 ndcPerPixel = vec2(abs(dFdx(fs_in.v[0].x)), abs(dFdy(fs_in.v[0].y)));
 
 	QuadraticInterpolation();	// calculate our vertex attributes
 
@@ -527,7 +588,12 @@ void main()
 	finalData.rgb = mix(finalData.rgb, fogData.rgb + lSpotFogColor, fogData.a);
 
 	// Write outputs to colour buffers
-	WriteOutputs(finalData,colourLayer);
+	WriteOutputs(finalData);
+
+	// an opaque pixel's edge, for the anti-aliasing (R3DFrameBuffers::Draw())
+	if (out1.r < 0.5) {
+		out1.gb = EdgeInfo(max(ndcPerPixel, vec2(1e-8)));
+	}
 }
 )glsl";
 

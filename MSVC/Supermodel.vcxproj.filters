@@ -29,6 +29,18 @@
     <Filter Include="Source Files\Model3">
       <UniqueIdentifier>{9113f873-c745-44ac-860a-dcf12d177f5b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Model1">
+      <UniqueIdentifier>{c57b15c0-beee-4ef8-a355-d43c2a619d7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Model1">
+      <UniqueIdentifier>{eb70be3c-038b-4311-98aa-220533f8f7a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Model2">
+      <UniqueIdentifier>{23e87649-ced2-4c70-b012-029fe8275e6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Model2">
+      <UniqueIdentifier>{cd14c7f3-25cb-45cd-9337-fb4af3358c57}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source Files\Pro1000">
       <UniqueIdentifier>{10297567-7bf1-47c1-89e4-d5856ff09166}</UniqueIdentifier>
     </Filter>
@@ -227,6 +239,90 @@
     <ClCompile Include="..\Src\Pro1000\Pro1000.cpp">
       <Filter>Source Files\Pro1000</Filter>
     </ClCompile>
+    <ClCompile Include="..\Src\Model1\Model1.cpp">
+      <Filter>Source Files\Model1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Model1\Model1Comm.cpp">
+      <Filter>Source Files\Model1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Model1\Model1Geometry.cpp">
+      <Filter>Source Files\Model1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Model1\Model1Geometrizer.cpp">
+      <Filter>Source Files\Model1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Model1\Model1Tilemap.cpp">
+      <Filter>Source Files\Model1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Model1\Model1SoundBoard.cpp">
+      <Filter>Source Files\Model1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Model1\I8251.cpp">
+      <Filter>Source Files\Model1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Model1\YM3438.cpp">
+      <Filter>Source Files\Model1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\CPU\V60\V60.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\CPU\V60\V60Disasm.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\CPU\MB86233\MB86233.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\CPU\MB86233\MB86233Disasm.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Sound\MultiPCM.cpp">
+      <Filter>Source Files\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Graphics\Model1Render.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Pkgs\ymfm\ymfm_opn.cpp">
+      <Filter>Source Files\Pkgs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Pkgs\ymfm\ymfm_adpcm.cpp">
+      <Filter>Source Files\Pkgs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Pkgs\ymfm\ymfm_ssg.cpp">
+      <Filter>Source Files\Pkgs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Model2\Model2.cpp">
+      <Filter>Source Files\Model2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\CPU\I960\I960.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\CPU\I960\I960Disasm.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\CPU\SHARC\SHARC.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\CPU\SHARC\SHARCDisasm.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\CPU\MB86235\MB86235.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\CPU\MB86235\MB86235Disasm.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Model2\Model2Comm.cpp">
+      <Filter>Source Files\Model2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Model2\Model2DriveBoard.cpp">
+      <Filter>Source Files\Model2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Model2\Sega315_5838.cpp">
+      <Filter>Source Files\Model2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Model2\Model2Video.cpp">
+      <Filter>Source Files\Model2</Filter>
+    </ClCompile>
     <ClCompile Include="..\Src\Pro1000\UART.cpp">
       <Filter>Source Files\Pro1000</Filter>
     </ClCompile>
@@ -275,8 +371,8 @@
     <ClCompile Include="..\Src\OSD\SDL\SDLInputSystem.cpp">
       <Filter>Source Files\OSD\SDL</Filter>
     </ClCompile>
-    <ClCompile Include="..\Src\OSD\SDL\Thread.cpp">
-      <Filter>Source Files\OSD\SDL</Filter>
+    <ClCompile Include="..\Src\OSD\Thread.cpp">
+      <Filter>Source Files\OSD</Filter>
     </ClCompile>
     <ClCompile Include="..\Src\OSD\Windows\DirectInputSystem.cpp">
       <Filter>Source Files\OSD\Windows</Filter>
@@ -446,6 +542,9 @@
     <ClCompile Include="..\Src\Util\ByteSwap.cpp">
       <Filter>Source Files\Util</Filter>
     </ClCompile>
+    <ClCompile Include="..\Src\Version.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Src\GameLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -455,8 +554,11 @@
     <ClCompile Include="..\Src\Model3\JTAG.cpp">
       <Filter>Source Files\Model3</Filter>
     </ClCompile>
-    <ClCompile Include="..\Src\Network\NetBoard.cpp">
-      <Filter>Source Files\Network</Filter>
+    <ClCompile Include="..\Src\Model3\NetBoard.cpp">
+      <Filter>Source Files\Model3</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Model3\NetBoardLink.cpp">
+      <Filter>Source Files\Model3</Filter>
     </ClCompile>
     <ClCompile Include="..\Src\Debugger\DebuggerIO.cpp">
       <Filter>Source Files\Debugger</Filter>
@@ -470,14 +572,14 @@
     <ClCompile Include="..\Src\Sound\MPEG\MpegAudio.cpp">
       <Filter>Source Files\Sound\MPEG</Filter>
     </ClCompile>
-    <ClCompile Include="..\Src\Network\TCPSend.cpp">
+    <ClCompile Include="..\Src\Network\NetServer.cpp">
       <Filter>Source Files\Network</Filter>
     </ClCompile>
-    <ClCompile Include="..\Src\Network\TCPReceive.cpp">
+    <ClCompile Include="..\Src\Network\TCPConnection.cpp">
       <Filter>Source Files\Network</Filter>
     </ClCompile>
-    <ClCompile Include="..\Src\Model3\DriveBoard\BillBoard.cpp">
-      <Filter>Source Files\Model3\DriveBoard</Filter>
+    <ClCompile Include="..\Src\Model3\BillBoard.cpp">
+      <Filter>Source Files\Model3</Filter>
     </ClCompile>
     <ClCompile Include="..\Src\Model3\DriveBoard\DriveBoard.cpp">
       <Filter>Source Files\Model3\DriveBoard</Filter>
@@ -491,13 +593,10 @@
     <ClCompile Include="..\Src\Model3\DriveBoard\WheelBoard.cpp">
       <Filter>Source Files\Model3\DriveBoard</Filter>
     </ClCompile>
-    <ClCompile Include="..\Src\Network\SimNetBoard.cpp">
-      <Filter>Source Files\Network</Filter>
+    <ClCompile Include="..\Src\Model3\SimNetBoard.cpp">
+      <Filter>Source Files\Model3</Filter>
     </ClCompile>
     <ClCompile Include="..\Src\OSD\SDL\Crosshair.cpp">
-      <Filter>Source Files\OSD\SDL</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Src\OSD\SDL\Overlay.cpp">
       <Filter>Source Files\OSD\SDL</Filter>
     </ClCompile>
     <ClCompile Include="..\Src\Graphics\FBO.cpp">
@@ -636,6 +735,96 @@
     </ClInclude>
     <ClInclude Include="..\Src\Pro1000\Pro1000.h">
       <Filter>Header Files\Pro1000</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model1\Model1.h">
+      <Filter>Header Files\Model1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model1\Model1Comm.h">
+      <Filter>Header Files\Model1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model1\Model1Geometrizer.h">
+      <Filter>Header Files\Model1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model1\Model1Geometry.h">
+      <Filter>Header Files\Model1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model1\Model1Tilemap.h">
+      <Filter>Header Files\Model1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model1\Model1SoundBoard.h">
+      <Filter>Header Files\Model1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model1\I8251.h">
+      <Filter>Header Files\Model1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model1\YM3438.h">
+      <Filter>Header Files\Model1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\CPU\V60\V60.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\CPU\V60\V60Disasm.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\CPU\MB86233\MB86233.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\CPU\MB86233\MB86233Disasm.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Sound\MultiPCM.h">
+      <Filter>Header Files\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Graphics\Model1Render.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Pkgs\ymfm\ymfm.h">
+      <Filter>Header Files\Pkgs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Pkgs\ymfm\ymfm_fm.h">
+      <Filter>Header Files\Pkgs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Pkgs\ymfm\ymfm_opn.h">
+      <Filter>Header Files\Pkgs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Pkgs\ymfm\ymfm_adpcm.h">
+      <Filter>Header Files\Pkgs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Pkgs\ymfm\ymfm_ssg.h">
+      <Filter>Header Files\Pkgs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model2\Model2.h">
+      <Filter>Header Files\Model2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\CPU\I960\I960.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\CPU\I960\I960Disasm.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\CPU\SHARC\SHARC.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\CPU\SHARC\SHARCDisasm.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\CPU\MB86235\MB86235.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\CPU\MB86235\MB86235Disasm.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model2\Model2Comm.h">
+      <Filter>Header Files\Model2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model2\Model2DriveBoard.h">
+      <Filter>Header Files\Model2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model2\Sega315_5838.h">
+      <Filter>Header Files\Model2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model2\Model2Video.h">
+      <Filter>Header Files\Model2</Filter>
     </ClInclude>
     <ClInclude Include="..\Src\Pro1000\UART.h">
       <Filter>Header Files\Pro1000</Filter>
@@ -835,8 +1024,11 @@
     <ClInclude Include="..\Src\Model3\JTAG.h">
       <Filter>Header Files\Model3</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\Network\NetBoard.h">
-      <Filter>Header Files\Network</Filter>
+    <ClInclude Include="..\Src\Model3\NetBoard.h">
+      <Filter>Header Files\Model3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model3\NetBoardLink.h">
+      <Filter>Header Files\Model3</Filter>
     </ClInclude>
     <ClInclude Include="..\Src\Debugger\DebuggerIO.h">
       <Filter>Header Files\Debugger</Filter>
@@ -847,8 +1039,8 @@
     <ClInclude Include="..\Src\Pkgs\minimp3.h">
       <Filter>Header Files\Pkgs</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\Model3\DriveBoard\BillBoard.h">
-      <Filter>Header Files\Model3\DriveBoard</Filter>
+    <ClInclude Include="..\Src\Model3\BillBoard.h">
+      <Filter>Header Files\Model3</Filter>
     </ClInclude>
     <ClInclude Include="..\Src\Model3\DriveBoard\DriveBoard.h">
       <Filter>Header Files\Model3\DriveBoard</Filter>
@@ -862,16 +1054,19 @@
     <ClInclude Include="..\Src\Model3\DriveBoard\WheelBoard.h">
       <Filter>Header Files\Model3\DriveBoard</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\Network\INetBoard.h">
+    <ClInclude Include="..\Src\Model3\INetBoard.h">
+      <Filter>Header Files\Model3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Model3\SimNetBoard.h">
+      <Filter>Header Files\Model3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Network\NetProtocol.h">
       <Filter>Header Files\Network</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\Network\SimNetBoard.h">
+    <ClInclude Include="..\Src\Network\NetServer.h">
       <Filter>Header Files\Network</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\Network\TCPReceive.h">
-      <Filter>Header Files\Network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Src\Network\TCPSend.h">
+    <ClInclude Include="..\Src\Network\TCPConnection.h">
       <Filter>Header Files\Network</Filter>
     </ClInclude>
     <ClInclude Include="..\Src\Graphics\IRender3D.h">
@@ -952,9 +1147,6 @@
     <ClInclude Include="..\Src\OSD\SDL\Crosshair.h">
       <Filter>Header Files\OSD\SDL</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\OSD\SDL\Overlay.h">
-      <Filter>Header Files\OSD\SDL</Filter>
-    </ClInclude>
     <ClInclude Include="..\Src\Graphics\FBO.h">
       <Filter>Header Files\Graphics</Filter>
     </ClInclude>
@@ -1003,4 +1195,4 @@
       <Filter>Source Files\Debugger</Filter>
     </CustomBuild>
   </ItemGroup>
-</Project>
+</Project>

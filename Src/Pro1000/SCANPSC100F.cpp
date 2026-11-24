@@ -1,6 +1,6 @@
 /**
  ** Supermodel
- ** A Sega Model 3 Arcade Emulator.
+ ** A Sega Model Series Arcade Emulator.
  ** Copyright 2003-2026 The Supermodel Team
  **
  ** This file is part of Supermodel.
@@ -106,7 +106,7 @@ uint8_t CSCANPSC100F::Read(unsigned reg)
     if (m_tdi.Empty())
     {
       // Real hardware would hold off the bus with RDY until data arrives
-      DebugLog("SCANPSC100F: read from empty TDI shifter/buffer\n");
+      DebugLog("SCANPSC100F: Read from empty TDI shifter/buffer\n");
       data = m_lastTDIRead;
     }
     else

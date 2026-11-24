@@ -167,6 +167,9 @@ namespace Util
       void SetSliderFormat(const std::string& format, const std::string& minLabel = "") { m_sliderFormat = format; m_sliderMinLabel = minLabel; }
       const std::string& GetSliderFormat() { return m_sliderFormat; }
       const std::string& GetSliderMinLabel() { return m_sliderMinLabel; }
+      // GUI note shown beside the control (e.g. which platforms it applies to)
+      void SetNote(const std::string& note) { m_note = note; }
+      const std::string& GetNote() { return m_note; }
       int GetIndex() { return (int)m_min.index(); }      // gets the variant index (basically the type)
 
   private:
@@ -177,6 +180,7 @@ namespace Util
       std::vector<std::string> m_labels;
       std::string m_sliderFormat;
       std::string m_sliderMinLabel;
+      std::string m_note;
   };
 
   class GenericValue
@@ -210,7 +214,7 @@ namespace Util
     const T &Value() const
     {
       if (!Is<T>())
-        throw std::logic_error(Util::Format() << "GenericValue::Value(): cannot get value as " << std::type_index(typeid(T)).name() <<" because it is stored as " << m_type.name());
+        throw std::logic_error(Util::Format() << "GenericValue::Value(): Cannot get value as " << std::type_index(typeid(T)).name() <<" because it is stored as " << m_type.name());
       return *reinterpret_cast<const T *>(GetData());
     }
 
@@ -234,7 +238,7 @@ namespace Util
     void Set(const T &value)
     {
       if (!Is<T>())
-        throw std::logic_error(Util::Format() << "GenericValue::Set(): cannot set value as " << std::type_index(typeid(T)).name() <<" because it is stored as " << m_type.name());
+        throw std::logic_error(Util::Format() << "GenericValue::Set(): Cannot set value as " << std::type_index(typeid(T)).name() <<" because it is stored as " << m_type.name());
       *reinterpret_cast<T *>(GetData()) = value;
     }
 

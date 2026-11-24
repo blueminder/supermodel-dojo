@@ -2,7 +2,7 @@
 
 std::string Dojo::Frame::Create(uint32_t frame_num, int player, uint32_t delay, uint32_t digital)
 {
-  uint8_t new_frame[FRAME_SIZE] = { 0 };
+  uint8_t new_frame[DOJO_FRAME_SIZE] = { 0 };
   new_frame[0] = player;
   new_frame[1] = delay;
 
@@ -12,10 +12,10 @@ std::string Dojo::Frame::Create(uint32_t frame_num, int player, uint32_t delay, 
   if (digital != 0)
     memcpy(new_frame + 6, (uint8_t*)&digital, sizeof(uint32_t));
 
-  uint8_t ret_frame[FRAME_SIZE] = { 0 };
-  memcpy((void*)ret_frame, new_frame, FRAME_SIZE);
+  uint8_t ret_frame[DOJO_FRAME_SIZE] = { 0 };
+  memcpy((void*)ret_frame, new_frame, DOJO_FRAME_SIZE);
 
-  std::string frame_str(ret_frame, ret_frame + FRAME_SIZE);
+  std::string frame_str(ret_frame, ret_frame + DOJO_FRAME_SIZE);
 
   return frame_str;
 }

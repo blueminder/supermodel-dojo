@@ -59,6 +59,8 @@
 #include "Supermodel.h"
 #include "OSD/Audio.h"
 #include "Sound/SCSP.h"
+#include <algorithm>
+#include <cmath>
 
 // DEBUG
 //#define SUPERMODEL_LOG_AUDIO	// define this to log all audio to sound.bin
@@ -70,7 +72,7 @@ static FILE		*soundFP;
 // Offsets of memory regions within sound board's pool
 #define OFFSET_RAM1	            0           // 1 MB SCSP1 RAM
 #define OFFSET_RAM2             0x100000    // 1 MB SCSP2 RAM
-#define LENGTH_CHANNEL_BUFFER   (sizeof(float)*NUM_SAMPLES_PER_FRAME)               // 2940 bytes (32 bits x 44.1 KHz x 1/60th second)
+#define LENGTH_CHANNEL_BUFFER   (sizeof(float)*MAX_SAMPLES_PER_FRAME)               // 32 bits x 44.1 KHz x longest frame (1/45th second)
 #define OFFSET_AUDIO_FRONTLEFT  0x200000                                            // 2940 bytes (32 bits, 44.1 KHz, 1/60th second) left audio channel
 #define OFFSET_AUDIO_FRONTRIGHT (OFFSET_AUDIO_FRONTLEFT + LENGTH_CHANNEL_BUFFER)    // 2940 bytes right audio channel
 #define OFFSET_AUDIO_REARLEFT   (OFFSET_AUDIO_FRONTRIGHT + LENGTH_CHANNEL_BUFFER)   // 2940 bytes (32 bits, 44.1 KHz, 1/60th second) left audio channel
@@ -330,6 +332,15 @@ int SCSP68KRunCallback(int numCycles)
  Sound Board Interface
 ******************************************************************************/
 
+void CSoundBoard::SetMIDIOutCallback(std::function<void(UINT8)> callback)
+{
+	m_midiOutCallback = std::move(callback);
+	if (m_midiOutCallback)
+		SCSP_SetMidiOutCallback([](void *context, UINT8 data) { static_cast<CSoundBoard *>(context)->m_midiOutCallback(data); }, this);
+	else
+		SCSP_SetMidiOutCallback(nullptr, nullptr);
+}
+
 void CSoundBoard::WriteMIDIPort(UINT8 data)
 {
 	SCSP_MidiIn(data);
@@ -351,21 +362,38 @@ static INT16 ClampINT16(float x)
 }
 #endif
 
+int CSoundBoard::NextFrameSamples(void)
+{
+	// The fraction left over from each frame is carried to the next one, so on average a frame is exactly
+	// 44100 / refresh rate samples long
+	double refreshHz = std::abs(m_config["RefreshRate"].ValueAsDefault<float>(60.0f));
+	refreshHz = (std::max)(45.0, (std::min)(120.0, refreshHz));
+	double samples = 44100.0 / refreshHz + m_sampleRemainder;
+	int numSamples = (std::min)((int)samples, MAX_SAMPLES_PER_FRAME);
+	m_sampleRemainder = samples - numSamples;
+	return numSamples;
+}
+
 bool CSoundBoard::RunFrame(void)
 {
+	// One frame of sound lasts as long as one displayed frame: 735 samples at 60 Hz, 766.6 at 57.524 Hz (766 and 767
+	// in turn). At 57.524 Hz this is the same as the real hardware, so game and sound stay in step. At 60 Hz the game
+	// runs 4.3% fast while sound plays at the right speed.
+	const int numSamples = NextFrameSamples();
+
 	// Run sound board first to generate SCSP audio
 	if (m_config["EmulateSound"].ValueAs<bool>())
 	{
 		M68KSetContext(&M68K);
-		SCSP_Update();
+		SCSP_Update(numSamples);
 		M68KGetContext(&M68K);
 	}
 	else
 	{
-		memset(audioFL, 0, LENGTH_CHANNEL_BUFFER);
-		memset(audioFR, 0, LENGTH_CHANNEL_BUFFER);
-		memset(audioRL, 0, LENGTH_CHANNEL_BUFFER);
-		memset(audioRR, 0, LENGTH_CHANNEL_BUFFER);
+		memset(audioFL, 0, numSamples * sizeof(float));
+		memset(audioFR, 0, numSamples * sizeof(float));
+		memset(audioRL, 0, numSamples * sizeof(float));
+		memset(audioRR, 0, numSamples * sizeof(float));
 	}
 
 	// Compute sound volume as 
@@ -373,7 +401,7 @@ bool CSoundBoard::RunFrame(void)
 	soundVol = soundVol * (float)(1.0 / 100.0);
 
 	// Apply sound volume setting to SCSP channels only
-	for (int i = 0; i < NUM_SAMPLES_PER_FRAME; i++) {
+	for (int i = 0; i < numSamples; i++) {
 		audioFL[i] *= soundVol;
 		audioFR[i] *= soundVol;
 		audioRL[i] *= soundVol;
@@ -386,18 +414,18 @@ bool CSoundBoard::RunFrame(void)
 		constexpr bool mixDSBWithFront = true; // Everything to front channels for now
 		// Case "both" not handled for now
 		if (mixDSBWithFront)
-			DSB->RunFrame(audioFL, audioFR);
+			DSB->RunFrame(audioFL, audioFR, numSamples);
 		else
-			DSB->RunFrame(audioRL, audioRR);
+			DSB->RunFrame(audioRL, audioRR, numSamples);
 	}
 
 	// Output the audio buffers
-	bool bufferFull = OutputAudio(NUM_SAMPLES_PER_FRAME, audioFL, audioFR, audioRL, audioRR, m_config["FlipStereo"].ValueAs<bool>());
+	bool bufferFull = OutputAudio(numSamples, audioFL, audioFR, audioRL, audioRR, m_config["FlipStereo"].ValueAs<bool>());
 
 #ifdef SUPERMODEL_LOG_AUDIO
 	// Output to binary file
 	INT16	s;
-	for (int i = 0; i < NUM_SAMPLES_PER_FRAME; i++)
+	for (int i = 0; i < numSamples; i++)
 	{	
 		s = ClampINT16(audioFL[i]);
 		fwrite(&s, sizeof(INT16), 1, soundFP);	// left channel
@@ -445,6 +473,10 @@ void CSoundBoard::SaveState(CBlockFile *SaveState)
 	SCSP_SaveState(SaveState);
 	if (NULL != DSB)
 		DSB->SaveState(SaveState);
+
+	// Fraction of a sample carried to the next frame (NextFrameSamples)
+	SaveState->NewBlock("Sound Board frame", __FILE__);
+	SaveState->Write(&m_sampleRemainder, sizeof(m_sampleRemainder));
 }
 
 void CSoundBoard::LoadState(CBlockFile *SaveState)
@@ -467,6 +499,10 @@ void CSoundBoard::LoadState(CBlockFile *SaveState)
 	SCSP_LoadState(SaveState);
 	if (NULL != DSB)
 		DSB->LoadState(SaveState);
+
+	m_sampleRemainder = 0.0;
+	if (Result::OKAY == SaveState->FindBlock("Sound Board frame"))
+		SaveState->Read(&m_sampleRemainder, sizeof(m_sampleRemainder));
 }
 
 
@@ -513,7 +549,7 @@ Result CSoundBoard::Init(const UINT8 *soundROMPtr, const UINT8 *sampleROMPtr)
 	M68KGetContext(&M68K);
 		
 	// Initialize SCSPs
-	SCSP_SetBuffers(audioFL, audioFR, audioRL, audioRR, NUM_SAMPLES_PER_FRAME);
+	SCSP_SetBuffers(audioFL, audioFR, audioRL, audioRR, MAX_SAMPLES_PER_FRAME);
 	SCSP_SetCB(SCSP68KRunCallback, SCSP68KIRQCallback);
 	if (Result::OKAY != SCSP_Init(m_config, 2))
 		return Result::FAIL;
@@ -556,6 +592,7 @@ CSoundBoard::CSoundBoard(const Util::Config::Node &config)
 
 	sampleBank = nullptr;
 	ctrlReg = 0;
+	m_sampleRemainder = 0.0;
 
 	DebugLog("Built Sound Board\n");
 }
@@ -567,6 +604,8 @@ CSoundBoard::~CSoundBoard(void)
 	fclose(soundFP);
 #endif
 
+	if (m_midiOutCallback)
+		SCSP_SetMidiOutCallback(nullptr, nullptr);
 	SCSP_Deinit();
 
 	DSB = NULL;

@@ -1,3 +1,23 @@
+/**
+ ** Supermodel
+ ** A Sega Model Series Arcade Emulator.
+ **
+ ** This file is part of Supermodel.
+ **
+ ** Supermodel is free software: you can redistribute it and/or modify it under
+ ** the terms of the GNU General Public License as published by the Free
+ ** Software Foundation, either version 3 of the License, or (at your option)
+ ** any later version.
+ **
+ ** Supermodel is distributed in the hope that it will be useful, but WITHOUT
+ ** ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ ** FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ ** more details.
+ **
+ ** You should have received a copy of the GNU General Public License along
+ ** with Supermodel.  If not, see <http://www.gnu.org/licenses/>.
+ **/
+
 #include "R3DShader.h"
 #include "R3DShaderQuads.h"
 #include "R3DShaderTriangles.h"
@@ -110,13 +130,13 @@ bool R3DShader::LoadShader(const char* vertexShader, const char* fragmentShader)
 	m_locTexture2Enabled	= glGetUniformLocation(m_shaderProgram, "microTexture");
 	m_locTextureAlpha		= glGetUniformLocation(m_shaderProgram, "textureAlpha");
 	m_locAlphaTest			= glGetUniformLocation(m_shaderProgram, "alphaTest");
+	m_locTransEdge			= glGetUniformLocation(m_shaderProgram, "transEdge");
 	m_locMicroTexMinLOD		= glGetUniformLocation(m_shaderProgram, "microTextureMinLOD");
 	m_locMicroTexID			= glGetUniformLocation(m_shaderProgram, "microTextureID");
 	m_locBaseTexInfo		= glGetUniformLocation(m_shaderProgram, "baseTexInfo");
 	m_locBaseTexType		= glGetUniformLocation(m_shaderProgram, "baseTexType");
 	m_locTextureInverted	= glGetUniformLocation(m_shaderProgram, "textureInverted");
 	m_locTexWrapMode		= glGetUniformLocation(m_shaderProgram, "textureWrapMode");
-	m_locColourLayer		= glGetUniformLocation(m_shaderProgram, "colourLayer");
 	m_locLayerDepthBias		= glGetUniformLocation(m_shaderProgram, "layerDepthBias");
 
 	m_locFogIntensity		= glGetUniformLocation(m_shaderProgram, "fogIntensity");
@@ -148,7 +168,7 @@ bool R3DShader::LoadShader(const char* vertexShader, const char* fragmentShader)
 	m_locModelMat			= glGetUniformLocation(m_shaderProgram, "modelMat");
 
 	m_locStep15Luminous		= glGetUniformLocation(m_shaderProgram, "step15Luminous");
-	m_locDiscardAlpha		= glGetUniformLocation(m_shaderProgram, "discardAlpha");
+	m_locTransLayer			= glGetUniformLocation(m_shaderProgram, "transLayer");
 
 	m_locCota				= glGetUniformLocation(m_shaderProgram, "cota");
 
@@ -196,7 +216,6 @@ void R3DShader::SetShader(bool enable)
 	if (enable) {
 		glUseProgram(m_shaderProgram);
 		Start();
-		DiscardAlpha(false);	// need some default
 	}
 	else {
 		glUseProgram(0);
@@ -264,6 +283,11 @@ void R3DShader::SetMeshUniforms(const Mesh* m)
 		m_alphaTest = m->alphaTest;
 	}
 
+	if (m_dirtyMesh || m->transEdge != m_transEdge) {
+		glUniform1i(m_locTransEdge, m->transEdge);
+		m_transEdge = m->transEdge;
+	}
+
 	if (m_dirtyMesh || m->textureAlpha != m_textureAlpha) {
 		glUniform1i(m_locTextureAlpha, m->textureAlpha);
 		m_textureAlpha = m->textureAlpha;
@@ -313,6 +337,11 @@ void R3DShader::SetMeshUniforms(const Mesh* m)
 		m_texWrapMode[0] = m->wrapModeU;
 		m_texWrapMode[1] = m->wrapModeV;
 		glUniform2iv(m_locTexWrapMode, 1, m_texWrapMode);
+	}
+
+	if (m_dirtyMesh || m->transLSelect != m_transLayer) {
+		m_transLayer = m->transLSelect;
+		glUniform1i(m_locTransLayer, m_transLayer);
 	}
 
 	if (m_dirtyMesh || m->noLosReturn != m_noLosReturn) {
@@ -397,16 +426,6 @@ void R3DShader::SetModelStates(const Model* model)
 	glUniformMatrix4fv(m_locModelMat, 1, GL_FALSE, model->modelMat);
 
 	m_dirtyModel = false;
-}
-
-void R3DShader::DiscardAlpha(bool discard)
-{
-	glUniform1i(m_locDiscardAlpha, discard);
-}
-
-void R3DShader::SetLayer(Layer layer)
-{
-	glUniform1i(m_locColourLayer, (GLint)layer);
 }
 
 void R3DShader::PrintShaderResult(GLuint shader)

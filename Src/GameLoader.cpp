@@ -1,3 +1,23 @@
+/**
+ ** Supermodel
+ ** A Sega Model Series Arcade Emulator.
+ **
+ ** This file is part of Supermodel.
+ **
+ ** Supermodel is free software: you can redistribute it and/or modify it under
+ ** the terms of the GNU General Public License as published by the Free
+ ** Software Foundation, either version 3 of the License, or (at your option)
+ ** any later version.
+ **
+ ** Supermodel is distributed in the hope that it will be useful, but WITHOUT
+ ** ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ ** FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ ** more details.
+ **
+ ** You should have received a copy of the GNU General Public License along
+ ** with Supermodel.  If not, see <http://www.gnu.org/licenses/>.
+ **/
+
 #include "GameLoader.h"
 #include "OSD/Logger.h"
 #include "Util/NewConfig.h"
@@ -6,6 +26,7 @@
 #include "Util/Format.h"
 #include <algorithm>
 #include <cctype>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 
@@ -197,6 +218,7 @@ GameLoader::Region::ptr_t GameLoader::Region::Create(const GameLoader &loader, c
   }
 
   region->required = region_node["required"].ValueAsDefault<bool>(true);
+  region->merge = region_node["merge"].ValueAsDefault<bool>(true);
 
   // Byte layout. If byte_swap was specified, construct the byte swapped layout string based on
   // stride size. If byte_swap is set to false, empty layout string is fine.
@@ -262,14 +284,16 @@ static bool PopulateGameInfo(Game *game, const Util::Config::Node &game_node)
   {
     { "",                 Game::PLATFORM_MODEL3 },  // default to Model 3
     { "Sega Model 3",     Game::PLATFORM_MODEL3 },
-    { "Real3D Pro-1000",  Game::PLATFORM_PRO1000 }
+    { "Real3D PRO-1000",  Game::PLATFORM_PRO1000 },
+    { "Sega Model 1",     Game::PLATFORM_MODEL1 },
+    { "Sega Model 2",     Game::PLATFORM_MODEL2 }
   };
   std::string platform = game_node["hardware/platform"].ValueAsDefault<std::string>("");
   if (platforms.find(platform) == platforms.end())
     ErrorLog("Unknown platform '%s' for '%s'. Defaulting to Sega Model 3.", platform.c_str(), game->name.c_str());
   game->platform = platforms[platform];
-  // The stepping must be a stepping of the platform. The Pro-1000 default is
-  // the PRO-1100.
+  // The stepping must be a stepping of the platform. The PRO-1000 default is
+  // the PRO-1100 and the Model 2 default is the Model 2A.
   std::map<std::string, Game::Stepping> model3_steppings
   {
     { "1.0",  Game::Stepping::MODEL3_1_0 },
@@ -284,14 +308,29 @@ static bool PopulateGameInfo(Game *game, const Util::Config::Node &game_node)
     { "1200", Game::Stepping::PRO1000_1200 },
     { "1400", Game::Stepping::PRO1000_1400 }
   };
+  std::map<std::string, Game::Stepping> model1_steppings
+  {
+    { "",     Game::Stepping::MODEL1 }
+  };
+  std::map<std::string, Game::Stepping> model2_steppings
+  {
+    { "",     Game::Stepping::MODEL2A },
+    { "2",    Game::Stepping::MODEL2 },
+    { "2A",   Game::Stepping::MODEL2A },
+    { "2B",   Game::Stepping::MODEL2B },
+    { "2C",   Game::Stepping::MODEL2C }
+  };
   bool pro1000 = game->platform == Game::PLATFORM_PRO1000;
-  const auto &steppings = pro1000 ? pro1000_steppings : model3_steppings;
+  bool model1 = game->platform == Game::PLATFORM_MODEL1;
+  bool model2 = game->platform == Game::PLATFORM_MODEL2;
+  const auto &steppings = model2 ? model2_steppings : model1 ? model1_steppings : pro1000 ? pro1000_steppings : model3_steppings;
   std::string stepping = game_node["hardware/stepping"].ValueAsDefault<std::string>("");
   auto stepping_it = steppings.find(stepping);
   if (stepping_it == steppings.end())
   {
     ErrorLog("Stepping '%s' of '%s' is not a %s stepping (%s). Ignoring this game.", stepping.c_str(), game->name.c_str(),
-             pro1000 ? "Real3D Pro-1000" : "Sega Model 3", pro1000 ? "1100, 1200, or 1400" : "1.0, 1.5, 2.0, or 2.1");
+             model2 ? "Sega Model 2" : model1 ? "Sega Model 1" : pro1000 ? "Real3D PRO-1000" : "Sega Model 3",
+             model2 ? "2, 2A, 2B, or 2C" : model1 ? "none" : pro1000 ? "1100, 1200, or 1400" : "1.0, 1.5, 2.0, or 2.1");
     return false;
   }
   game->stepping = stepping_it->second;
@@ -345,7 +384,10 @@ static bool PopulateGameInfo(Game *game, const Util::Config::Node &game_node)
     { "analog_gun2",      Game::INPUT_ANALOG_GUN2 },
     { "ski",              Game::INPUT_SKI },
     { "magtruck",         Game::INPUT_MAGTRUCK },
-    { "fishing",          Game::INPUT_FISHING }
+    { "fishing",          Game::INPUT_FISHING },
+    { "throttle",         Game::INPUT_THROTTLE },
+    { "analog_joystick2", Game::INPUT_ANALOG_JOYSTICK2 },
+    { "flight_view4",     Game::INPUT_FLIGHT_VIEW4 }
   };
   for (auto &node: game_node["hardware/inputs"])
   {
@@ -361,7 +403,8 @@ static bool PopulateGameInfo(Game *game, const Util::Config::Node &game_node)
     { "Wheel",      Game::DRIVE_BOARD_WHEEL },
     { "Joystick",   Game::DRIVE_BOARD_JOYSTICK },
     { "Ski",        Game::DRIVE_BOARD_SKI },
-    { "Billboard",  Game::DRIVE_BOARD_BILLBOARD}
+    { "Billboard",  Game::DRIVE_BOARD_BILLBOARD},
+    { "Motion",     Game::DRIVE_BOARD_MOTION}
   };
   std::string drive_board_type = game_node["hardware/drive_board"].ValueAsDefault<std::string>(std::string());
   game->driveboard_type = drive_board_types[drive_board_type];
@@ -393,6 +436,7 @@ bool GameLoader::LoadGamesFromXML(const Util::Config::Node &xml)
         ErrorLog("%s: Ignoring redefinition of game '%s'.", m_xml_filename.c_str(), game_name.c_str());
         continue;
       }
+      m_game_order.emplace(game_name, m_game_order.size());
       if (!PopulateGameInfo(&m_game_info_by_game[game_name], game_node))
       {
         m_game_info_by_game.erase(game_name);
@@ -442,8 +486,9 @@ bool GameLoader::LoadGamesFromXML(const Util::Config::Node &xml)
             files.push_back(file);
           }
 
-          // Check to ensure that some files were defined in the region
-          if (files.empty())
+          // Check to ensure that some files were defined in the region (a
+          // child's unmerged region may have none: it removes the parent's)
+          if (files.empty() && region->merge)
             ErrorLog("%s: No files defined in region '%s' of '%s'.", m_xml_filename.c_str(), region->region_name.c_str(), game_name.c_str());
           else
             regions_by_name[region->region_name] = region;
@@ -511,9 +556,21 @@ bool GameLoader::MergeChildrenWithParents()
     RegionsByName_t new_regions;
     for (auto &v2: parent_regions)
     {
+      auto &region_name = v2.first;
+
+      // A child region with merge="false" replaces the parent's region
+      // entirely (as in a non-merged ROM set, which has only the child's own
+      // files), or removes it if it has no files
+      auto child_it = child_regions.find(region_name);
+      if (child_it != child_regions.end() && !child_it->second->merge)
+      {
+        if (!child_it->second->files.empty())
+          new_regions[region_name] = child_it->second;
+        continue;
+      }
+
       // Copy over parent region (shallow copy is sufficient, vector of files
       // will be copied over correctly)
-      auto &region_name = v2.first;
       new_regions[region_name] = std::make_shared<Region>(*v2.second);
       auto &new_region = new_regions[region_name];
 
@@ -541,7 +598,7 @@ bool GameLoader::MergeChildrenWithParents()
     // Simply append any region in child that does *not* exist in parent
     for (auto &v2: child_regions)
     {
-      if (new_regions.find(v2.first) == new_regions.end())
+      if (new_regions.find(v2.first) == new_regions.end() && !v2.second->files.empty())
       {
         // Since these are pointers anyway, just insert directly
         new_regions[v2.first] = v2.second;
@@ -735,6 +792,26 @@ void GameLoader::ChooseGameInZipArchive(std::string *chosen_game, bool *missing_
   std::map<std::string, std::set<File::ptr_t>> files_missing_by_merged_game;
   IdentifyGamesInZipArchive(&complete_merged_games, &files_missing_by_merged_game, zip, m_regions_by_merged_game);
 
+  // A complete game named as the zip file is the one wanted: MAME's merged
+  // sets hold a parent and its clones in one zip named after the parent, and
+  // a clone's own zip is named after it
+  {
+    std::string stem = zipfilename;
+    size_t slash = stem.find_last_of("/\\");
+    if (slash != std::string::npos)
+      stem = stem.substr(slash + 1);
+    size_t dot = stem.find_last_of('.');
+    if (dot != std::string::npos)
+      stem = stem.substr(0, dot);
+    std::transform(stem.begin(), stem.end(), stem.begin(), [](unsigned char c) { return (char) std::tolower(c); });
+    bool childOnly = complete_games.count(stem) && IsChildSet(m_game_info_by_game.find(stem)->second);
+    if (complete_merged_games.count(stem) || (complete_games.count(stem) && !childOnly))
+    {
+      chosen_game->assign(stem);
+      return;
+    }
+  }
+
   /*
    * Find incomplete child games by sorting child games out from the unmerged
    * games results and pruning out complete merged games. Don't care about
@@ -773,9 +850,15 @@ void GameLoader::ChooseGameInZipArchive(std::string *chosen_game, bool *missing_
     files_missing_by_game.erase(parent);
   }
 
-  // Any remaining incomplete games from the unmerged set are legitimate errors
+  // Any remaining incomplete games from the unmerged set are legitimate errors,
+  // but only worth reporting when nothing complete was found: boards share some
+  // ROMs (Model 1 and Model 2 both have the geometrizer table ROMs), so a
+  // complete set of one game is a partial match for others
+  bool found = !complete_merged_games.empty() || !incomplete_child_games.empty() || !complete_games.empty();
   for (auto &v: files_missing_by_game)
   {
+    if (found)
+      break;
     for (auto &file: v.second)
     {
       ErrorLog("'%s' (CRC32 0x%08x) not found in '%s' for game '%s'.", file->filename.c_str(), file->crc32, zipfilename.c_str(), v.first.c_str());
@@ -784,20 +867,37 @@ void GameLoader::ChooseGameInZipArchive(std::string *chosen_game, bool *missing_
   }
 
   // Choose game: complete merged game > incomplete child game > complete
-  // unmerged game
+  // unmerged game; among several, the one listed first in the XML file (a
+  // family's parent, then its clones in their order)
+  auto first = [this](const std::set<std::string> &games) -> std::string
+  {
+    std::string best;
+    size_t bestOrder = SIZE_MAX;
+    for (const auto &name : games)
+    {
+      auto it = m_game_order.find(name);
+      size_t order = it != m_game_order.end() ? it->second : SIZE_MAX - 1;
+      if (best.empty() || order < bestOrder)
+      {
+        best = name;
+        bestOrder = order;
+      }
+    }
+    return best;
+  };
   if (!complete_merged_games.empty())
-    chosen_game->assign(*complete_merged_games.begin());
+    chosen_game->assign(first(complete_merged_games));
   else if (!incomplete_child_games.empty())
   {
     // TODO: could use scoring to pick game with most files?
-    chosen_game->assign(*incomplete_child_games.begin());
+    chosen_game->assign(first(incomplete_child_games));
     *missing_parent_roms = true;  // try to find missing files in parent ROM zip file
   }
   else if (!complete_games.empty())
-    chosen_game->assign(*complete_games.begin());
+    chosen_game->assign(first(complete_games));
   else
   {
-    ErrorLog("No complete Model 3 games found in '%s'.", zipfilename.c_str());
+    ErrorLog("No complete games found in '%s'.", zipfilename.c_str());
     return;
   }
 

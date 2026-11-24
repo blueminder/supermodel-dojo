@@ -41,7 +41,7 @@ void Dojo::Netplay::ServerThread()
 
 			if (!frame.empty())
 			{
-				ENetPacket* packet = enet_packet_create(frame.data(), FRAME_SIZE, ENET_PACKET_FLAG_RELIABLE);
+				ENetPacket* packet = enet_packet_create(frame.data(), DOJO_FRAME_SIZE, ENET_PACKET_FLAG_RELIABLE);
 				if (enet_peer_send(peer, 0, packet) < 0)
 				{
 					enet_packet_destroy(packet);
@@ -73,7 +73,7 @@ void Dojo::Netplay::ServerThread()
 
 			std::vector<uint8_t> message = start_msg.Msg();
 
-			ENetPacket* packet = enet_packet_create(message.data(), start_msg.GetSize() + (uint32_t)HEADER_LEN, ENET_PACKET_FLAG_RELIABLE);
+			ENetPacket* packet = enet_packet_create(message.data(), start_msg.GetSize() + (uint32_t)DOJO_HEADER_LEN, ENET_PACKET_FLAG_RELIABLE);
 			enet_peer_send(peer, 1, packet);
 
 			FillDelay();
@@ -88,8 +88,8 @@ void Dojo::Netplay::ServerThread()
 		case ENET_EVENT_TYPE_RECEIVE: {
 			if (event.channelID == 0)
 			{
-				char to_add[FRAME_SIZE];
-				memcpy((void*)to_add, event.packet->data, FRAME_SIZE);
+				char to_add[DOJO_FRAME_SIZE];
+				memcpy((void*)to_add, event.packet->data, DOJO_FRAME_SIZE);
 				AddNetFrame((const char *)to_add);
 			}
 			else if (event.channelID == 1)
@@ -103,7 +103,7 @@ void Dojo::Netplay::ServerThread()
 				std::vector<uint8_t> body_buf;
 				body_buf.resize(body_size);
 
-				memcpy((void*)body_buf.data(), event.packet->data + HEADER_LEN, body_size);
+				memcpy((void*)body_buf.data(), event.packet->data + DOJO_HEADER_LEN, body_size);
 				int offset = 0;
 
 				Message::ProcessBody(cmd, body_size, (const char *)body_buf.data(), &offset);
@@ -168,7 +168,7 @@ void Dojo::Netplay::ClientThread()
 
 			if (!frame.empty())
 			{
-				ENetPacket* packet = enet_packet_create(frame.data(), FRAME_SIZE, ENET_PACKET_FLAG_RELIABLE);
+				ENetPacket* packet = enet_packet_create(frame.data(), DOJO_FRAME_SIZE, ENET_PACKET_FLAG_RELIABLE);
 				if (enet_peer_send(peer, 0, packet) < 0)
 				{
 					enet_packet_destroy(packet);
@@ -193,8 +193,8 @@ void Dojo::Netplay::ClientThread()
 		case ENET_EVENT_TYPE_RECEIVE: {
 			if (event.channelID == 0)
 			{
-				char to_add[FRAME_SIZE];
-				memcpy((void*)to_add, event.packet->data, FRAME_SIZE);
+				char to_add[DOJO_FRAME_SIZE];
+				memcpy((void*)to_add, event.packet->data, DOJO_FRAME_SIZE);
 				AddNetFrame((const char *)to_add);
 			}
 			else if (event.channelID == 1)
@@ -208,7 +208,7 @@ void Dojo::Netplay::ClientThread()
 				std::vector<uint8_t> body_buf;
 				body_buf.resize(body_size);
 
-				memcpy((void*)body_buf.data(), event.packet->data + HEADER_LEN, body_size);
+				memcpy((void*)body_buf.data(), event.packet->data + DOJO_HEADER_LEN, body_size);
 				int offset = 0;
 
 				Message::ProcessBody(cmd, body_size, (const char *)body_buf.data(), &offset);

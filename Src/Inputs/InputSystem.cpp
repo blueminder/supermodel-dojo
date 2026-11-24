@@ -36,7 +36,8 @@
 
 #include "Supermodel.h"
 #include "Input.h"
-#include "OSD/Thread.h"
+#include <chrono>
+#include <thread>
 #include <cmath>
 #include <string>
 #include <algorithm>
@@ -368,7 +369,7 @@ const JoyPartsStruct CInputSystem::s_joyParts[] =
   { "POV4_LEFT",     JoyPOV3Left },
   { "POV4_RIGHT",    JoyPOV3Right },
 
-  // Buttons 1-32
+  // Buttons 1-128
   { "BUTTON1",       JoyButton0 },
   { "BUTTON2",       JoyButton1 },
   { "BUTTON3",       JoyButton2 },
@@ -401,6 +402,102 @@ const JoyPartsStruct CInputSystem::s_joyParts[] =
   { "BUTTON30",      JoyButton29 },
   { "BUTTON31",      JoyButton30 },
   { "BUTTON32",      JoyButton31 },
+  { "BUTTON33",      JoyButton32 },
+  { "BUTTON34",      JoyButton33 },
+  { "BUTTON35",      JoyButton34 },
+  { "BUTTON36",      JoyButton35 },
+  { "BUTTON37",      JoyButton36 },
+  { "BUTTON38",      JoyButton37 },
+  { "BUTTON39",      JoyButton38 },
+  { "BUTTON40",      JoyButton39 },
+  { "BUTTON41",      JoyButton40 },
+  { "BUTTON42",      JoyButton41 },
+  { "BUTTON43",      JoyButton42 },
+  { "BUTTON44",      JoyButton43 },
+  { "BUTTON45",      JoyButton44 },
+  { "BUTTON46",      JoyButton45 },
+  { "BUTTON47",      JoyButton46 },
+  { "BUTTON48",      JoyButton47 },
+  { "BUTTON49",      JoyButton48 },
+  { "BUTTON50",      JoyButton49 },
+  { "BUTTON51",      JoyButton50 },
+  { "BUTTON52",      JoyButton51 },
+  { "BUTTON53",      JoyButton52 },
+  { "BUTTON54",      JoyButton53 },
+  { "BUTTON55",      JoyButton54 },
+  { "BUTTON56",      JoyButton55 },
+  { "BUTTON57",      JoyButton56 },
+  { "BUTTON58",      JoyButton57 },
+  { "BUTTON59",      JoyButton58 },
+  { "BUTTON60",      JoyButton59 },
+  { "BUTTON61",      JoyButton60 },
+  { "BUTTON62",      JoyButton61 },
+  { "BUTTON63",      JoyButton62 },
+  { "BUTTON64",      JoyButton63 },
+  { "BUTTON65",      JoyButton64 },
+  { "BUTTON66",      JoyButton65 },
+  { "BUTTON67",      JoyButton66 },
+  { "BUTTON68",      JoyButton67 },
+  { "BUTTON69",      JoyButton68 },
+  { "BUTTON70",      JoyButton69 },
+  { "BUTTON71",      JoyButton70 },
+  { "BUTTON72",      JoyButton71 },
+  { "BUTTON73",      JoyButton72 },
+  { "BUTTON74",      JoyButton73 },
+  { "BUTTON75",      JoyButton74 },
+  { "BUTTON76",      JoyButton75 },
+  { "BUTTON77",      JoyButton76 },
+  { "BUTTON78",      JoyButton77 },
+  { "BUTTON79",      JoyButton78 },
+  { "BUTTON80",      JoyButton79 },
+  { "BUTTON81",      JoyButton80 },
+  { "BUTTON82",      JoyButton81 },
+  { "BUTTON83",      JoyButton82 },
+  { "BUTTON84",      JoyButton83 },
+  { "BUTTON85",      JoyButton84 },
+  { "BUTTON86",      JoyButton85 },
+  { "BUTTON87",      JoyButton86 },
+  { "BUTTON88",      JoyButton87 },
+  { "BUTTON89",      JoyButton88 },
+  { "BUTTON90",      JoyButton89 },
+  { "BUTTON91",      JoyButton90 },
+  { "BUTTON92",      JoyButton91 },
+  { "BUTTON93",      JoyButton92 },
+  { "BUTTON94",      JoyButton93 },
+  { "BUTTON95",      JoyButton94 },
+  { "BUTTON96",      JoyButton95 },
+  { "BUTTON97",      JoyButton96 },
+  { "BUTTON98",      JoyButton97 },
+  { "BUTTON99",      JoyButton98 },
+  { "BUTTON100",     JoyButton99 },
+  { "BUTTON101",     JoyButton100 },
+  { "BUTTON102",     JoyButton101 },
+  { "BUTTON103",     JoyButton102 },
+  { "BUTTON104",     JoyButton103 },
+  { "BUTTON105",     JoyButton104 },
+  { "BUTTON106",     JoyButton105 },
+  { "BUTTON107",     JoyButton106 },
+  { "BUTTON108",     JoyButton107 },
+  { "BUTTON109",     JoyButton108 },
+  { "BUTTON110",     JoyButton109 },
+  { "BUTTON111",     JoyButton110 },
+  { "BUTTON112",     JoyButton111 },
+  { "BUTTON113",     JoyButton112 },
+  { "BUTTON114",     JoyButton113 },
+  { "BUTTON115",     JoyButton114 },
+  { "BUTTON116",     JoyButton115 },
+  { "BUTTON117",     JoyButton116 },
+  { "BUTTON118",     JoyButton117 },
+  { "BUTTON119",     JoyButton118 },
+  { "BUTTON120",     JoyButton119 },
+  { "BUTTON121",     JoyButton120 },
+  { "BUTTON122",     JoyButton121 },
+  { "BUTTON123",     JoyButton122 },
+  { "BUTTON124",     JoyButton123 },
+  { "BUTTON125",     JoyButton124 },
+  { "BUTTON126",     JoyButton125 },
+  { "BUTTON127",     JoyButton126 },
+  { "BUTTON128",     JoyButton127 },
 
   // List terminator
   { NULL,            JoyUnknown }
@@ -1435,7 +1532,7 @@ bool CInputSystem::GetPOVDetails(EJoyPart joyPart, int &povNum, int &povDir)
 
 bool CInputSystem::IsButton(EJoyPart joyPart)
 {
-  return joyPart >= JoyButton0 && joyPart <= JoyButton31;
+  return joyPart >= JoyButton0 && joyPart <= JoyButton127;
 }
 
 int CInputSystem::GetButtonNumber(EJoyPart joyPart)
@@ -1796,7 +1893,8 @@ bool CInputSystem::ReadMapping(char* buffer, unsigned bufSize, bool fullAxisOnly
 
     // See which sources activated to begin with and from here on ignore these (this stops badly calibrated axes that are constantly "active"
     // from preventing the user from exiting read loop)
-    UINT32 startTime = CThread::GetTicks();
+    // Milliseconds on a clock that only ever goes forward
+    const auto startTick = std::chrono::steady_clock::now();
     if (!Poll())
         goto Cancelled;
 
@@ -1817,8 +1915,8 @@ bool CInputSystem::ReadMapping(char* buffer, unsigned bufSize, bool fullAxisOnly
             {
                 if (!Poll())
                     goto Cancelled;
-                CThread::Sleep(1000 / 60);
-                if (timeoutMs > 0 && CThread::GetTicks() - startTime >= timeoutMs)
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 60));
+                if (timeoutMs > 0 && std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTick).count() >= timeoutMs)
                     goto Cancelled;
             }
             goto Cancelled;
@@ -1854,10 +1952,10 @@ bool CInputSystem::ReadMapping(char* buffer, unsigned bufSize, bool fullAxisOnly
         }
 
         // Don't poll continuously
-        CThread::Sleep(1000 / 60);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 60));
 
         // Check for timeout
-        if (timeoutMs > 0 && CThread::GetTicks() - startTime >= timeoutMs)
+        if (timeoutMs > 0 && std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTick).count() >= timeoutMs)
             goto Cancelled;
     }
 
@@ -1947,7 +2045,7 @@ bool CInputSystem::DetectJoystickAxis(unsigned joyNum, unsigned &axisNum, const 
       {
         if (!Poll())
           goto Cancelled;
-        CThread::Sleep(1000/60);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 60));
       }
       goto Cancelled;
     }
@@ -1960,7 +2058,7 @@ bool CInputSystem::DetectJoystickAxis(unsigned joyNum, unsigned &axisNum, const 
       {
         if (!Poll())
           goto Cancelled;
-        CThread::Sleep(1000/60);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 60));
       }
       break;
     }
@@ -1992,7 +2090,7 @@ bool CInputSystem::DetectJoystickAxis(unsigned joyNum, unsigned &axisNum, const 
     }
 
     // Don't poll continuously
-    CThread::Sleep(1000/60);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 60));
   }
 
   maxRange = 0;
@@ -2187,7 +2285,7 @@ Repeat:
         {
           if (!Poll())
             goto Cancelled;
-          CThread::Sleep(1000/60);
+          std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 60));
         }
         goto Cancelled;
       }
@@ -2206,7 +2304,7 @@ Repeat:
       }
 
       // Don't poll continuously
-      CThread::Sleep(1000/60);
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 60));
     }
 
     printf("Done\n\n");

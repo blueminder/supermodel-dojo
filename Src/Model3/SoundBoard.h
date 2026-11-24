@@ -31,13 +31,14 @@
 #include "Types.h"
 #include "CPU/Bus.h"
 #include "Model3/DSB.h"
+#include <functional>
 
 /*
  * CSoundBoard:
  *
  * Model 3 sound board (68K CPU + 2 x SCSP).
  */
-class CSoundBoard: public IBus
+class CSoundBoard final : public IBus
 {
 public:
 	/*
@@ -83,6 +84,14 @@ public:
 	 *		data	Byte to write to MIDI port.
 	 */
 	void WriteMIDIPort(UINT8 data);
+
+	/*
+	 * SetMIDIOutCallback(callback):
+	 *
+	 * Receives the SCSP's MIDI output (Model 2: the main board's UART). With
+	 * none, the output is discarded (Model 3).
+	 */
+	void SetMIDIOutCallback(std::function<void(UINT8)> callback);
 
 	/*
 	 * SaveState(SaveState):
@@ -181,6 +190,7 @@ public:
 private:
 	// Private helper functions
 	void		UpdateROMBanks(void);
+	int			NextFrameSamples(void);	// length of the next frame in samples (44.1 KHz, 1/refresh rate of a second)
 	
 	// Config
 	const Util::Config::Node &m_config;
@@ -202,8 +212,12 @@ private:
 	UINT8	ctrlReg;			// control register: ROM banking
 	
 	// Audio
-	float* audioFL, * audioFR;	// left and right front audio channels (1/60th second, 44.1 KHz)
-	float* audioRL, * audioRR;	// left and right rear audio channels (1/60th second, 44.1 KHz)
+	float* audioFL, * audioFR;	// left and right front audio channels (one frame, 44.1 KHz)
+	float* audioRL, * audioRR;	// left and right rear audio channels (one frame, 44.1 KHz)
+	double	m_sampleRemainder;	// fraction of a sample carried from one frame to the next
+
+	// The SCSP's MIDI output's receiver (none: discarded)
+	std::function<void(UINT8)> m_midiOutCallback;
 };
 
 

@@ -242,7 +242,7 @@ private:
 	void CopyVertexData(const R3DPoly& r3dPoly, std::vector<FVertex>& vertexArray);
 	void GetCoordinates(int width, int height, UINT16 uIn, UINT16 vIn, float uvScale, float& uOut, float& vOut) const;
 
-	bool RenderScene(int priority, bool renderOverlay, Layer layer);		// returns if has overlay plane
+	bool RenderScene(int priority, bool renderOverlay);			// returns if has overlay plane
 	bool IsDynamicModel(UINT32 *data) const;				// check if the model has a colour palette
 	bool IsVROMModel(UINT32 modelAddr) const;
 	void DrawScrollFog();
