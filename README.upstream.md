@@ -1,9 +1,9 @@
-# Supermodel: A Sega Model 3 Arcade Emulator
-*Copyright 2003-2023 The Supermodel Team*
+# Supermodel: A Sega Model Series Arcade Emulator
+*Copyright 2003-2026 The Supermodel Team*
 
 ## Overview
 
-[Supermodel](https://supermodel3.com) emulates Sega's Model 3 arcade platform, allowing you to relive state-of-the-art 3D arcade gaming as it existed from 1996 through 1999. It uses OpenGL, [SDL2](https://libsdl.org), and can run on Windows, Linux, and macOS. It also supports network play on low-latency network connections. The source code is freely available under the terms of the [GNU General Public License](http://www.gnu.org/copyleft/gpl.html).
+**Supermodel** emulates Sega's Model 3 arcade platform, allowing you to relive state-of-the-art 3D arcade gaming as it existed from 1996 through 1999. It uses OpenGL, [SDL2](https://libsdl.org), and can run on Windows, Linux, and macOS. It also supports network play on low-latency network connections. The source code is freely available under the terms of the [GNU General Public License](http://www.gnu.org/copyleft/gpl.html).
 
 <p align="center">
   <img src="Docs/Images/Daytona2_1.gif" width="375" height="250" /> <img src="Docs/Images/LAMachin.gif" width="375" height="250" />
@@ -16,7 +16,18 @@ The aim of the Supermodel project is to develop an emulator that is both accurat
 
 ## How To Get It
 
-Windows builds are updated automatically and available on the official Supermodel [download page](https://supermodel3.com/Download.html). Linux and macOS users currently have to build from source.
+Automated builds for Windows, macOS and Linux are now available here on GitHub.  
+Check out the releases page [here](https://github.com/trzy/Supermodel/releases).
+
+## Community
+
+<table border="0">
+  <tr>
+    <td><a href="https://discord.gg/XDd7TMMUMz"><img width="32" src="Docs/Images/Discord.svg"></a></td><td><a href="https://discord.gg/XDd7TMMUMz">Join the Discord server</a>.</td>
+  </tr>
+</table>
+
+We lost our web hosting and have no backup of the recent forum. For now, please use this GitHub page for official releases and [Discord](https://discord.gg/XDd7TMMUMz) for asking questions.
 
 ## Build Instructions
 
@@ -39,17 +50,14 @@ pacman -S mingw64/mingw-w64-x86_64-SDL2_net
 
 At this point, you can continue using either the MSYS2 shell or Windows Command Prompt but ensure that both ```gcc``` and ```mingw32-make``` are in your path. In MSYS2, the location of these binaries will be ```/mingw64/bin``` and for Command Prompt, assuming MSYS2 was installed in the default location, add ```C:\msys64\mingw64\bin``` to your Windows ```PATH``` variable.
 
-To build Supermodel without network support, use:
+To build Supermodel use (Network support built in by default now, no need to specify anymore):
 
 ```
 mingw32-make -f Makefiles/Makefile.Win32
 ```
 
-For network support:
-
-```
-mingw32-make -f Makefiles/Makefile.Win32 NET_BOARD=1
-```
+If you wish to build via Visual Studio 2026,
+Make sure to run the Get_Libs.cmd files in the libraries directory. It will automatically pull in the required dependencies. Then either build inside the GUI or use the Build.cmd file in the MSVC folder.
 
 ### Linux
 
@@ -58,18 +66,13 @@ Ensure SDL2 is installed. Most package managers ought to have this available. Fo
 ```
 sudo apt install libsdl2-dev
 sudo apt install libsdl2-net-dev
+sudo apt install libglu1-mesa-dev
 ```
 
 And then build Supermodel:
 
 ```
 make -f Makefiles/Makefile.UNIX
-```
-
-For network support:
-
-```
-make -f Makefiles/Makefile.UNIX NET_BOARD=1
 ```
 
 ### macOS
@@ -94,12 +97,6 @@ And then build Supermodel:
 make -f Makefiles/Makefile.OSX
 ```
 
-For network support:
-
-```
-make -f Makefiles/Makefile.OSX NET_BOARD=1
-```
-
 ### Note: running on macOS
 If you try and run a macOS binary that was downloaded from the internet and/or built on a different machine, you need to grant macOS permission to execute the binary (just 1-time):
 
@@ -110,3 +107,9 @@ If you try and run a macOS binary that was downloaded from the internet and/or b
 * Close the terminal window that opens (after clicking open)
 
 Details: https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac
+
+## License
+
+Supermodel is distributed under the terms of the [GNU General Public License](Docs/LICENSE.txt).
+
+Parts of it, mainly the Sega Model 1 and Model 2 support, are based on code from [MAME](https://www.mamedev.org) by Aaron Giles, Andreas Naive, Angelo Salese, Ariane Fugmann, David Haywood, ElSemi, Ernesto Corvi, Farfetch'd, Matthew Daniels, Miguel Angel Horna, Morten Shearman Kirkegaard, Olivier Galibert, Peter Wilhelmsen, R. Belmont, Robbbert, Samuel Neves, smf and Ville Linde. Their code was made available under the BSD 3-Clause License: the full notice is in the Acknowledgments section of [Docs/README.txt](Docs/README.txt).
