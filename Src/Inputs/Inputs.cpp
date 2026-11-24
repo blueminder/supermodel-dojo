@@ -822,6 +822,14 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"ShortPass", "ShortPass2"},
 		{"LongPass", "LongPass2"},
 		{"Shoot", "Shoot2"},
+		{"AnalogGunLeft", "AnalogGunLeft2"},
+		{"AnalogGunRight", "AnalogGunRight2"},
+		{"AnalogGunUp", "AnalogGunUp2"},
+		{"AnalogGunDown", "AnalogGunDown2"},
+		{"AnalogGunX", "AnalogGunX2"},
+		{"AnalogGunY", "AnalogGunY2"},
+		{"AnalogTriggerLeft", "AnalogTriggerLeft2"},
+		{"AnalogTriggerRight", "AnalogTriggerRight2"},
 		{"Start2", "Start1"},
 		{"Coin2", "Coin1"},
 		{"ServiceB", "ServiceA"},
@@ -837,6 +845,14 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"ShortPass2", "ShortPass"},
 		{"LongPass2", "LongPass"},
 		{"Shoot2", "Shoot"},
+		{"AnalogGunLeft2", "AnalogGunLeft"},
+		{"AnalogGunRight2", "AnalogGunRight"},
+		{"AnalogGunUp2", "AnalogGunUp"},
+		{"AnalogGunDown2", "AnalogGunDown"},
+		{"AnalogGunX2", "AnalogGunX"},
+		{"AnalogGunY2", "AnalogGunY"},
+		{"AnalogTriggerLeft2", "AnalogTriggerLeft"},
+		{"AnalogTriggerRight2", "AnalogTriggerRight"},
 	};
 
 	std::map<const char *, const char *> translate_p1_to_p2_keys = {
@@ -855,6 +871,14 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"ShortPass", "ShortPass2"},
 		{"LongPass", "LongPass2"},
 		{"Shoot", "Shoot2"},
+		{"AnalogGunLeft", "AnalogGunLeft2"},
+		{"AnalogGunRight", "AnalogGunRight2"},
+		{"AnalogGunUp", "AnalogGunUp2"},
+		{"AnalogGunDown", "AnalogGunDown2"},
+		{"AnalogGunX", "AnalogGunX2"},
+		{"AnalogGunY", "AnalogGunY2"},
+		{"AnalogTriggerLeft", "AnalogTriggerLeft2"},
+		{"AnalogTriggerRight", "AnalogTriggerRight2"},
 	};
 
 	std::map<const char *, const char *> swapped_player_inputs;
@@ -894,6 +918,22 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"ShortPass2", 0},
 		{"LongPass2", 0},
 		{"Shoot2", 0},
+		{"AnalogGunLeft", 0},
+		{"AnalogGunRight", 0},
+		{"AnalogGunUp", 0},
+		{"AnalogGunDown", 0},
+		{"AnalogGunX", 0},
+		{"AnalogGunY", 0},
+		{"AnalogTriggerLeft", 0},
+		{"AnalogTriggerRight", 0},
+		{"AnalogGunLeft2", 0},
+		{"AnalogGunRight2", 0},
+		{"AnalogGunUp2", 0},
+		{"AnalogGunDown2", 0},
+		{"AnalogGunX2", 0},
+		{"AnalogGunY2", 0},
+		{"AnalogTriggerLeft2", 0},
+		{"AnalogTriggerRight2", 0},
 	};
 
 	std::set<const char *> p1_inputs = {
@@ -911,7 +951,15 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		"Escape",
 		"ShortPass",
 		"LongPass",
-		"Shoot"
+		"Shoot",
+		"AnalogGunLeft",
+		"AnalogGunRight",
+		"AnalogGunUp",
+		"AnalogGunDown",
+		"AnalogGunX",
+		"AnalogGunY",
+		"AnalogTriggerLeft",
+		"AnalogTriggerRight"
 	};
 
 	std::set<const char *> p2_inputs = {
@@ -929,9 +977,36 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		"Escape2",
 		"ShortPass2",
 		"LongPass2",
-		"Shoot2"
+		"Shoot2",
+		"AnalogGunLeft2",
+		"AnalogGunRight2",
+		"AnalogGunUp2",
+		"AnalogGunDown2",
+		"AnalogGunX2",
+		"AnalogGunY2",
+		"AnalogTriggerLeft2",
+		"AnalogTriggerRight2"
 	};
 
+
+	const bool analog_gun_game = game && (game->inputs & (Game::INPUT_ANALOG_GUN1 | Game::INPUT_ANALOG_GUN2));
+
+	{
+		uint32_t bit = 0;
+		uint32_t masks[2] = { 0, 0 };
+		for (auto& i : m_inputs)
+		{
+			if (!(i->gameFlags & gameFlags))
+				continue;
+			if (p1_inputs.count(i->id))
+				masks[0] |= (1u << bit);
+			if (p2_inputs.count(i->id))
+				masks[1] |= (1u << bit);
+			bit++;
+		}
+		Dojo::player_input_masks[0] = masks[0];
+		Dojo::player_input_masks[1] = masks[1];
+	}
 
 	// translate local player inputs to assigned character
 	if (Dojo::players_swapped || Dojo::Replay::p2_override)
@@ -973,9 +1048,35 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 			(*it)->value = 0;
 
 		if (((*it)->gameFlags & gameFlags))
+		{
+			if (analog_gun_game)
+				Dojo::Poll::AxisAction(*it);
 			Dojo::Poll::ButtonAction(*it);
+		}
 	}
 	Dojo::Poll::EndAction();
+
+	if (analog_gun_game && Dojo::Poll::has_incoming_analog)
+	{
+		uint32_t restored = Dojo::Poll::incoming_analog;
+		if (Dojo::Replay::p1_override)
+			restored = (restored & 0xFFFF0000u) | (Dojo::Poll::analog & 0x0000FFFFu);
+		else if (Dojo::Replay::p2_override)
+			restored = (restored & 0x0000FFFFu) | (Dojo::Poll::analog & 0xFFFF0000u);
+
+		analogGunX[0]->value = (UINT16)(restored & 0xFFu);
+		analogGunY[0]->value = (UINT16)((restored >> 8) & 0xFFu);
+		analogGunX[1]->value = (UINT16)((restored >> 16) & 0xFFu);
+		analogGunY[1]->value = (UINT16)((restored >> 24) & 0xFFu);
+
+		if (Dojo::debug)
+		{
+			std::ostringstream LogStream;
+			LogStream << Dojo::index << ": gun x1=" << analogGunX[0]->value << " y1=" << analogGunY[0]->value
+				<< " x2=" << analogGunX[1]->value << " y2=" << analogGunY[1]->value;
+			InfoLog(LogStream.str().data());
+		}
+	}
 
 	return true;
 }

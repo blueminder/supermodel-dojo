@@ -64,6 +64,11 @@ void Dojo::Init(const std::string& game_name, bool record_session, bool train_se
     {
         std::cout << "Playing Replay" << std::endl;
         Replay::LoadFile(Replay::file_path);
+        if (Replay::header_version > Replay::header_version_current)
+        {
+          replay_rejected = true;
+          std::cout << "Replay Rejected: Unsupported Header Version " << Replay::header_version << std::endl;
+        }
         if (!net_inputs[1].empty())
           net_replay = true;
         Replay::NormalizeLegacyKeys();
@@ -81,8 +86,8 @@ void Dojo::FillDelay()
   // add buffer frames for delay
   for (uint32_t d = 0; d < delay; d++)
   {
-    auto p1_frame = Dojo::Frame::Create(d, 0, 0, 0);
-    auto p2_frame = Dojo::Frame::Create(d, 1, 0, 0);
+    auto p1_frame = Dojo::Frame::Create(d, 0, 0, 0, DOJO_ANALOG_GUN_REST);
+    auto p2_frame = Dojo::Frame::Create(d, 1, 0, 0, DOJO_ANALOG_GUN_REST);
 
     AddNetFrame(p1_frame.data());
     AddNetFrame(p2_frame.data());
@@ -138,6 +143,7 @@ void Dojo::AddNetFrame(const char* received_data)
 
   net_frames[frame_player].emplace(effective_frame_num, data_to_queue);
   net_inputs[frame_player].emplace(effective_frame_num, Frame::GetDigital((uint8_t*)data));
+  net_analog[frame_player].emplace(effective_frame_num, Frame::GetAnalog((uint8_t*)data));
 
   // idempotent advance: a lost update cannot freeze the chain
   if (netplay)
@@ -155,13 +161,20 @@ void Dojo::AddNetFrame(const char* received_data)
 
 uint32_t Dojo::WipePlayerInputs(int player_no, uint32_t digital)
 {
-  uint32_t input_mask = 0;
   if (player_no == 0)
-    input_mask = 986965;
-  else if (player_no == 1)
-    input_mask = 15790250;
+    return digital & ~player_input_masks[0];
+  if (player_no == 1)
+    return digital & ~player_input_masks[1];
+  return digital;
+}
 
-  return digital & ~input_mask;
+uint32_t Dojo::WipeAnalogPlayerInputs(int player_no, uint32_t analog)
+{
+  if (player_no == 0)
+    return analog & ~0x0000FFFFu;
+  if (player_no == 1)
+    return analog & ~0xFFFF0000u;
+  return analog;
 }
 
 bool Dojo::PlayerInputsFilled(uint32_t i)
@@ -196,5 +209,6 @@ void Dojo::TrimNetMapsNoLock()
   {
     net_frames[p].erase(net_frames[p].begin(), net_frames[p].lower_bound(cutoff));
     net_inputs[p].erase(net_inputs[p].begin(), net_inputs[p].lower_bound(cutoff));
+    net_analog[p].erase(net_analog[p].begin(), net_analog[p].lower_bound(cutoff));
   }
 }

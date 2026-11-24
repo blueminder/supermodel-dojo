@@ -2031,7 +2031,7 @@ Util::Config::Node DefaultConfig()
   config.Set("RefreshRate", 57.524f, "Video", 0.0f, 0.0f, { 57.524f, 60.f });
   SetLabels("RefreshRate", { "57.524 Hz (original hardware)", "60 Hz" });
   config.Set("ShowFrameRate", true, "Video");
-  config.Set("Crosshairs", int(0), "Video", 0, 0, { 0,1,2,3 });
+  config.Set("Crosshairs", int(3), "Video", 0, 0, { 0,1,2,3 });
   SetLabels("Crosshairs", { "None", "Player 1 only", "Player 2 only", "Players 1 & 2" });
   config.Set<std::string>("CrosshairStyle", "vector", "Video", "", "", { "bmp","vector" });
   SetLabels("CrosshairStyle", { "Bitmap", "Vector" });

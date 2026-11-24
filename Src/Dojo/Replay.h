@@ -53,4 +53,5 @@ namespace Dojo::Replay {
   inline uint32_t final_frame = 0;
 
   inline uint32_t header_version = 0;
+  inline uint32_t header_version_current = 7;
 } // namespace Dojo::Replay

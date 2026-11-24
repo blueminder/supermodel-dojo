@@ -28,6 +28,8 @@
 
 #define DOJO_FRAME_SIZE 15
 #define DOJO_HEADER_LEN 12
+// gun rest position: 0x80 per axis, all four bytes
+#define DOJO_ANALOG_GUN_REST 0x80808080
 
 namespace Dojo {
     void Init(const std::string& game_name, bool record_session, bool train_session, bool receiving, bool hosting, bool netplay, const std::string& state_path);
@@ -36,6 +38,7 @@ namespace Dojo {
     void AddNetFrame(const char* received_data);
 
     uint32_t WipePlayerInputs(int player_no, uint32_t digital);
+    uint32_t WipeAnalogPlayerInputs(int player_no, uint32_t analog);
     bool PlayerInputsFilled(uint32_t i);
     bool PlayerFramesFilled(uint32_t i);
     // no-lock variants: caller must already hold inputs_mtx
@@ -48,6 +51,8 @@ namespace Dojo {
     inline std::atomic<uint32_t> delay = 0;
     inline std::map<uint32_t, std::string> net_frames[2];
     inline std::map<uint32_t, uint32_t> net_inputs[2];
+    inline std::map<uint32_t, uint32_t> net_analog[2];
+    inline uint32_t player_input_masks[2] = { 0, 0 };
     inline std::string current_frame;
 
     inline std::string game_name;

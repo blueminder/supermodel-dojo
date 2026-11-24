@@ -5,12 +5,24 @@
 
 # Netplay & Replay Supported Games
 
-Currently, Supermodel Dojo's __netplay & replay__ functionality only supports games with 2 joysticks and digital buttons. These games include:
+Currently, Supermodel Dojo's __netplay & replay__ functionality supports games with 2 joysticks and digital buttons on the same cabinet, and analog light gun games. These games include:
+
+## Model 3
 
 * Virtua Fighter 3
 * Virtua Fighter 3 Team Battle
 * Fighting Vipers 2
 * Virtua Striker 2
+* The Lost World: Jurassic Park (analog gun)
+* Ocean Hunter (analog gun)
+* LA Machineguns (analog gun)
+
+## Model 2
+
+* Gunblade NY (analog gun)
+* Rail Chase 2 (analog gun)
+
+Crosshairs are on by default for gun games (Alt+I cycles them off). Sega Model 2 serial light gun games (`INPUT_GUN1`/`INPUT_GUN2`, 10-bit guns: Virtua Cop, House of the Dead) are not yet supported.
 
 Replay and netplay functionality is planned for all games with local multiplayer on the same physical cabinet.
 
@@ -131,4 +143,3 @@ make -f Makefiles/Makefile.UNIX NET_BOARD=1
 ```
 
 You will find `supermodel` in the `bin` folder.
-

@@ -1,4 +1,5 @@
 #include "Dojo.h"
+#include <cstring>
 
 void Dojo::Poll::StartAction()
 {
@@ -6,6 +7,9 @@ void Dojo::Poll::StartAction()
 	incoming.reset();
 	outgoing.reset();
 	current.reset();
+	analog = 0;
+	incoming_analog = 0;
+	has_incoming_analog = false;
 
 	// may enqueue frames (AddNetFrame takes the lock itself)
 	if (Dojo::training)
@@ -31,6 +35,20 @@ void Dojo::Poll::StartAction()
 				input_data = Dojo::WipePlayerInputs(1, input_data);
 			incoming = std::bitset<32>(input_data);
 		}
+
+		auto ita = Dojo::net_analog[0].find(Dojo::index);
+		if (ita != Dojo::net_analog[0].end())
+		{
+			uint32_t analog_data = ita->second;
+			if (playback && net_replay && PlayerInputsFilledNoLock(Dojo::index))
+				analog_data = (analog_data & 0x0000FFFFu) | (Dojo::net_analog[1].at(Dojo::index) & 0xFFFF0000u);
+			if (Dojo::Replay::p1_override)
+				analog_data = Dojo::WipeAnalogPlayerInputs(0, analog_data);
+			else if (Dojo::Replay::p2_override)
+				analog_data = Dojo::WipeAnalogPlayerInputs(1, analog_data);
+			incoming_analog = analog_data;
+			has_incoming_analog = true;
+		}
 	}
 
 	if (Dojo::netplay && PlayerInputsFilledNoLock(Dojo::index))
@@ -41,6 +59,10 @@ void Dojo::Poll::StartAction()
 		uint32_t input_data = p1_input_data | p2_input_data;
 
 		current = std::bitset<32>(input_data);
+
+		incoming_analog = (Dojo::net_analog[0].at(Dojo::index) & 0x0000FFFFu) |
+			(Dojo::net_analog[1].at(Dojo::index) & 0xFFFF0000u);
+		has_incoming_analog = true;
 
 		if (Dojo::debug)
 		{
@@ -82,12 +104,26 @@ void Dojo::Poll::ButtonAction(std::shared_ptr<CInput> btn)
 	idx++;
 }
 
+void Dojo::Poll::AxisAction(std::shared_ptr<CInput> axis)
+{
+	uint32_t v = (uint32_t)axis->value & 0xFFu;
+
+	if (strcmp(axis->id, "AnalogGunX") == 0)
+		analog = (analog & ~0x000000FFu) | v;
+	else if (strcmp(axis->id, "AnalogGunY") == 0)
+		analog = (analog & ~0x0000FF00u) | (v << 8);
+	else if (strcmp(axis->id, "AnalogGunX2") == 0)
+		analog = (analog & ~0x00FF0000u) | (v << 16);
+	else if (strcmp(axis->id, "AnalogGunY2") == 0)
+		analog = (analog & ~0xFF000000u) | (v << 24);
+}
+
 void Dojo::Poll::EndAction()
 {
 	uint32_t digital = (uint32_t)outgoing.to_ulong();
 	if (Dojo::record || Dojo::training || Dojo::netplay)
 	{
-		std::string outgoing_frame = Dojo::Frame::Create(Dojo::index, Dojo::player, Dojo::delay, digital);
+		std::string outgoing_frame = Dojo::Frame::Create(Dojo::index, Dojo::player, Dojo::delay, digital, analog);
 
 		Dojo::AddNetFrame(outgoing_frame.data());
 

@@ -100,7 +100,7 @@ void Dojo::Replay::AppendHeaderToFile(const std::string& game_name)
   spectate_start.AppendHeader(1, SPECTATE_START);
 
   // version
-  spectate_start.AppendInt(6);
+  spectate_start.AppendInt(header_version_current);
   spectate_start.AppendString(game_name);
   spectate_start.AppendString("Player1");
   spectate_start.AppendString("Player2");
@@ -333,7 +333,7 @@ Dojo::Replay::ReplayHeader Dojo::Replay::ReadReplayHeader(const std::string& pat
   };
 
   const uint32_t version = readInt();
-  if (version < 1 || version > 6)
+  if (version < 1 || version > header_version_current)
     return meta;
 
   meta.game_name = readString();

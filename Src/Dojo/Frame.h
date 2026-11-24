@@ -5,7 +5,8 @@ namespace Dojo::Frame {
   uint32_t GetFrameNumber(const uint8_t* data);
   uint32_t GetEffectiveFrameNumber(const uint8_t* data);
   uint32_t GetDigital(const uint8_t* data);
+  uint32_t GetAnalog(const uint8_t* data);
   std::string Str(const uint8_t* data);
 
-  std::string Create(uint32_t frame_num, int player, uint32_t delay, uint32_t digital);
+  std::string Create(uint32_t frame_num, int player, uint32_t delay, uint32_t digital, uint32_t analog);
 } // namespace Dojo::Frame

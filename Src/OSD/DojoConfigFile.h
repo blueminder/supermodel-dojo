@@ -32,7 +32,7 @@
  {
 "[Global]\n"
 "AddressOut = 127.0.0.1\n"
-"Crosshairs = 0\n"
+"Crosshairs = 3\n"
 "DirectInputConstForceMax = 0\n"
 "DirectInputFrictionMax = 0\n"
 "DirectInputSelfCenterMax = 0\n"
