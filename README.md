@@ -1,34 +1,70 @@
 <p align="center"><img src="SMD.png" alt="Supermodel Dojo Logo" width="600"><br /><i>Logo Credit: <a href="https://www.deviantart.com/mkfan12">@Frosted_Moontips</a></i></p>
 <h1 align="center">Supermodel Dojo</h1>
 
-**Supermodel Dojo** is a fork of [**Supermodel**](https://github.com/trzy/Supermodel), a Sega Model 3 emulator, with a focus on netplay features, replay, and training options for competitive play.  We intend to keep **Supermodel Dojo** updated with the latest downstream changes made to the parent project.
+**Supermodel Dojo** is a fork of [**Supermodel**](https://github.com/trzy/Supermodel), a Sega Model 1/2/3 emulator, with a focus on netplay features, replay, and training options for competitive play.  We intend to keep **Supermodel Dojo** updated with the latest upstream changes made to the parent project.
 
 # Netplay & Replay Supported Games
 
-Currently, Supermodel Dojo's __netplay & replay__ functionality supports games with 2 joysticks and digital buttons on the same cabinet, and analog light gun games. These games include:
+Currently, Supermodel Dojo's __netplay & replay__ functionality supports games that use 2 joysticks with digital buttons on the same cabinet, and analog light gun games. These games include:
 
 ## Model 3
 
-* Virtua Fighter 3
-* Virtua Fighter 3 Team Battle
-* Fighting Vipers 2
-* Virtua Striker 2
-* The Lost World: Jurassic Park (analog gun)
-* Ocean Hunter (analog gun)
-* LA Machineguns (analog gun)
+### Two Joysticks & Digital Buttons
+
+* Virtua Fighter 3 (`vf3`, `vf3a`, `vf3c`)
+* Virtua Fighter 3 Team Battle (`vf3tb`)
+* Fighting Vipers 2 (`fvipers2`, `fvipers2o`)
+* Virtua Striker 2 (`vs2`, `vs215`, `vs215o`)
+* Virtua Striker 2 '98 (`vs298`, `vs29815`)
+* Virtua Striker 2 '99 (`vs299`, `vs299a`, `vs29915a`)
+* Virtua Striker 2 '99.1 (`vs2v991`, `vs299j`, `vs29915`, `vs29915j`)
+
+### Analog Light Guns
+
+* The Lost World: Jurassic Park (`lostwsga`, `lostwsgp`)
+* The Ocean Hunter (`oceanhun`, `oceanhuna`)
+* L.A. Machineguns: Rage of the Machines (`lamachin`)
 
 ## Model 2
 
-* Gunblade NY (analog gun)
-* Rail Chase 2 (analog gun)
+### Two Joysticks & Digital Buttons
 
-Crosshairs are on by default for gun games (Alt+I cycles them off). Sega Model 2 serial light gun games (`INPUT_GUN1`/`INPUT_GUN2`, 10-bit guns: Virtua Cop, House of the Dead) are not yet supported.
+* Virtua Fighter 2 (`vf2`, `vf2a`, `vf2b`, `vf2o`)
+* Fighting Vipers (`fvipers`, `fvipersa`, `fvipersb`)
+* Last Bronx (`lastbrnx`, `lastbrnxu`, `lastbrnxj`)
+* Sonic the Fighters (`sfight`)
+* Sonic Championship (`schamp`)
+* Dead or Alive (`doa`, `doaa`, `doaab`, `doaae`, `doab`)
+* Dynamite Cop (`dynamcop`, `dynamcopb`, `dynamcopc`)
+* Dynamite Deka 2 (`dyndeka2`, `dyndeka2b`)
+* Dynamite Baseball (`dynabb`)
+* Dynamite Baseball 97 (`dynabb97`)
+* Virtua Striker (`vstriker`, `vstrikero`)
+* Zero Gunner (`zerogun`, `zeroguna`, `zerogunaj`, `zerogunj`)
+* Pilot Kids (`pltkids`, `pltkidsa`)
+* Air Walkers (`airwlkrs`)
+* Royal Ascot 2 (`rascot2`)
+* Hanguk Pro Yagu 98 (`hpyagu98`)
+
+### Analog Light Guns
+
+* Gunblade NY (`gunblade`)
+* Rail Chase 2 (`rchase2`, `rchase2a`)
+* Behind Enemy Lines (`bel`)
+
+## Model 1
+
+### Two Joysticks & Digital Buttons
+
+* Virtua Fighter (`vf`)
+
+Crosshairs are on by default for gun games (Alt+I cycles them off).
 
 Replay and netplay functionality is planned for all games with local multiplayer on the same physical cabinet.
 
 # Replays
 
-Session replay recording is enabled by default. To disable, be sure to disable the `RecordSession` option in `Supermode.ini`, or in the in-emulator Settings Menu.
+Session replay recording is enabled by default. To disable, be sure to disable the `RecordSession` option in `Supermodel.ini`, or in the in-emulator Settings Menu.
 
 To load a replay, add the `-replay-file=` argument with the replay path included.
 
@@ -51,22 +87,10 @@ Toggle Playback Loop: `Shift + F9`
 
 # Netplay
 
-## Starting Netplay Session
-### Hosting
-1. Select a game and click **Host Netplay Session**.
-2. Confirm Port & Input Delay
-3. Press **Start**
-
-![image](https://github.com/blueminder/supermodel-dojo/assets/504581/8dc0f01f-cbe2-4368-8ce5-1a46e889e6ec)
-
-## Joining
-1. Select a game and click **Join Netplay Session**.
-2. Enter Host IP & Port
-3. Press **Start**
-
-![image](https://github.com/blueminder/supermodel-dojo/assets/504581/9a72b75f-7586-4b6d-b900-52d5d1365f81)
+Netplay can either be done via the command line instructions below, or through the [Dojo Lobby](https://lobby.dojo.ooo/) matchmaking platform. Dojo Lobby takes care of the emulator defaults, matchmaking, hole punching, and fallback relay details for you, along the ability to share replays with other players. The latest version of Supermodel Dojo is bundled in the Dojo Lobby installer and kept up to date via the internal updater, ensuring that both players are on the same version.
 
 ## Netplay Session Notes
+
 The following settings should be identical between host & guest player to prevent desyncs:
 * PowerPC Frequency
 * Refresh Rate
@@ -76,7 +100,7 @@ A wired connection is preferred, and guarantees a smoother connection between yo
 
 # Command Line Examples
 ## Hosting Netplay Session
-```supermodel.exe ROMs/vf3.zip -netplay -delay=1 -target-port=6000 -host```
+```supermodel.exe ROMs/vf3.zip -netplay -delay=1 -source-port=6000 -host```
 
 ## Joining Netplay Session
 ```supermodel.exe ROMs/vf3.zip -netplay -delay=1 -target-port=6000 -target-ip="127.0.0.1"```
