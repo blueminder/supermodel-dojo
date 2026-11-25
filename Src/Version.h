@@ -28,8 +28,10 @@
 #ifndef INCLUDED_VERSION_H
 #define INCLUDED_VERSION_H
 
+#include <string>
+
 #ifndef SUPERMODEL_VERSION
-#define SUPERMODEL_VERSION	"0.3a-WIP"
+#define SUPERMODEL_VERSION	"0.4"
 #endif
 
 /*
@@ -45,5 +47,7 @@
     #define SUPERMODEL_BUILD_ID	"unknown"
   #endif
 #endif
+
+std::string SupermodelVersion();
 
 #endif	// INCLUDED_VERSION_H

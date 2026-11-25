@@ -31,14 +31,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <string>
 
-// Official builds pass SUPERMODEL_GIT_REVISION (commit date and hash), giving,
-// e.g., 0.4-20261106-git-2d833a0. Other builds get the build date from the
-// compiler's __DATE__ ("Mmm dd yyyy"), giving, e.g., 0.4-dev-20261106.
+// Official builds pass SUPERMODEL_GIT_REVISION (short commit hash), giving,
+// e.g., dojo-0.4-2d833a0. Other builds get the build date from the compiler's
+// __DATE__ ("Mmm dd yyyy"), giving, e.g., dojo-0.4-dev-20261126.
 std::string SupermodelVersion()
 {
-  const std::string series_version = "0.4";
+  const std::string series_version = "dojo-0.4";
 #ifdef SUPERMODEL_GIT_REVISION
   return series_version + "-" SUPERMODEL_GIT_REVISION;
 #else

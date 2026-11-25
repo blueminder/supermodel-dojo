@@ -752,7 +752,7 @@ static void SaveState(IEmulator *Model3, bool clip_save=false)
   CBlockFile  SaveState;
 
   std::string file_path = Util::Format() << FileSystemPath::GetPath(FileSystemPath::Saves) << Model3->GetGame().name << ".st" << s_saveSlot;
-  if (Result::OKAY != SaveState.Create(file_path, "Supermodel Save State", "Supermodel Version " SUPERMODEL_VERSION))
+  if (Result::OKAY != SaveState.Create(file_path, "Supermodel Save State", "Supermodel Version " + SupermodelVersion()))
   {
     ErrorLog("Unable to save state to '%s'.", file_path.c_str());
     return;
@@ -817,7 +817,7 @@ static void SaveNVRAM(IEmulator *Emu)
   CBlockFile  NVRAM;
 
   std::string file_path = Util::Format() << FileSystemPath::GetPath(FileSystemPath::NVRAM) << Emu->GetGame().name << ".nv";
-  if (Result::OKAY != NVRAM.Create(file_path, "Supermodel NVRAM State", "Supermodel Version " SUPERMODEL_VERSION))
+  if (Result::OKAY != NVRAM.Create(file_path, "Supermodel NVRAM State", "Supermodel Version " + SupermodelVersion()))
   {
     ErrorLog("Unable to save NVRAM to '%s'. Make sure directory exists!", file_path.c_str());
     return;
@@ -2367,7 +2367,7 @@ Util::Config::Node DefaultConfig()
 
 static void Title(void)
 {
-  printf("Supermodel: A Sega Model Series Arcade Emulator (Version " SUPERMODEL_VERSION ")\n");
+  printf("Supermodel: A Sega Model Series Arcade Emulator (Version %s)\n", SupermodelVersion().c_str());
   puts("Copyright 2003-2026 by The Supermodel Team");
 }
 
@@ -2843,7 +2843,7 @@ int main(int argc, char **argv)
   {
     if (!strcmp(argv[i], "-version") || !strcmp(argv[i], "--version"))
     {
-      printf("Supermodel " SUPERMODEL_VERSION "\n");
+      printf("Supermodel %s\n", SupermodelVersion().c_str());
       return 0;
     }
   }
@@ -2900,7 +2900,7 @@ int main(int argc, char **argv)
     return 1;
   }
   SetLogger(logger);
-  InfoLog("Supermodel Version " SUPERMODEL_VERSION);
+  InfoLog("Supermodel Version %s", SupermodelVersion().c_str());
   InfoLog("Started as:");
   for (int i = 0; i < argc; i++)
     InfoLog("  argv[%d] = %s", i, argv[i]);
@@ -3117,7 +3117,7 @@ int main(int argc, char **argv)
   // the PRO-1000. If it cannot listen, emulation continues.
   if (game.platform == Game::PLATFORM_PRO1000 || (game.netboard_present && s_runtime_config["Network"].ValueAs<bool>()))
   {
-    netServer = std::make_shared<CNetServer>(s_runtime_config["PortIn"].ValueAs<unsigned>(), "Supermodel " SUPERMODEL_VERSION " (" + game.name + ")");
+    netServer = std::make_shared<CNetServer>(s_runtime_config["PortIn"].ValueAs<unsigned>(), "Supermodel " + SupermodelVersion() + " (" + game.name + ")");
     netServer->Start();
   }
 
