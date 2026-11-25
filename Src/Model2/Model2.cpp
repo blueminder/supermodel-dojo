@@ -2101,21 +2101,23 @@ void CModel2::UpdateInputs(void)
     }
     if (is("rchase2a"))
     {
-      m_analog[0] = x[1]; m_analog[1] = x[0]; m_analog[2] = y[1]; m_analog[3] = y[0];
+      // MAME AD_STICK_Y: up = 0x00, down = 0xFF; AnalogGunY: up = 0xFF
+      m_analog[0] = x[1]; m_analog[1] = x[0];
+      m_analog[2] = (uint8_t)(0xFF - y[1]); m_analog[3] = (uint8_t)(0xFF - y[0]);
     }
     else if (is("rchase2"))
     {
       m_analog[0] = range(x[1], 0x34, 0xC7, true);
       m_analog[1] = range(x[0], 0x3A, 0xCA, true);
-      m_analog[2] = range(y[1], 0x1C, 0xCB, true);
-      m_analog[3] = range(y[0], 0x1C, 0xCB, true);
+      m_analog[2] = range(y[1], 0x1C, 0xCB);
+      m_analog[3] = range(y[0], 0x1C, 0xCB);
     }
     else
     {
       m_analog[0] = range(x[0], 0x69, 0xFF);
       m_analog[1] = range(x[1], 0x00, 0x96);
-      m_analog[2] = range(y[0], 0x11, 0xAE);
-      m_analog[3] = range(y[1], 0x11, 0xAE);
+      m_analog[2] = range(y[0], 0x11, 0xAE, true);
+      m_analog[3] = range(y[1], 0x11, 0xAE, true);
     }
     break;
   }
