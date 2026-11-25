@@ -871,6 +871,36 @@ static void LoadNVRAM(IEmulator *Emu)
   }
 }
 
+static bool LoadBaselineNVRAM(IEmulator *Emu)
+{
+  CBlockFile  NVRAM;
+
+  std::string file_path = Util::Format() << FileSystemPath::GetPath(FileSystemPath::Assets) << "NVRAM/" << Emu->GetGame().name << ".nv";
+
+  if (Result::OKAY != NVRAM.Load(file_path))
+    return false;
+
+  if (Result::OKAY != NVRAM.FindBlock("Supermodel NVRAM State"))
+  {
+    ErrorLog("'%s' does not appear to be a valid NVRAM file.", file_path.c_str());
+    return false;
+  }
+
+  int32_t fileVersion;
+  NVRAM.Read(&fileVersion, sizeof(fileVersion));
+  if (fileVersion != NVRAM_FILE_VERSION)
+  {
+    ErrorLog("'%s' is incompatible with this version of Supermodel.", file_path.c_str());
+    return false;
+  }
+
+  Emu->LoadNVRAM(&NVRAM);
+  NVRAM.Close();
+  InfoLog("Loaded baseline NVRAM from '%s'.", file_path.c_str());
+  std::cout << "Loaded Baseline NVRAM: " << file_path << std::endl;
+  return true;
+}
+
 
 /*
 static void PrintGLError(GLenum error)
@@ -1189,6 +1219,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
   IRender3D *Render3D = (IRender3D *) new New3D::CNew3D(s_runtime_config, Emu->GetGame().name);
 #endif
 
+  bool baselineLoaded = false;
   UpscaleMode upscaleMode = (UpscaleMode)s_runtime_config["UpscaleMode"].ValueAs<int>();
 
   if (Result::OKAY != Render2D->Init(xOffset*aaValue, yOffset*aaValue, xRes*aaValue, yRes*aaValue, totalXRes*aaValue, totalYRes*aaValue, superAA->GetTargetID(), upscaleMode))
@@ -1263,11 +1294,18 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
       break;
     }
 
-    // wipe NVRAM before the first emulated frame so both players start identically
+    // reset NVRAM before the first emulated frame so both players start identically
     if (Dojo::clear_nvram)
     {
-      Emu->ClearNVRAM();
+      if (!LoadBaselineNVRAM(Emu))
+        Emu->ClearNVRAM();
       Dojo::clear_nvram = false;
+      baselineLoaded = true;
+    }
+    else if ((Dojo::playback || Dojo::training || Dojo::record) && !Dojo::netplay && !baselineLoaded)
+    {
+      LoadBaselineNVRAM(Emu);
+      baselineLoaded = true;
     }
 
     if (Dojo::receiving)
