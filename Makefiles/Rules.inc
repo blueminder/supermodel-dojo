@@ -355,12 +355,12 @@ pkg/path: all
 	@echo $(PKG_PATH)
 
 #
-# Sets a GIT_REVISION variable based on the git sha and passes it to the build,
-# where SupermodelVersion() prepends the version number. Version.cpp is the only
-# file that uses it.
+# Sets a GIT_REVISION variable (short commit hash) and passes it to the build,
+# where SupermodelVersion() composes the full version string. Version.cpp is
+# the only file that uses it.
 #
 set_git_revision:
-	$(eval GIT_REVISION = $(strip $(subst ',,$(shell git show -s --format=%cd --date=format:%Y%m%d HEAD)-git-$(shell git rev-parse --short HEAD))))
+	$(eval GIT_REVISION = $(strip $(subst ',,$(shell git rev-parse --short HEAD))))
 	$(eval SUPERMODEL_BUILD_FLAGS += -DSUPERMODEL_GIT_REVISION=\"$(GIT_REVISION)\")
 
 #

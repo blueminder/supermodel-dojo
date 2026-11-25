@@ -47,8 +47,8 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "v${{ steps.version.outputs.version }}"
-          name: "Supermodel Dojo v${{ steps.version.outputs.version }}"
+          tag_name: "${{ steps.version.outputs.version }}"
+          name: "Supermodel Dojo ${{ steps.version.outputs.version }}"
           files: |
             artifacts/*/*.zip
             artifacts/*/*.tar.gz
