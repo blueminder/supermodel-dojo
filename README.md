@@ -5,7 +5,7 @@
 
 # Netplay & Replay Supported Games
 
-Currently, Supermodel Dojo's __netplay & replay__ functionality supports games that use 2 joysticks with digital buttons on the same cabinet, and analog light gun games. These games include:
+Currently, Supermodel Dojo's __netplay & replay__ functionality supports games that use 2 joysticks with digital buttons on the same cabinet, and light gun games (both analog and serial). These games include:
 
 ## Model 3
 
@@ -51,6 +51,12 @@ Currently, Supermodel Dojo's __netplay & replay__ functionality supports games t
 * Gunblade NY (`gunblade`)
 * Rail Chase 2 (`rchase2`, `rchase2a`)
 * Behind Enemy Lines (`bel`)
+
+### Serial Light Guns
+
+* Virtua Cop (`vcop`, `vcopa`)
+* Virtua Cop 2 (`vcop2`)
+* The House of the Dead (`hotd`, `hotdo`, `hotdp`)
 
 ## Model 1
 
