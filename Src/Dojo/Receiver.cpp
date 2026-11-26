@@ -59,17 +59,17 @@ void Dojo::Receiver::ReceiverThread()
         uint32_t body_size = Message::GetSize((uint8_t *)header);
         uint32_t cmd = Message::GetCmd((uint8_t *)header);
 
-        char body[2048];
-        int len = SDLNet_TCP_Recv(client, body, body_size);
+        std::vector<char> body(body_size);
+        int len = SDLNet_TCP_Recv(client, body.data(), body_size);
         if (!len) {
           printf("SDLNet_TCP_Recv: %s\n", SDLNet_GetError());
           break;
         }
         //printf("Received: %.*s\n", len, message);
-        std::string received = std::string(body, body_size);
+        std::string received = std::string(body.data(), body_size);
 
         int offset = 0;
-        Message::ProcessBody(cmd, body_size, body, &offset);
+        Message::ProcessBody(cmd, body_size, body.data(), &offset);
       }
       SDLNet_TCP_Close(client);
     }
@@ -118,17 +118,17 @@ void Dojo::Receiver::ReceiverThread()
         uint32_t body_size = Message::GetSize((uint8_t *)header);
         uint32_t cmd = Message::GetCmd((uint8_t *)header);
 
-        char body[2048];
-        int len = SDLNet_TCP_Recv(tcpsock, body, body_size);
+        std::vector<char> body(body_size);
+        int len = SDLNet_TCP_Recv(tcpsock, body.data(), body_size);
         if (!len) {
           printf("SDLNet_TCP_Recv: %s\n", SDLNet_GetError());
           break;
         }
         //printf("Received: %.*s\n", len, message);
-        std::string received = std::string(body, body_size);
+        std::string received = std::string(body.data(), body_size);
 
         int offset = 0;
-        Message::ProcessBody(cmd, body_size, body, &offset);
+        Message::ProcessBody(cmd, body_size, body.data(), &offset);
     }
 
     SDLNet_TCP_Close(tcpsock);

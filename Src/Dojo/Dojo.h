@@ -26,10 +26,12 @@
 
 #include "OSD/Logger.h"
 
-#define DOJO_FRAME_SIZE 15
+#define DOJO_FRAME_SIZE 22
 #define DOJO_HEADER_LEN 12
-// gun rest position: 0x80 per axis, all four bytes
+// analog gun rest position: 0x80 per axis, all four bytes
 #define DOJO_ANALOG_GUN_REST 0x80808080
+// serial gun rest position: X=400, Y=272 per player word
+#define DOJO_SERIAL_GUN_REST ((uint32_t)400 | ((uint32_t)272 << 16))
 
 namespace Dojo {
     void Init(const std::string& game_name, bool record_session, bool train_session, bool receiving, bool hosting, bool netplay, const std::string& state_path);
@@ -39,6 +41,7 @@ namespace Dojo {
 
     uint32_t WipePlayerInputs(int player_no, uint32_t digital);
     uint32_t WipeAnalogPlayerInputs(int player_no, uint32_t analog);
+    uint64_t WipeGunPlayerInputs(int player_no, uint64_t gun);
     bool PlayerInputsFilled(uint32_t i);
     bool PlayerFramesFilled(uint32_t i);
     // no-lock variants: caller must already hold inputs_mtx
@@ -52,10 +55,13 @@ namespace Dojo {
     inline std::map<uint32_t, std::string> net_frames[2];
     inline std::map<uint32_t, uint32_t> net_inputs[2];
     inline std::map<uint32_t, uint32_t> net_analog[2];
+    // serial gun words per player frame: P1 X | P1 Y << 16 | P2 X << 32 | P2 Y << 48
+    inline std::map<uint32_t, uint64_t> net_gun[2];
     inline uint32_t player_input_masks[2] = { 0, 0 };
     inline std::string current_frame;
 
     inline std::string game_name;
+    inline bool serial_gun_game = false;
     inline uint32_t ppc_frequency = 0;
     // effective session refresh rate in milliHz; stored in replay headers
     inline uint32_t refresh_rate_millihz = 0;

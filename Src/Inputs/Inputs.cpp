@@ -822,6 +822,15 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"ShortPass", "ShortPass2"},
 		{"LongPass", "LongPass2"},
 		{"Shoot", "Shoot2"},
+		{"GunLeft", "GunLeft2"},
+		{"GunRight", "GunRight2"},
+		{"GunUp", "GunUp2"},
+		{"GunDown", "GunDown2"},
+		{"GunX", "GunX2"},
+		{"GunY", "GunY2"},
+		{"Trigger", "Trigger2"},
+		{"Offscreen", "Offscreen2"},
+		{"AutoTrigger", "AutoTrigger2"},
 		{"AnalogGunLeft", "AnalogGunLeft2"},
 		{"AnalogGunRight", "AnalogGunRight2"},
 		{"AnalogGunUp", "AnalogGunUp2"},
@@ -853,6 +862,15 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"AnalogGunY2", "AnalogGunY"},
 		{"AnalogTriggerLeft2", "AnalogTriggerLeft"},
 		{"AnalogTriggerRight2", "AnalogTriggerRight"},
+		{"GunLeft2", "GunLeft"},
+		{"GunRight2", "GunRight"},
+		{"GunUp2", "GunUp"},
+		{"GunDown2", "GunDown"},
+		{"GunX2", "GunX"},
+		{"GunY2", "GunY"},
+		{"Trigger2", "Trigger"},
+		{"Offscreen2", "Offscreen"},
+		{"AutoTrigger2", "AutoTrigger"},
 	};
 
 	std::map<const char *, const char *> translate_p1_to_p2_keys = {
@@ -871,6 +889,15 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"ShortPass", "ShortPass2"},
 		{"LongPass", "LongPass2"},
 		{"Shoot", "Shoot2"},
+		{"GunLeft", "GunLeft2"},
+		{"GunRight", "GunRight2"},
+		{"GunUp", "GunUp2"},
+		{"GunDown", "GunDown2"},
+		{"GunX", "GunX2"},
+		{"GunY", "GunY2"},
+		{"Trigger", "Trigger2"},
+		{"Offscreen", "Offscreen2"},
+		{"AutoTrigger", "AutoTrigger2"},
 		{"AnalogGunLeft", "AnalogGunLeft2"},
 		{"AnalogGunRight", "AnalogGunRight2"},
 		{"AnalogGunUp", "AnalogGunUp2"},
@@ -903,6 +930,15 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"ShortPass", 0},
 		{"LongPass", 0},
 		{"Shoot", 0},
+		{"GunLeft", 0},
+		{"GunRight", 0},
+		{"GunUp", 0},
+		{"GunDown", 0},
+		{"GunX", 0},
+		{"GunY", 0},
+		{"Trigger", 0},
+		{"Offscreen", 0},
+		{"AutoTrigger", 0},
 		{"Start2", 0},
 		{"Coin2", 0},
 		{"ServiceB", 0},
@@ -918,6 +954,15 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		{"ShortPass2", 0},
 		{"LongPass2", 0},
 		{"Shoot2", 0},
+		{"GunLeft2", 0},
+		{"GunRight2", 0},
+		{"GunUp2", 0},
+		{"GunDown2", 0},
+		{"GunX2", 0},
+		{"GunY2", 0},
+		{"Trigger2", 0},
+		{"Offscreen2", 0},
+		{"AutoTrigger2", 0},
 		{"AnalogGunLeft", 0},
 		{"AnalogGunRight", 0},
 		{"AnalogGunUp", 0},
@@ -952,6 +997,15 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		"ShortPass",
 		"LongPass",
 		"Shoot",
+		"GunLeft",
+		"GunRight",
+		"GunUp",
+		"GunDown",
+		"GunX",
+		"GunY",
+		"Trigger",
+		"Offscreen",
+		"AutoTrigger",
 		"AnalogGunLeft",
 		"AnalogGunRight",
 		"AnalogGunUp",
@@ -978,6 +1032,15 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		"ShortPass2",
 		"LongPass2",
 		"Shoot2",
+		"GunLeft2",
+		"GunRight2",
+		"GunUp2",
+		"GunDown2",
+		"GunX2",
+		"GunY2",
+		"Trigger2",
+		"Offscreen2",
+		"AutoTrigger2",
 		"AnalogGunLeft2",
 		"AnalogGunRight2",
 		"AnalogGunUp2",
@@ -990,6 +1053,7 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 
 
 	const bool analog_gun_game = game && (game->inputs & (Game::INPUT_ANALOG_GUN1 | Game::INPUT_ANALOG_GUN2));
+	const bool serial_gun_game = game && (game->inputs & (Game::INPUT_GUN1 | Game::INPUT_GUN2));
 
 	{
 		uint32_t bit = 0;
@@ -1049,7 +1113,7 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 
 		if (((*it)->gameFlags & gameFlags))
 		{
-			if (analog_gun_game)
+			if (analog_gun_game || serial_gun_game)
 				Dojo::Poll::AxisAction(*it);
 			Dojo::Poll::ButtonAction(*it);
 		}
@@ -1074,6 +1138,29 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 			std::ostringstream LogStream;
 			LogStream << Dojo::index << ": gun x1=" << analogGunX[0]->value << " y1=" << analogGunY[0]->value
 				<< " x2=" << analogGunX[1]->value << " y2=" << analogGunY[1]->value;
+			InfoLog(LogStream.str().data());
+		}
+	}
+
+	// serial gun: restore raw axis values from the incoming gun words
+	if (serial_gun_game && Dojo::Poll::has_incoming_gun)
+	{
+		uint64_t restored = Dojo::Poll::incoming_gun;
+		if (Dojo::Replay::p1_override)
+			restored = (restored & 0xFFFFFFFF00000000ull) | (Dojo::Poll::gun & 0x00000000FFFFFFFFull);
+		else if (Dojo::Replay::p2_override)
+			restored = (restored & 0x00000000FFFFFFFFull) | (Dojo::Poll::gun & 0xFFFFFFFF00000000ull);
+
+		gunX[0]->value = (UINT16)(restored & 0xFFFFu);
+		gunY[0]->value = (UINT16)((restored >> 16) & 0xFFFFu);
+		gunX[1]->value = (UINT16)((restored >> 32) & 0xFFFFu);
+		gunY[1]->value = (UINT16)((restored >> 48) & 0xFFFFu);
+
+		if (Dojo::debug)
+		{
+			std::ostringstream LogStream;
+			LogStream << Dojo::index << ": serial gun x1=" << gunX[0]->value << " y1=" << gunY[0]->value
+				<< " x2=" << gunX[1]->value << " y2=" << gunY[1]->value;
 			InfoLog(LogStream.str().data());
 		}
 	}

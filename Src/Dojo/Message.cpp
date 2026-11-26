@@ -175,10 +175,25 @@ void Dojo::Message::ProcessBody(uint32_t cmd, uint32_t body_size, const char* bu
   {
     uint32_t frame_size = Message::ReadInt((const char*)buffer, offset);
 
+    // serial gun replays recorded before gun transport: axes are missing, reject
+    if (frame_size < DOJO_FRAME_SIZE && Dojo::serial_gun_game)
+    {
+      if (!Dojo::replay_rejected)
+        std::cout << "Replay Rejected: Recorded Before Serial Gun Support" << std::endl;
+      Dojo::replay_rejected = true;
+      return;
+    }
+
     // read frames
     while (*offset < (int)body_size)
     {
-      std::string frame = Message::ReadContinuousData((const char*)buffer, offset, frame_size);
+      uint32_t len = frame_size;
+      if (*offset + (int)len > (int)body_size)
+        len = (uint32_t)((int)body_size - *offset);
+      std::string frame = Message::ReadContinuousData((const char*)buffer, offset, len);
+
+      if (frame.size() < DOJO_FRAME_SIZE)
+        frame.resize(DOJO_FRAME_SIZE, 0);
       Dojo::AddNetFrame(frame.data());
     }
   }

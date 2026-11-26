@@ -398,10 +398,16 @@ uint32_t Dojo::Replay::GetReplayFrameCount(const std::string& path)
       if (fin.gcount() != (std::streamsize)body_size)
         break;
 
-      const uint32_t num_frames = (body_size - 4) / DOJO_FRAME_SIZE;
+      const uint32_t frame_size = (uint32_t)(uint8_t)body[0] | ((uint32_t)(uint8_t)body[1] << 8) |
+        ((uint32_t)(uint8_t)body[2] << 16) | ((uint32_t)(uint8_t)body[3] << 24);
+
+      if (frame_size == 0 || frame_size > (uint32_t)body_size)
+        break;
+
+      const uint32_t num_frames = (body_size - 4) / frame_size;
       for (uint32_t i = 0; i < num_frames; i++)
       {
-        const uint32_t player = (uint32_t)(uint8_t)body[4 + i * DOJO_FRAME_SIZE];
+        const uint32_t player = (uint32_t)(uint8_t)body[4 + i * frame_size];
         if (player < 2)
           player_frames[player]++;
       }

@@ -18,4 +18,9 @@ namespace Dojo::Poll {
     inline uint32_t analog = 0;
     inline uint32_t incoming_analog = 0;
     inline bool has_incoming_analog = false;
+
+    // packed serial gun axes, raw values: P1 X | P1 Y << 16 | P2 X << 32 | P2 Y << 48
+    inline uint64_t gun = 0;
+    inline uint64_t incoming_gun = 0;
+    inline bool has_incoming_gun = false;
 }
