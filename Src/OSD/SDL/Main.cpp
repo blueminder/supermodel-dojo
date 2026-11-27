@@ -1101,6 +1101,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
   bool        gameHasLightguns = false;
   bool        quit = false;
   bool        paused = false;
+  bool        netStall = false;   // paused because the opponent's input has not arrived
   bool        dumpTimings = false;
   bool        fastForward = false;
 
@@ -1358,6 +1359,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
         }
 
         paused = !inputs_ready;
+        netStall = paused;
 
         if (paused)
         {
@@ -1810,7 +1812,29 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
     SetAudioEnabled(!paused && !fastForward);
     if (paused || (!fastForward && s_runtime_config["Throttle"].ValueAs<bool>()))
     {
+      if (netStall)
+      {
+        // netplay stall: poll in slices, resume when the input arrives
+        const uint64_t slice = s_perfCounterFrequency / 250;   // 4 ms
+        for (;;)
+        {
+          SuperSleepUntil(std::min(nextTime, SDL_GetPerformanceCounter() + slice));
+          bool ready;
+          {
+            std::lock_guard<std::mutex> lock(Dojo::inputs_mtx);
+            ready = Dojo::PlayerInputsFilledNoLock(Dojo::index) && Dojo::index <= Dojo::lccf;
+          }
+          if (ready || SDL_GetPerformanceCounter() >= nextTime)
+            break;
+        }
+      }
+      else
         SuperSleepUntil(nextTime);
+
+      // drift-corrected schedule: rebase when more than three frames behind
+      nextTime += perfCountPerFrame;
+      const int64_t behind = int64_t(SDL_GetPerformanceCounter()) - int64_t(nextTime);
+      if (behind > int64_t(3 * perfCountPerFrame))
         nextTime = SDL_GetPerformanceCounter() + perfCountPerFrame;
     }
 
