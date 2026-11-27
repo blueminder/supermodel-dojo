@@ -7,6 +7,8 @@
 
 void Dojo::Netplay::ServerThread()
 {
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+
 	int player = 0;
 	uint32_t delay = Dojo::delay;
 
@@ -122,6 +124,8 @@ void Dojo::Netplay::ServerThread()
 
 void Dojo::Netplay::ClientThread()
 {
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+
 	uint16_t source_port = Dojo::source_port;
 
 	ENetHost* host;
