@@ -1814,18 +1814,20 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
     {
       if (netStall)
       {
-        // netplay stall: poll in slices, resume when the input arrives
-        const uint64_t slice = s_perfCounterFrequency / 250;   // 4 ms
+        // netplay stall: sleep in slices, resume when the input arrives; no spin
         for (;;)
         {
-          SuperSleepUntil(std::min(nextTime, SDL_GetPerformanceCounter() + slice));
+          const uint64_t now = SDL_GetPerformanceCounter();
+          if (now >= nextTime)
+            break;
           bool ready;
           {
             std::lock_guard<std::mutex> lock(Dojo::inputs_mtx);
             ready = Dojo::PlayerInputsFilledNoLock(Dojo::index) && Dojo::index <= Dojo::lccf;
           }
-          if (ready || SDL_GetPerformanceCounter() >= nextTime)
+          if (ready)
             break;
+          SDL_Delay(2);
         }
       }
       else
