@@ -1277,6 +1277,7 @@ int Supermodel(const Game &game, ROMSet *rom_set, IEmulator *Emu, CInputs *Input
   Dojo::ppc_frequency = ResolvePPCFrequency(game);
   Dojo::refresh_rate_millihz = (uint32_t)GetDesiredRefreshRateMilliHz();
   Dojo::serial_gun_game = !!(game.inputs & (Game::INPUT_GUN1 | Game::INPUT_GUN2));
+  Dojo::vehicle_game = !!(game.inputs & (Game::INPUT_VEHICLE | Game::INPUT_HARLEY));
 
   Dojo::Init(ReplayGameName(Emu->GetGame().name), recordSession, trainSession, receiving, hosting, netplay, initialState);
 

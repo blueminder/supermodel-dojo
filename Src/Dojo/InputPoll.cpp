@@ -36,6 +36,9 @@ void Dojo::Poll::StartAction()
 				input_data = Dojo::WipePlayerInputs(0, input_data);
 			else if (Dojo::Replay::p2_override)
 				input_data = Dojo::WipePlayerInputs(1, input_data);
+			// vehicle takeover: wipe shared racing bits from both streams, local inputs drive the seat
+			if (Dojo::vehicle_game && (Dojo::Replay::p1_override || Dojo::Replay::p2_override))
+				input_data &= ~Dojo::shared_input_mask;
 			incoming = std::bitset<32>(input_data);
 		}
 
@@ -44,11 +47,16 @@ void Dojo::Poll::StartAction()
 		{
 			uint32_t analog_data = ita->second;
 			if (playback && net_replay && PlayerInputsFilledNoLock(Dojo::index))
-				analog_data = (analog_data & 0x0000FFFFu) | (Dojo::net_analog[1].at(Dojo::index) & 0xFFFF0000u);
+			{
+				if (Dojo::vehicle_game)
+					analog_data = Dojo::MergeVehicleAnalog(analog_data, Dojo::net_analog[1].at(Dojo::index));
+				else
+					analog_data = (analog_data & 0x0000FFFFu) | (Dojo::net_analog[1].at(Dojo::index) & 0xFFFF0000u);
+			}
 			if (Dojo::Replay::p1_override)
-				analog_data = Dojo::WipeAnalogPlayerInputs(0, analog_data);
+				analog_data = Dojo::vehicle_game ? 0 : Dojo::WipeAnalogPlayerInputs(0, analog_data);
 			else if (Dojo::Replay::p2_override)
-				analog_data = Dojo::WipeAnalogPlayerInputs(1, analog_data);
+				analog_data = Dojo::vehicle_game ? 0 : Dojo::WipeAnalogPlayerInputs(1, analog_data);
 			incoming_analog = analog_data;
 			has_incoming_analog = true;
 		}
@@ -77,8 +85,11 @@ void Dojo::Poll::StartAction()
 
 		current = std::bitset<32>(input_data);
 
-		incoming_analog = (Dojo::net_analog[0].at(Dojo::index) & 0x0000FFFFu) |
-			(Dojo::net_analog[1].at(Dojo::index) & 0xFFFF0000u);
+		if (Dojo::vehicle_game)
+			incoming_analog = Dojo::MergeVehicleAnalog(Dojo::net_analog[0].at(Dojo::index), Dojo::net_analog[1].at(Dojo::index));
+		else
+			incoming_analog = (Dojo::net_analog[0].at(Dojo::index) & 0x0000FFFFu) |
+				(Dojo::net_analog[1].at(Dojo::index) & 0xFFFF0000u);
 		has_incoming_analog = true;
 
 		incoming_gun = (Dojo::net_gun[0].at(Dojo::index) & 0xFFFFFFFFull) |
@@ -134,6 +145,15 @@ void Dojo::Poll::AxisAction(std::shared_ptr<CInput> axis)
 	else if (strcmp(axis->id, "AnalogGunX2") == 0)
 		analog = (analog & ~0x00FF0000u) | (((uint32_t)axis->value & 0xFFu) << 16);
 	else if (strcmp(axis->id, "AnalogGunY2") == 0)
+		analog = (analog & ~0xFF000000u) | (((uint32_t)axis->value & 0xFFu) << 24);
+	// vehicle: steering byte0, accelerator byte1, brake byte2, rear brake byte3
+	else if (strcmp(axis->id, "Steering") == 0)
+		analog = (analog & ~0x000000FFu) | ((uint32_t)axis->value & 0xFFu);
+	else if (strcmp(axis->id, "Accelerator") == 0)
+		analog = (analog & ~0x0000FF00u) | (((uint32_t)axis->value & 0xFFu) << 8);
+	else if (strcmp(axis->id, "Brake") == 0)
+		analog = (analog & ~0x00FF0000u) | (((uint32_t)axis->value & 0xFFu) << 16);
+	else if (strcmp(axis->id, "RearBrake") == 0)
 		analog = (analog & ~0xFF000000u) | (((uint32_t)axis->value & 0xFFu) << 24);
 	// serial gun: raw axis values, no scaling
 	else if (strcmp(axis->id, "GunX") == 0)

@@ -32,6 +32,8 @@
 #define DOJO_ANALOG_GUN_REST 0x80808080
 // serial gun rest position: X=400, Y=272 per player word
 #define DOJO_SERIAL_GUN_REST ((uint32_t)400 | ((uint32_t)272 << 16))
+// vehicle rest position: steering centered (0x80), pedals released
+#define DOJO_VEHICLE_REST 0x00000080u
 
 namespace Dojo {
     void Init(const std::string& game_name, bool record_session, bool train_session, bool receiving, bool hosting, bool netplay, const std::string& state_path);
@@ -42,6 +44,8 @@ namespace Dojo {
     uint32_t WipePlayerInputs(int player_no, uint32_t digital);
     uint32_t WipeAnalogPlayerInputs(int player_no, uint32_t analog);
     uint64_t WipeGunPlayerInputs(int player_no, uint64_t gun);
+    // shared-seat racing: per byte, value farthest from rest wins, P1 wins ties
+    uint32_t MergeVehicleAnalog(uint32_t p1_analog, uint32_t p2_analog);
     bool PlayerInputsFilled(uint32_t i);
     bool PlayerFramesFilled(uint32_t i);
     // no-lock variants: caller must already hold inputs_mtx
@@ -57,11 +61,14 @@ namespace Dojo {
     inline std::map<uint32_t, uint32_t> net_analog[2];
     // serial gun words per player frame: P1 X | P1 Y << 16 | P2 X << 32 | P2 Y << 48
     inline std::map<uint32_t, uint64_t> net_gun[2];
+    // vehicle digital bits: one seat, either player drives
+    inline uint32_t shared_input_mask = 0;
     inline uint32_t player_input_masks[2] = { 0, 0 };
     inline std::string current_frame;
 
     inline std::string game_name;
     inline bool serial_gun_game = false;
+    inline bool vehicle_game = false;
     inline uint32_t ppc_frequency = 0;
     // effective session refresh rate in milliHz; stored in replay headers
     inline uint32_t refresh_rate_millihz = 0;

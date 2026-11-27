@@ -84,10 +84,11 @@ void Dojo::Init(const std::string& game_name, bool record_session, bool train_se
 void Dojo::FillDelay()
 {
   // add buffer frames for delay
+  uint32_t idle_analog = vehicle_game ? DOJO_VEHICLE_REST : DOJO_ANALOG_GUN_REST;
   for (uint32_t d = 0; d < delay; d++)
   {
-    auto p1_frame = Dojo::Frame::Create(d, 0, 0, 0, DOJO_ANALOG_GUN_REST, DOJO_SERIAL_GUN_REST, DOJO_SERIAL_GUN_REST);
-    auto p2_frame = Dojo::Frame::Create(d, 1, 0, 0, DOJO_ANALOG_GUN_REST, DOJO_SERIAL_GUN_REST, DOJO_SERIAL_GUN_REST);
+    auto p1_frame = Dojo::Frame::Create(d, 0, 0, 0, idle_analog, DOJO_SERIAL_GUN_REST, DOJO_SERIAL_GUN_REST);
+    auto p2_frame = Dojo::Frame::Create(d, 1, 0, 0, idle_analog, DOJO_SERIAL_GUN_REST, DOJO_SERIAL_GUN_REST);
 
     AddNetFrame(p1_frame.data());
     AddNetFrame(p2_frame.data());
@@ -186,6 +187,22 @@ uint64_t Dojo::WipeGunPlayerInputs(int player_no, uint64_t gun)
   if (player_no == 1)
     return gun & 0xFFFFFFFFull;
   return gun;
+}
+
+// shared-seat racing: per byte, farthest from rest wins (steer rest 0x80, pedals 0); ties go to P1
+uint32_t Dojo::MergeVehicleAnalog(uint32_t p1_analog, uint32_t p2_analog)
+{
+  uint32_t merged = 0;
+  for (int i = 0; i < 4; i++)
+  {
+    int rest = (i == 0) ? 0x80 : 0x00;
+    int v1 = (p1_analog >> (8 * i)) & 0xFF;
+    int v2 = (p2_analog >> (8 * i)) & 0xFF;
+    int d1 = v1 > rest ? v1 - rest : rest - v1;
+    int d2 = v2 > rest ? v2 - rest : rest - v2;
+    merged |= (uint32_t)((d2 > d1 ? v2 : v1) & 0xFF) << (8 * i);
+  }
+  return merged;
 }
 
 bool Dojo::PlayerInputsFilled(uint32_t i)

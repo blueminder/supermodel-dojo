@@ -1051,13 +1051,23 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 		"AnalogTriggerRight2"
 	};
 
+	// vehicle controls: single seat, either player (or replay takeover) drives
+	std::set<const char *> shared_inputs = {
+		"SteeringLeft", "SteeringRight", "Steering", "Accelerator", "Brake",
+		"GearShiftUp", "GearShiftDown", "GearShift1", "GearShift2", "GearShift3",
+		"GearShift4", "GearShiftN", "GearShift",
+		"VR1", "VR2", "VR3", "VR4", "ViewChange", "HandBrake", "RearBrake", "MusicSelect"
+	};
+
 
 	const bool analog_gun_game = game && (game->inputs & (Game::INPUT_ANALOG_GUN1 | Game::INPUT_ANALOG_GUN2));
 	const bool serial_gun_game = game && (game->inputs & (Game::INPUT_GUN1 | Game::INPUT_GUN2));
+	const bool vehicle_game = game && Dojo::vehicle_game;
 
 	{
 		uint32_t bit = 0;
 		uint32_t masks[2] = { 0, 0 };
+		uint32_t shared_mask = 0;
 		for (auto& i : m_inputs)
 		{
 			if (!(i->gameFlags & gameFlags))
@@ -1066,10 +1076,13 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 				masks[0] |= (1u << bit);
 			if (p2_inputs.count(i->id))
 				masks[1] |= (1u << bit);
+			if (shared_inputs.count(i->id))
+				shared_mask |= (1u << bit);
 			bit++;
 		}
 		Dojo::player_input_masks[0] = masks[0];
 		Dojo::player_input_masks[1] = masks[1];
+		Dojo::shared_input_mask = shared_mask;
 	}
 
 	// translate local player inputs to assigned character
@@ -1113,7 +1126,7 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 
 		if (((*it)->gameFlags & gameFlags))
 		{
-			if (analog_gun_game || serial_gun_game)
+			if (analog_gun_game || serial_gun_game || vehicle_game)
 				Dojo::Poll::AxisAction(*it);
 			Dojo::Poll::ButtonAction(*it);
 		}
@@ -1163,6 +1176,19 @@ bool CInputs::Poll(const Game *game, unsigned dispX, unsigned dispY, unsigned di
 				<< " x2=" << gunX[1]->value << " y2=" << gunY[1]->value;
 			InfoLog(LogStream.str().data());
 		}
+	}
+
+	// vehicle: restore racing axes from the incoming analog word; takeover injects local inputs
+	if (vehicle_game && Dojo::Poll::has_incoming_analog)
+	{
+		uint32_t restored = Dojo::Poll::incoming_analog;
+		if (Dojo::Replay::p1_override || Dojo::Replay::p2_override)
+			restored = Dojo::Poll::analog;
+
+		steering->value = (UINT16)(restored & 0xFFu);
+		accelerator->value = (UINT16)((restored >> 8) & 0xFFu);
+		brake->value = (UINT16)((restored >> 16) & 0xFFu);
+		rearBrake->value = (UINT16)((restored >> 24) & 0xFFu);
 	}
 
 	return true;
