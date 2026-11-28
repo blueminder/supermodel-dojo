@@ -5,7 +5,9 @@
 
 # Netplay & Replay Supported Games
 
-Currently, Supermodel Dojo's __netplay & replay__ functionality supports games that use 2 joysticks with digital buttons on the same cabinet, and light gun games (both analog and serial). These games include:
+Currently, Supermodel Dojo's __netplay & replay__ functionality supports single cabinet games that use 2 joysticks with digital buttons, light guns (both analog and serial), and racing controls. Since individual racing cabinets only have inputs for a single player, a netplay session permits both players to control the inputs of the same racer.
+
+These games include:
 
 ## Model 3
 
@@ -24,6 +26,14 @@ Currently, Supermodel Dojo's __netplay & replay__ functionality supports games t
 * The Lost World: Jurassic Park (`lostwsga`, `lostwsgp`)
 * The Ocean Hunter (`oceanhun`, `oceanhuna`)
 * L.A. Machineguns: Rage of the Machines (`lamachin`)
+
+### Racing (Single Cabinet)
+
+* Dirt Devils (`dirtdvls`, `dirtdvlsu`, `dirtdvlsau`, `dirtdvlsj`, `dirtdvlsg`)
+* Emergency Call Ambulance (`eca`, `ecap`, `ecau`, `ecaj`)
+* Harley-Davidson and L.A. Riders (`harley`, `harleya`)
+* Le Mans 24 (`lemans24`)
+* Scud Race (`scud`, `scudau`, `scuddx`, `scuddxo`, `scudplus`, `scudplusa`)
 
 ## Model 2
 
@@ -58,11 +68,28 @@ Currently, Supermodel Dojo's __netplay & replay__ functionality supports games t
 * Virtua Cop 2 (`vcop2`)
 * The House of the Dead (`hotd`, `hotdo`, `hotdp`)
 
+### Racing (Single Cabinet)
+
+* Daytona USA (`daytona`, `daytonase`, `daytona93`, `daytonas`, `daytonat`, `daytonata`, `daytonam`, `daytonagtx`)
+* Desert Tank (`desert`)
+* INDY 500 (`indy500`, `indy500d`, `indy500to`)
+* Manx TT Superbike (`manxtt`, `manxttc`, `manxttdx`)
+* Motor Raid (`motoraid`, `motoraiddx`)
+* Over Rev (`overrev`, `overrevb`, `overrevba`)
+* Power Sled (`powsled`, `powsledr`, `powsledm`)
+* Sega Rally Championship (`srallyc`, `srallycb`, `srallycc`, `srallycdx`, `srallycdxa`)
+* Sega Touring Car Championship (`stcc`, `stccb`, `stcca`, `stcco`)
+* Wave Runner (`waverunr`)
+
 ## Model 1
 
 ### Two Joysticks & Digital Buttons
 
 * Virtua Fighter (`vf`)
+
+### Racing (Single Cabinet)
+
+* Virtua Racing (`vr`, `vformula`, `vrext`)
 
 Crosshairs are on by default for gun games (Alt+I cycles them off).
 
@@ -78,7 +105,7 @@ To load a replay, add the `-replay-file=` argument with the replay path included
 
 You can watch your old replays and drop in at any time as either character to experiment with your strategy and execution.
 
-When watching a replay, you can assume control over a player by pressing `Shift + 1` for player 1 o `Shift + 2` for Player 2. This will transfer you to Training Mode with the remainder of the replay playing out.
+When watching a replay, you can assume control over a player by pressing `Shift + 1` for player 1 or `Shift + 2` for Player 2. This will transfer you to Training Mode with the remainder of the replay playing out.
 
 # Training Mode
 
